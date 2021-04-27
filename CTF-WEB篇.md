@@ -54,7 +54,7 @@ sqlmap -u "http://xxx.xxx/index.php?id=x" --dbms mysql --level 3
 sqlmap -u "http://xxx.xxx/index.php" --cookie  “id=11” –level 2（只有level达到2才会检测cookie）
 ~~~
 
-+ post数据包注入
++ **post数据包注入**
 
 ~~~
 可以使用burpsuite工具抓取post数据包
