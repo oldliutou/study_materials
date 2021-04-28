@@ -1,5 +1,25 @@
 # WEB篇
 
+**tip:计算机网络常用端口汇总！总有你不知道的端口及对应的服务！**
+
+| 端口 |                          服务及说明                          |
+| :--: | :----------------------------------------------------------: |
+|  20  |          ftp-data。FTP文件传输协议（默认数据端口）           |
+|  21  |               ftp。FTP文件传输协议（控制端口）               |
+|  22  |                     ssh。SSH远程登录协议                     |
+|  23  |                Telnet。Telnet标准终端仿真协议                |
+|  25  |             SMTP。简单邮件传输协议，用于发送邮件             |
+|  37  |                        time。时间协议                        |
+|  39  |                      rip。资源定位协议                       |
+|  53  |                     domain。DNS域名服务                      |
+|  80  |             HTTP。用于万维网服务的超文本传输协议             |
+| 110  |              pop3。邮局协议版本3，用于接收邮件               |
+| 161  |                   snmp。 简单网络管理协议                    |
+| 443  | HTTPS。基于TLS/SSL的网页浏览端口，能提供加密和通过安全端口传输的另一种HTTP |
+| 3389 |         Windows2000（2003）server远程桌面的服务端口          |
+
+[更多……](https://www.douban.com/note/568630865/?start=100)
+
 ## SQL注入
 
 ### 基本概念
@@ -504,7 +524,170 @@ mysql数据库仅有的
 
 
 
-## XSS跨站
+## XSS跨站脚本攻击
 
 ![image-20210426163409777](CTF-WEB篇.assets/image-20210426163409777.png)
 
+### XSS简介
+
+>  跨站脚本（Cross-Site Script，XSS）是一种经常出现在WEB应用程序中的计算机安全漏洞，是由于WEB应用程序对用户的输入过滤不足而产生的。攻击者利用网站漏洞把恶意脚本代码注入到网页中，当其他用户浏览这些网页是，就会执行其中的恶意代码，对受害用户可能采取cookie资料窃取、会话劫持、钓鱼欺骗等各种攻击。
+
+### 反射型XSS
+
+反射型跨站脚本（Reflected Cross-Site Scripting）是最常见，也是使用最广的一种，可将恶意脚本附加到 URL 地址的参数中。
+
+反射型 XSS 的利用一般是攻击者通过特定手法（如电子邮件），诱使用户去访问一个包含恶意代码的  URL，当受害者点击这些专门设计的链接的时候，恶意代码会直接在受害者主机上的浏览器执行。此类 XSS  通常出现在网站的搜索栏、用户登录口等地方，常用来窃取客户端 Cookies 或进行钓鱼欺骗。
+
+服务器端代码：
+
+~~~php
+<?php 
+// Is there any input? 
+if( array_key_exists( "name", $_GET ) && $_GET[ 'name' ] != NULL ) { 
+    // Feedback for end user 
+    echo '<pre>Hello ' . $_GET[ 'name' ] . '</pre>'; 
+} 
+?>
+~~~
+
+可以看到，代码直接引用了 `name` 参数，并没有做任何的过滤和检查，存在明显的 XSS 漏洞。
+
+### 持久型XSS
+
+持久型跨站脚本（Persistent Cross-Site Scripting）也等同于存储型跨站脚本（Stored Cross-Site Scripting）。
+
+此类 XSS 不需要用户单击特定 URL  就能执行跨站脚本，攻击者事先将恶意代码上传或储存到漏洞服务器中，只要受害者浏览包含此恶意代码的页面就会执行恶意代码。持久型 XSS  一般出现在网站留言、评论、博客日志等交互处，恶意脚本存储到客户端或者服务端的数据库中。
+
+服务器端代码：
+
+~~~php
+<?php
+  if( isset( $_POST[ 'btnSign' ] ) ) {
+    // Get input
+    $message = trim( $_POST[ 'mtxMessage' ] );
+    $name    = trim( $_POST[ 'txtName' ] );
+    // Sanitize message input
+    $message = stripslashes( $message );
+    $message = mysql_real_escape_string( $message );
+    // Sanitize name input
+    $name = mysql_real_escape_string( $name );
+    // Update database
+    $query  = "INSERT INTO guestbook ( comment, name ) VALUES ( '$message', '$name' );";
+    $result = mysql_query( $query ) or die( '<pre>' . mysql_error() . '</pre>' );
+    //mysql_close(); }
+?>
+~~~
+
+代码只对一些空白符、特殊符号、反斜杠进行了删除或转义，没有做 XSS 的过滤和检查，且存储在数据库中，明显存在存储型 XSS 漏洞。
+
+### DOM XSS
+
+
+
+
+
+httponly
+
+
+
+## CSRF
+
+### CSRF简介
+
+> CSRF，全名Cross Site Request Forgery，跨站请求伪造。很容易将它与XSS混淆，对于CSRF其两个关键点是**跨站点的请求**与**请求的伪造**，由于目标站**无token与referer防御**，导致用户的敏感操作的每一个参数都可以被攻击者获知，攻击者即可以伪造一个完全一样的请求以用户的身份达到恶意目的。
+
+### CSRF类型
+
++ 按请求类型：`GET型`、`POST型`
++ 按攻击方式：`HTML CSRF`、`JSON HiJacking`、`Flash CSRF`等
+
+#### HTML CSRF
+
+利用HTML元素发出的CSRF请求，这是最常见的CSRF攻击。
+
+HTML中可以设置`src/href`等链接地址的标签都可以发起一个GET请求，如：
+
+~~~html
+<link href="">
+<img src="">
+<img lowsrc="">
+<img dynsrc="">
+<meta http-equiv="refresh" content="0; url=">
+<iframe src="">
+<frame src="">
+<script src=""></script>
+<bgsound src=""></bgsound>
+<embed src=""></bgsound>
+<video src=""></video>
+<audio src=""></audio>
+<a href=""></a>
+<table background=""></table>
+......
+~~~
+
+还有 CSS 样式中的：
+
+~~~css
+@import ""
+background:url("")
+......
+~~~
+
+也可使用表单来对 POST 型的请求进行伪造:
+
+~~~html
+<form action="http://www.a.com/register" id="register" method="post">
+  <input type=text name="username" value="" />
+  <input type=password name="password" value="" />
+</form>
+<script>
+  var f = document.getElementById("register");
+  f.inputs[0].value = "test";
+  f.inputs[1].value = "passwd";
+  f.submit();
+</script>
+~~~
+
+#### Flash CSRF
+
+Flash 也有各种方式可以发起网络请求，包括POST:
+
+~~~
+import flash.net.URLRequest;
+import flash.system.Security;
+var url = new URLRequest("http://target/page");
+var param = new URLVariables();
+param = "test=123";
+url.method = "POST";
+url.data = param;
+sendToURL(url);
+stop();
+~~~
+
+Flash 中还可以使用 `getURL`、`loadVars` 等方式发起请求。
+
+~~~
+req = new LoadVars();
+req.addRequestHeader("foo", "bar");
+req.send("http://target/page?v1=123&v2=222", "_blank", "GET");
+~~~
+
+### CSRF的防御
+
+#### 验证码
+
+验证码强制用户必须与应用进行交互，才能完成最终请求。
+
+#### Referer Check
+
+检查请求是否来自合法的源，但服务器并非什么时候都能取得Referer。
+
+#### Token
+
+ CSRF能够攻击成功的本质原因是重要操作的所有参数都可以被攻击者猜测得到。
+
+保持原参数不变，新增加一个参数Token，值是随机的，在实际应用中，Token可以放在用户的Session中，或者浏览器的Cookie中。
+
+Token一定要足够随机。此外，Token的目的不是为了防止重复提交，所以为了使用方便，可以允许在一个用户的有效生命周期内，在Token消耗掉之前都使用同一个Token，但如果用户已经提交了表单，则这个Token已经消耗掉，应该重新生成Token。
+
+Token还应注意其保密性，如果Token出现在url中，则可能会通过Referer泄露，应尽量把Token放在表单中，把敏感操作由GET改为POST，以表单或者AJAX的形式提交，避免Token泄露。
