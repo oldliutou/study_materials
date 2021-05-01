@@ -10,7 +10,8 @@ header():
 curl_init():
 curl_setopt():
 curl_exec():
-ord():
+ord():函数返回字符串的首个字符的 ASCII 值
+die()
 ==
 ===
  ```
