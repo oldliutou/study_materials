@@ -129,3 +129,129 @@ flag便传到了服务器上
 
 ![image-20210501194343817](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210501194343817.png)
 
+> 突然发现自己好菜啊，果然光听不练假把式。在实践中学习，在学习中实践！以下是第二天的题，记录下自己踩得坑，得到了什么经验，学到了什么新东西。但是发现自己踩得全是坑。。。。。
+
+### “百度杯”CTF比赛 2017 二月场——爆破-1
+
+进入网站
+
+![image-20210502140954426](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502140954426.png)
+
+呦吼，阅读php代码，有点javaweb语言基础的我还是勉强能看懂的，就是有些特殊的函数就不知道它的具体功能了，百度。。。。其中不认识的php函数我都整理到了PHP代码审计的笔记中了。
+
+网上的解题思路大部分都是看见了两个$$符号，就猜到了要考察`GLOBALS`超全局变量，而我这个小菜鸟连这个超全局变量都没听说过，又学到了新东西。结合自己的想法，$a表示URL中输入的参数值，但是GLOBALS变量使用前要有$符号，所以看见两个$$符号就想到了GLOBALS。这是自己的理解。
+
+![image-20210502142121838](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502142121838.png)
+
+解题成功，通过这道题学到了GLOBALS超全局变量。
+
+### “百度杯”CTF比赛 2017 二月场——爆破-2
+
+![image-20210502143146826](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502143146826.png)
+
+该题就是通过url的参数值来获得flag.php中的flag值。怎么获得呢？如果直接输入`flag.php`会被当成字符串执行，没有任何意义，我们读取需要flag.php文件里面的内容。所以可以使用`file()、file_get_contents()`函数，提前把flag.php读入一个数组或者字符串，然后在通过var_dump()函数把变量输出，但是输出的内容就是flag.php文件里面的内容。
+
+还有一种方法就是拼接字符串。`1);show_source('flag.php');var_dump(` 把var_dump()拆分成三个函数即可。
+
+![image-20210502144424875](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502144424875.png)
+
+### “百度杯”CTF比赛 九月场——SQL
+
+![image-20210502144617838](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502144617838.png)
+
+需要对id参数进行SQL注入，测试得到是整数型注入，但是order by 、union select等一些关键字都被限制了，学到了一个新的绕过姿势，使用<>绕过。便可一路过关斩将，利用information_schema库的一些信息来获得了flag值。
+
+**首先获得表**
+
+![image-20210502150010162](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502150010162.png)
+
+**获得表中的字段**
+
+![image-20210502150334897](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502150334897.png)
+
+**最终可以获得表中的值**
+
+![image-20210502150439645](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502150439645.png)
+
+### “百度杯”CTF比赛 十月场——Login
+
+![image-20210502151044842](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502151044842.png)
+
+进去网站我看见是一个登录页面，然后我就迫不接待的打开了brup打算暴力破解密码，这里非常成功的踩了第一个坑。没有看注释，注释里给了账号和密码，说明出题人考察的方面根本就不是暴力破解密码。
+
+![image-20210502151316297](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502151316297.png)
+
+接下来登录进去网站，发现啥也没有。
+
+![image-20210502151421923](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502151421923.png)
+
+好了，又没思路了，我可太菜了。。。。。借鉴一下别人的思路，用burp抓包试试。
+
+![image-20210502152040368](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502152040368.png)
+
+发现了response里面有个可以的参数show=0，我们可以试试从客户端发个show=1的包看看服务器的响应是怎么样的。成功获得一段PHP代码，又要开始代码审计了。马马虎虎能看懂，还需要再学学PHP啊。
+
+![image-20210502152338715](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502152338715.png)
+
+~~~php
+<?php
+	include 'common.php';
+	$requset = array_merge($_GET, $_POST, $_SESSION, $_COOKIE);
+	class db
+	{
+		public $where;
+		function __wakeup()
+		{
+			if(!empty($this->where))
+			{
+				$this->select($this->where);
+			}
+		}
+
+		function select($where)
+		{
+			$sql = mysql_query('select * from user where '.$where);
+			return @mysql_fetch_array($sql);
+		}
+	}
+
+	if(isset($requset['token']))
+	{
+		$login = unserialize(gzuncompress(base64_decode($requset['token'])));
+		$db = new db();
+		$row = $db->select('user=\''.mysql_real_escape_string($login['user']).'\'');
+		if($login['user'] === 'ichunqiu')
+		{
+			echo $flag;
+		}else if($row['pass'] !== $login['pass']){
+			echo 'unserialize injection!!';
+		}else{
+			echo "(╯‵□′)╯︵┴─┴ ";
+		}
+	}else{
+		header('Location: index.php?error=1');
+	}
+
+?>
+~~~
+
+来吧兄弟们，代码审计走起来。class db这一段就是对数据库的一个操作，对本体来说不重要， 重点看 `if(isset($requset['token']))`这个里面的代码！以下是我对本段代码的理解。
+
+获取token的值，token值经过了base64解码-->解压缩-->对单一的已序列化的变量进行操作将其转换回PHP 的值,
+
+最终获得login变量，但是login变量里的user值必须为'ichunqiu'才会获得flag。
+
+现在就是构造一个token，给它的user值赋予'ichunqiu'，然后序列化-->压缩-->base64编码
+
+![image-20210502154345812](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502154345812.png)
+
+
+
+![image-20210502154334063](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502154334063.png)
+
+最后加cookie里面加上token参数给服务器发送。服务器便会成功返回一个flag值。
+
+![image-20210502154529559](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502154529559.png)
+
+成功返回flag值，奥利给，又学了新东西。
+
