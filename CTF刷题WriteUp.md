@@ -1,3 +1,7 @@
+
+
+
+
 # CTF刷题WriteUp
 
 ## WEB
@@ -446,3 +450,106 @@ path可以直接传参数进行文件包含。。。抓包，用PHP伪协议执�
 成功获得flag
 
 ![image-20210502201315455](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210502201315455.png)
+
+### 2017第二届广东省强网杯线上赛——broken
+
+进入网址看见全都是一些中括号、感叹号什么的，有点蒙，后来才知道这是jsfuck加密。。。。[详细解释]([JSFuck 有趣的js加密 (360doc.com)](http://www.360doc.com/content/20/0206/19/30583588_890134979.shtml))
+
+害得我一顿扫描目录还有抓包。
+
+![image-20210503165413769](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503165413769.png)
+
+![image-20210503165424044](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503165424044.png)
+
+这里需要了解一下**jsfuck的解密方法**
+
+> jsfuck、jjencode、aaencode可以被很轻易的还原：
+> 第一步：首先打开谷歌浏览器，进入浏览器控制台。
+> 第二步：去掉最后一行末尾的()，复制加密后的代码；
+> 第三步：在console控制台粘贴你第二步复制的代码；
+> 第四步：回车，达到便能得到解密后的代码。
+
+但是呢，这道题还有一个坑就是符号的匹配问题，他在最前面多了一个 `[`没有进行匹配，删掉即可显示js 代码，成功获得flag
+
+![image-20210503165814265](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503165814265.png)
+
+通过这道题，知道了jsfuck编码。
+
+### 2017第二届广东省强网杯线上赛——who are you?
+
+进入网站，对不起，你没有权限。果断去用burp抓包,查看是否有可疑字段
+
+![image-20210503170040013](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503170040013.png)
+
+发现了cookie中有个role值，看着像base64编码，去解码
+
+![image-20210503170443094](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503170443094.png)
+
+解码发现，这不就是我今天刚学的php的无类序列化问题嘛，这里面的用户是thrfg，我用admin编码之后试试能不能有权限，结果发现登录不进去。后来看了别人的writeup才知道，原来thrfg也是编码后的，用的是rot-13编码，编码后是guest.
+
+![image-20210503170557070](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503170557070.png)
+
+然后把admin用rot-13编码，再用base64把整体编码传入cookie中登录成功。
+
+![image-20210503171603238](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503171603238.png)
+
+![image-20210503171636111](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503171636111.png)
+
+登录成功显示让上传东西，查看源码给了传输的条件。
+
+![image-20210503171522878](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503171522878.png)
+
+![image-20210503172208669](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503172208669.png)
+
+
+
+报错了，后台应该有限制，尝试去绕过。因为网页做了正则匹配过滤. 而用data[]=的方法，把data从字符串变成数组，可以绕过正则匹配的过滤。
+
+![image-20210503172356709](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503172356709.png)
+
+绕过限制以后，显示传输成功，并且给了传输成功的地址，但是都是显示404找不到资源
+
+![image-20210503174345724](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503174345724.png)
+
+![image-20210503174402068](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503174402068.png)
+
+![image-20210503174514339](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503174514339.png)
+
+我猜测应该是服务器的问题，我在网上找了很多解题方法，都没有遇到这种情况。我也用dirsearch扫了一下目录。并没有发现uploads文件夹，可能更加应征了我的猜测，过段时间再来看看这道题吧。
+
+这道题就是用了**两次的编码（base64、rot-13）把admin身份传入cookie中通过了身份验证**，然后就是文件上传的正则表达式限制字符串的格式，**通过数组去绕过正则表达式限制**。
+
+### “百度杯”CTF比赛 九月场——YeserCMS
+
+进入网站，是一个庞大的电商系统，一时间不知如何下手。先去百度搜搜以前报过哪些漏洞吧。
+
+![image-20210503182613652](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503182613652.png)
+
+在网上顺利找到一个注入点，直接进行尝试
+
+~~~http
+http://cac6d32bf8ff4b52becb3516148c9c106deeaa1e92b64a8e.changame.ichunqiu.com//celive/live/header.php
+~~~
+
+**Payload**:通过POST方式传参
+
+~~~
+xajax=Postdata&xajaxargs[0]=<xjxquery><q>detail=xxxxxx',(UpdateXML(1,CONCAT(0x5b,mid((SELECT/**/GROUP_CONCAT(concat(database())) ),1,32),0x5d),1)),NULL,NULL,NULL,NULL,NULL,NULL)-- </q></xjxquery>
+~~~
+
+最终成功破解管理员账号密码，爆出的密码并不全，通过把1改成11就会把后面的密码显示，然后通过MD5算法解密即可
+
+![image-20210503183242453](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503183242453.png)
+
+成功用账号密码登录进管理员页面
+
+![image-20210503183411367](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503183411367.png)
+
+但是下一步该怎么办，我们需要获得的是在网站根目录下的flag.php文件，可以在管理员后台找有没有访问服务器文件的功能，找到了模板功能中的修改模板，这个功能点不就是修改服务器中的web文件嘛，所以在点击编辑的时候抓包，修改地址就获得了flag.php文件。
+
+![image-20210503183807527](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503183807527.png)
+
+![image-20210503182451205](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210503182451205.png)
+
+这个题考查的是对公共cms系统漏洞的复现，以及利用web管理员的权限提权获得服务器中文件的信息，利用的就是功能点路径的限制不严格。
+

