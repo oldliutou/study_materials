@@ -553,3 +553,281 @@ xajax=Postdata&xajaxargs[0]=<xjxquery><q>detail=xxxxxx',(UpdateXML(1,CONCAT(0x5b
 
 这个题考查的是对公共cms系统漏洞的复现，以及利用web管理员的权限提权获得服务器中文件的信息，利用的就是功能点路径的限制不严格。
 
+> 第三天开始啦！
+
+### 第三届“百越杯”福建省高校网络空间安全大赛——Do you know upload？
+
+进入网站
+
+![image-20210504144854894](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504144854894.png)
+
+查看源代码，发现了文件包含注释，所以可以直接上传任何后缀的文件都会被解析成PHP文件，所以话不多说，上传个php文件试试，显示上传文件类型不正确，上传jpg格式可以
+
+![image-20210504144839893](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504144839893.png)
+
+抓个包，改下content-type:image/jpeg，成功绕过上传成功
+
+![image-20210504152910664](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504152910664.png)
+
+用蚁剑连接成功，发现里面有个config.php文件，打开发现了数据库配置的账号密码，flag可能在数据库中，然后用蚁剑连接数据库，成功获得flag
+
+![image-20210504152923606](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504152923606.png)
+
+![image-20210504152930806](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504152930806.png)
+
+这道题其实难度不大，上传绕过也很基础，不要想的太复杂。
+
+### 2016全国大学生信息安全竞赛——破译
+
+这道题没有网页，只有下面的一段密文，让选手破译，第一次遇到这种题目
+
+~~~
+ TW5650Y - 0TS UZ50S S0V LZW UZ50WKW 9505KL4G 1X WVMUSL510 S001M0UWV 910VSG S0 WFLW0K510 1X LZW54 WF5KL50Y 2S4L0W4KZ52 L1 50U14214SLW X5L0WKK S0V TSK7WLTS88 VWNW8129W0L 50 W8W9W0LS4G, 95VV8W S0V Z5YZ KUZ118K SU41KK UZ50S.LZW S001M0UW9W0L ESK 9SVW SL S K5Y050Y UW4W910G L1VSG TG 0TS UZ50S UW1 VSN5V KZ1W9S7W4 S0V FM LS1, V54WUL14 YW0W4S8 1X LZW 50LW40SL510S8 U112W4SL510 S0V WFUZS0YW VW2S4L9W0L 1X LZW 9505KL4G 1X WVMUSL510.
+"EW S4W WFU5LWV L1 T41SVW0 1M4 2S4L0W4KZ52 E5LZ LZW 9505KL4G 1X WVMUSL510 L1 9S7W S 810Y-8SKL50Y 592SUL 10 LZW 85NWK 1X UZ50WKW KLMVW0LK LZ41MYZ S 6150L8G-VWK5Y0WV TSK7WLTS88 UM445UM8M9 S0V S E5VW 4S0YW 1X KUZ118 TSK7WLTS88 241Y4S9K," KS5V KZ1W9S7W4. "LZ5K U1995L9W0L 9S47K S01LZW4 958WKL10W 50 LZW 0TS'K G1MLZ S0V TSK7WLTS88 VWNW8129W0L WXX14LK 50 UZ50S." X8SY { YK182V9ZUL9STU5V}
+~~~
+
+这是什么啊，蒙了。看着不像是熟悉的base64、md5加密啊，百度一下
+
+
+
+### “百度杯”CTF比赛 九月场——Test
+
+这道题和昨天做的YeserCMS套路是一样的，这个稍微简单点。都是给了一个开源的cms站，根据他们以往被爆出的漏洞进行渗透。
+
+![image-20210504155938028](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504155938028.png)
+
+直接百度历史漏洞
+
+爆出payload：
+
+~~~
+直接在直接在url后面加上：/search.php?searchtype=5&tid=&area=eval($_POST[1])
+~~~
+
+咱们先用phpinfo()试试漏洞，果然成功了
+
+![image-20210504160150073](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504160150073.png)
+
+果断修改为一句话木马 `eval($_POST[pass])`，用蚁剑连接即可成功。
+
+![image-20210504160548076](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504160548076.png)
+
+进去服务器之后并没有发现flag文件，心想是不是跟上一个题一样的套路，flag藏在数据库中，然后就找数据库连接文件，连接数据库。
+
+![image-20210504160730768](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504160730768.png)
+
+在数据库中成功找到flag文件
+
+![image-20210504160840893](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504160840893.png)
+
+做题做多了，出题人的套路也慢慢的熟悉了一些。继续努力！
+
+### “百度杯”CTF比赛 九月场——123
+
+进入网站
+
+![image-20210504161018898](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504161018898.png)
+
+登录？老套路，第一步先看源码
+
+![image-20210504161105091](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504161105091.png)
+
+注释说用户信息在user.php里，打开看看？没有回显任何信息，先用dirsearch扫一下目录吧
+
+![image-20210504161728291](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504161728291.png)
+
+![image-20210504163001048](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504163001048.png)
+
+扫出的结果并没有什么异常的文件，后来看了wp，发现竟然有个`user.php.bak`文件，扫描文件没扫出来哦，下载下来是个用户名，果断爆破密码
+
+
+
+![image-20210504162933003](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504162933003.png)
+
+从1990年开始，扫出了一个结果
+
+![image-20210504163216924](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504163216924.png)
+
+于是成功登录进去啥也没有。。。。。肯定又是在注释里，果然。
+
+![image-20210504163302089](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504163302089.png)
+
+form表单存在上传漏洞？接下来怎么办呢？去掉注释
+
+![image-20210504163955143](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504163955143.png)
+
+接下来就是上传文件的知识了
+
+![image-20210504164231534](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504164231534.png)
+
+上传各种绕过的方式都显示文件名不合法，它的限制好像是文件名和内容都不能含有PHP字母，否则就会显示文件内容不合法。于是随便写了几个1，显示出来了一个超链接
+
+![image-20210504164955941](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504164955941.png)
+
+![image-20210504164728314](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504164728314.png)
+
+进入/view.php显示一个file?
+
+![image-20210504165428568](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504165428568.png)
+
+用他包含flag试试
+
+![image-20210504165754866](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504165754866.png)
+
+字符串过滤flag,使用字符串叠加，成功显示flag值
+
+![image-20210504165848715](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504165848715.png)
+
+感觉这道题考的知识点好多啊，有文件备份泄露、密码暴力破解、文件上传、字符串过滤等。收获很大。
+
+### “百度杯”CTF比赛 九月场——SQLi
+
+进入页面发现什么也没有，查看注释
+
+![image-20210504173901172](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504173901172.png)
+
+果断访问这个地址，结果打算SQL注入，输入很多情况并没有回显任何信息，只能看看别人的思路了。
+
+访问index.php抓包显示，发现了refresh响应字段，重定向
+
+![image-20210504172608161](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504172608161.png)
+
+发现refresh中重定向的地址l字母变成了1，在url中显示，然后就用原始的地址抓包发现了l0gin.php?id=1，这个才是真的注入点吧。哇，这个题真的考验眼力啊。。。
+
+![image-20210504173837416](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504173837416.png)
+
+成功回显内容，开始注入吧
+
+![image-20210504174247543](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504174247543.png)
+
+输入参数 `1' and ascii(substr((select database()),1,1))>64 %23`，发现 `，`之后的内容没有显示，语句没有执行成功被显示了出来，说明代码限制了 `，`的使用，可以使用其他的SQL语句进行绕过
+
+![image-20210504180137413](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504180137413.png)
+
+用 `order by` 判断出来是两列显示，`union select 1,2`中的 `，`被限制了， 可以使用 `union select * from ((select 1) a join (select 2) b )`绕过
+
+![image-20210504180931298](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504180931298.png)
+
+接下来就可以使用数据库的一些特殊函数来获得flag值，先获取数据库和版本信息
+
+![image-20210504181145862](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504181145862.png)
+
+使用information_schema数据库获取数据库表信息，users表
+
+![image-20210504181411306](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504181411306.png)
+
+获取数据表users内部的字段信息
+
+![image-20210504181549896](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504181549896.png)
+
+最终获得users表中的flag信息
+
+![image-20210504181714382](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504181714382.png)
+
+好坑啊这个题，给了一个假的注入点，还要考察眼力。。。。。。不过也学习到了新的绕过逗号限制的方式。
+
+### “百度杯”CTF比赛 九月场——Code
+
+进入网站
+
+![image-20210504212939544](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504212939544.png)
+
+![image-20210504214155014](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504214155014.png)
+
+![image-20210504214208022](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504214208022.png)
+
+~~~php
+<?php
+/**
+ * Created by PhpStorm.
+ * Date: 2015/11/16
+ * Time: 1:31
+ */
+header('content-type:text/html;charset=utf-8');
+if(! isset($_GET['jpg']))
+    header('Refresh:0;url=./index.php?jpg=hei.jpg');
+$file = $_GET['jpg'];
+echo '<title>file:'.$file.'</title>';
+$file = preg_replace("/[^a-zA-Z0-9.]+/","", $file);
+$file = str_replace("config","_", $file);//把config替换成_
+$txt = base64_encode(file_get_contents($file));
+
+echo "<img src='data:image/gif;base64,".$txt."'></img>";
+
+/*
+ * Can you find the flag file?
+ *
+ */
+
+?>
+
+~~~
+
+> 正则表达式
+>  ^在[]外表示以什么开头
+>  ^在[]里表示取反
+>  .表示除换行符（\n、\r）之外的任何单个字符
+
+![image-20210504215648121](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210504215648121.png)
+
+
+
+~~~php
+<?php
+/**
+ * Created by PhpStorm.
+ * Date: 2015/11/16
+ * Time: 1:31
+ */
+error_reporting(E_ALL || ~E_NOTICE);
+include('config.php');
+//生成length长度的随机数
+function random($length, $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz') {
+    $hash = '';
+    $max = strlen($chars) - 1;
+    for($i = 0; $i < $length; $i++)	{
+        $hash .= $chars[mt_rand(0, $max)];
+    }
+    return $hash;
+}
+//传入txt、key两个变量
+function encrypt($txt,$key){
+    for($i=0;$i<strlen($txt);$i++){
+        $tmp .= chr(ord($txt[$i])+10);//txt变量的个个位数上的数字or字母的ascii码+10
+    }
+    $txt = $tmp;
+    $rnd=random(4);//生成随机数
+    $key=md5($rnd.$key);//加密key值
+    $s=0;
+    for($i=0;$i<strlen($txt);$i++){
+        if($s == 32) $s = 0;
+        $ttmp .= $txt[$i] ^ $key[++$s];
+    }
+    return base64_encode($rnd.$ttmp);
+}
+function decrypt($txt,$key){
+    $txt=base64_decode($txt);
+    $rnd = substr($txt,0,4);
+    $txt = substr($txt,4);
+    $key=md5($rnd.$key);
+
+    $s=0;
+    for($i=0;$i<strlen($txt);$i++){
+        if($s == 32) $s = 0;
+        $tmp .= $txt[$i]^$key[++$s];
+    }
+    for($i=0;$i<strlen($tmp);$i++){
+        $tmp1 .= chr(ord($tmp[$i])-10);
+    }
+    return $tmp1;
+}
+$username = decrypt($_COOKIE['user'],$key);
+if ($username == 'system'){//username='system'时输出flag
+    echo $flag;
+}else{
+    setcookie('user',encrypt('guest',$key));
+    echo "â®(â¯â½â°)â­";
+}
+?>
+~~~
+
