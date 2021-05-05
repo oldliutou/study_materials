@@ -577,7 +577,7 @@ xajax=Postdata&xajaxargs[0]=<xjxquery><q>detail=xxxxxx',(UpdateXML(1,CONCAT(0x5b
 
 这道题其实难度不大，上传绕过也很基础，不要想的太复杂。
 
-### 2016全国大学生信息安全竞赛——破译
+### 2016全国大学生信息安全竞赛——破译（未解决）
 
 这道题没有网页，只有下面的一段密文，让选手破译，第一次遇到这种题目
 
@@ -726,7 +726,7 @@ form表单存在上传漏洞？接下来怎么办呢？去掉注释
 
 好坑啊这个题，给了一个假的注入点，还要考察眼力。。。。。。不过也学习到了新的绕过逗号限制的方式。
 
-### “百度杯”CTF比赛 九月场——Code
+### “百度杯”CTF比赛 九月场——Code(未解决)
 
 进入网站
 
@@ -814,7 +814,7 @@ function decrypt($txt,$key){
     $s=0;
     for($i=0;$i<strlen($txt);$i++){
         if($s == 32) $s = 0;
-        $tmp .= $txt[$i]^$key[++$s];
+        $tmp .= $txt[$i]^$key[++$s];	//$a ^ $b 	Xor（按位异或） 	将把 $a 和 $b 中一个为 1 另一个为 0 的位设为 1。
     }
     for($i=0;$i<strlen($tmp);$i++){
         $tmp1 .= chr(ord($tmp[$i])-10);
@@ -822,7 +822,7 @@ function decrypt($txt,$key){
     return $tmp1;
 }
 $username = decrypt($_COOKIE['user'],$key);
-if ($username == 'system'){//username='system'时输出flag
+if ($username == 'system'){	//username='system'时输出flag
     echo $flag;
 }else{
     setcookie('user',encrypt('guest',$key));
@@ -830,4 +830,12 @@ if ($username == 'system'){//username='system'时输出flag
 }
 ?>
 ~~~
+
+### “百度杯”CTF比赛 2017 二月场——Zone
+
+![image-20210505130934079](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505130934079.png)
+
+### “百度杯”2017年春秋欢乐赛——象棋
+
+![image-20210505134028040](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505134028040.png)
 
