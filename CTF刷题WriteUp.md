@@ -831,11 +831,84 @@ if ($username == 'system'){	//username='system'时输出flag
 ?>
 ~~~
 
-### “百度杯”CTF比赛 2017 二月场——Zone
+### “百度杯”CTF比赛 2017 二月场——Zone（未写WP）
 
 ![image-20210505130934079](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505130934079.png)
 
-### “百度杯”2017年春秋欢乐赛——象棋
+### “百度杯”2017年春秋欢乐赛——象棋（未写WP）
 
 ![image-20210505134028040](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505134028040.png)
+
+### 第一届“百度杯”信息安全攻防总决赛 线上选拔赛——Upload
+
+
+
+
+
+
+
+### “百度杯”CTF比赛 十月场——GetFlag
+
+~~~php
+<?php
+$f = $_POST['flag'];
+$f = str_replace(array('`', '$', '*', '#', ':', '\\', '"', "'", '(', ')', '.', '>'), '', $f);
+if((strlen($f) > 13) || (false !== stripos($f, 'return')))//$f长度小于13并且内容不包含‘return’
+{
+		die('wowwwwwwwwwwwwwwwwwwwwwwwww');
+}
+try
+{
+		 eval("\$spaceone = $f");
+}
+catch (Exception $e)
+{
+		return false;
+}
+if ($spaceone === 'flag'){
+	echo file_get_contents("helloctf.php");
+}
+
+?>
+ 
+~~~
+
+
+
+百度了一样PHP字符串的表示方法，之后发现字符串还有一种表示方法叫做Heredoc，不包含引号，于是构造flag参数如图，因为包含换行，所以需要url编码
+
+~~~
+<<<s
+flag
+s;
+
+~~~
+
+### “百度杯”CTF比赛 十月场——Not Found
+
+![image-20210506202653751](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210506202653751.png)
+
+> 1   GET  发送请求来获得服务器上的资源，请求体中不会包含请求数据，请求数据放在协议头中。另外get支持快取、缓存、可保留书签等。幂等
+>
+> 2   POST  和get一样很常见，向服务器提交资源让服务器处理，比如提交表单、上传文件等，可能导致建立新的资源或者对原有资源的修改。提交的资源放在请求体中。不支持快取。非幂等
+>
+> 3   HEAD  本质和get一样，但是响应中没有呈现数据，而是http的头信息，主要用来检查资源或超链接的有效性或是否可以可达、检查网页是否被串改或更新，获取头信息等，特别适用在有限的速度和带宽下。
+>
+>   4   PUT  和post类似，html表单不支持，发送资源与服务器，并存储在服务器指定位置，要求客户端事先知
+>
+> 道该位置；比如post是在一个集合上（/province），而put是具体某一个资源上（/province/123）。所以put是安全的，无论请求多少次，都是在123上更改，而post可能请求几次创建了几次资源。幂等
+>
+> 5   DELETE   请求服务器删除某资源。和put都具有破坏性，可能被防火墙拦截。如果是https协议，则无需担心。幂等   
+>
+> 6   CONNECT  HTTP/1.1协议中预留给能够将连接改为管道方式的代理服务器。就是把服务器作为跳板，去访问其他网页然后把数据返回回来，连接成功后，就可以正常的get、post了。
+>
+> 7   OPTIONS   获取http服务器支持的http请求方法，允许客户端查看服务器的性能，比如ajax跨域时的预检等。   
+>
+> 8   TRACE  回显服务器收到的请求，主要用于测试或诊断。一般禁用，防止被恶意攻击
+
+### “百度杯”CTF比赛 十月场——fuzzing
+
+![image-20210506204654898](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210506204654898.png)
+
+> key is not right,md5(key)==="1b4167610ba3f2ac426a68488dbd89be",and the key is ichunqiu***,the * is in [a-z0-9]
 
