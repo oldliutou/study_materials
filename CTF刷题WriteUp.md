@@ -912,3 +912,126 @@ s;
 
 > key is not right,md5(key)==="1b4167610ba3f2ac426a68488dbd89be",and the key is ichunqiu***,the * is in [a-z0-9]
 
+### “百度杯”CTF比赛 十月场——Hash
+
+![image-20210507084430919](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507084430919.png)
+
+~~~php
+<?php
+class Demo {
+    private $file = 'Gu3ss_m3_h2h2.php';
+
+    public function __construct($file) {
+        $this->file = $file;
+    }
+
+    function __destruct() {
+        echo @highlight_file($this->file, true);
+    }
+
+    function __wakeup() {
+        if ($this->file != 'Gu3ss_m3_h2h2.php') {
+            //the secret is in the f15g_1s_here.php
+            $this->file = 'Gu3ss_m3_h2h2.php';
+        }
+    }
+}
+
+if (isset($_GET['var'])) {
+    $var = base64_decode($_GET['var']);//传递参数base64解码
+    if (preg_match('/[oc]:\d+:/i', $var)) { //正则匹配，/i表示忽略大小写，防止大小写绕过
+        die('stop hacking!');
+    } else {
+
+        @unserialize($var);
+    }
+} else {
+    highlight_file("Gu3ss_m3_h2h2.php");
+}
+?> 
+~~~
+
+
+
+~~~php
+<?php
+if (isset($_GET['val'])) {
+    $val = $_GET['val'];
+    eval('$value="' . addslashes($val) . '";');
+} else {
+    die('hahaha!');
+}
+
+?> 
+~~~
+
+
+
+val=${eval($_POST[0])}
+
+### [极客大挑战 2019]Havefun 1
+
+![image-20210507103243907](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507103243907.png)
+
+​							 			
+
+![image-20210507103345039](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507103345039.png)
+
+​							 					
+
+### [SUCTF 2019]EasySQL 1
+
+![image-20210507105339870](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507105339870.png)
+
+### [ACTF2020 新生赛]Include 1
+
+![image-20210507112302338](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507112302338.png)
+
+### [极客大挑战 2019]Secret File 1
+
+![image-20210507112433680](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507112433680.png)
+
+~~~php
+<html>
+    <title>secret</title>
+    <meta charset="UTF-8">
+<?php
+    highlight_file(__FILE__);
+    error_reporting(0);
+    $file=$_GET['file'];
+    if(strstr($file,"../")||stristr($file, "tp")||stristr($file,"input")||stristr($file,"data")){
+        echo "Oh no!";
+        exit();
+    }
+    include($file); 
+//flag放在了flag.php里
+?>
+</html>
+~~~
+
+### [极客大挑战 2019]LoveSQL 1
+
+简单，利用information_schema库
+
+### [ACTF2020 新生赛]Exec 1
+
+超级简单，RCE 
+
+Payload: 
+
+![image-20210507194417743](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507194417743.png)
+
+### GXYCTF2019]Ping Ping Ping
+
+![image-20210507194557084](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507194557084.png)
+
+远程命令执行&内联执行
+
+内联，就是将反引号内命令的输出作为输入执行
+
+https://blog.csdn.net/vanarrow/article/details/108295481
+
+### [极客大挑战 2019]Knife
+
+简单，略过
+
