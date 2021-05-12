@@ -726,7 +726,7 @@ form表单存在上传漏洞？接下来怎么办呢？去掉注释
 
 好坑啊这个题，给了一个假的注入点，还要考察眼力。。。。。。不过也学习到了新的绕过逗号限制的方式。
 
-### “百度杯”CTF比赛 九月场——Code(未解决)
+### “百度杯”CTF比赛 九月场——Code(*)
 
 进入网站
 
@@ -749,7 +749,7 @@ if(! isset($_GET['jpg']))
 $file = $_GET['jpg'];
 echo '<title>file:'.$file.'</title>';
 $file = preg_replace("/[^a-zA-Z0-9.]+/","", $file);
-$file = str_replace("config","_", $file);//把config替换成_
+$file = str_replace("config","_", $file);
 $txt = base64_encode(file_get_contents($file));
 
 echo "<img src='data:image/gif;base64,".$txt."'></img>";
@@ -760,7 +760,6 @@ echo "<img src='data:image/gif;base64,".$txt."'></img>";
  */
 
 ?>
-
 ~~~
 
 > 正则表达式
@@ -813,7 +812,8 @@ function decrypt($txt,$key){
 
     $s=0;
     for($i=0;$i<strlen($txt);$i++){
-        if($s == 32) $s = 0;
+        if($s == 32) 
+            $s = 0;
         $tmp .= $txt[$i]^$key[++$s];	//$a ^ $b 	Xor（按位异或） 	将把 $a 和 $b 中一个为 1 另一个为 0 的位设为 1。
     }
     for($i=0;$i<strlen($tmp);$i++){
@@ -831,13 +831,159 @@ if ($username == 'system'){	//username='system'时输出flag
 ?>
 ~~~
 
-### “百度杯”CTF比赛 2017 二月场——Zone（未写WP）
+现在我们需要获取key值，可以利用eles代码段里执行得到结果获得key。访问fl3g_ichuqiu.php文件，获得 `encrypt('guest',$key)`得到的`setcookie`值
+
+![image-20210511163942294](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511163942294.png)
+
+
+
+
+
+编写脚本文件，返回`system`的编码值
+
+~~~php
+<?php
+    $txt1 = 'guest';
+    for ($i = 0; $i < strlen($txt1); $i++) {
+        $txt1[$i] = chr(ord($txt1[$i])+10);
+    }
+    $cookie_guest = 'dUptNkYaWh5M'; //自己浏览器guest返回的set-cookie值
+    $cookie_guest = base64_decode($cookie_guest);
+    $rnd = substr($cookie_guest,0,4); 
+    $ttmp = substr($cookie_guest,4);
+    $key='';
+    for ($i = 0; $i < strlen($txt1); $i++) {
+        $key .= ($txt1[$i] ^ $ttmp[$i]);//$key=md5($rnd.$key);
+    }
+
+    $txt2 = 'system';
+    for ($i = 0; $i < strlen($txt2); $i++) {
+        $txt2[$i] = chr(ord($txt2[$i])+10);
+    }
+
+    $md5 = '0123456789abcdef';
+    for ($i = 0; $i < strlen($md5); $i++) {
+        $key_new = $key.$md5[$i];
+        $cookie_system='';
+        for ($j = 0; $j < strlen($txt2); $j++) {
+            $cookie_system .= ($key_new[$j] ^ $txt2[$j]);
+        }
+        $cookie_system = base64_encode($rnd.$cookie_system);
+        echo $cookie_system."</br>";
+    }  
+?>
+~~~
+
+得到许多的base64编码值，用burp爆破出正确的cookie：user=？值，得到flag值
+
+### “百度杯”CTF比赛 2017 二月场——Zone
 
 ![image-20210505130934079](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505130934079.png)
+
+进入页面是一个登录页面，抓包登录试试，看到cookie里有一个login=0，改成1试试，结果和正常一样。
+
+![image-20210511203125993](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511203125993.png)
+
+扫一下目录结构，发现了许多文件，其中就包括flag.php
+
+![image-20210511203226956](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511203226956.png)
+
+进入flag.php页面只显示了flag_is_here，估计flag值是在源码中，现在就是想办法获取flag.php文件的源码。
+
+试试从index.php页面抓包修改login=1,成功进入管理员页面
+
+![image-20210511203510988](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511203510988.png)
+
+点击Manage，发现url地址存在参数，怀疑是文件包含
+
+![image-20210511203627136](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511203627136.png)
+
+修改index为flag，果然可以看到flag.php的文件显示，但是还是看不到源码。去访问/etc/passwd文件。并没有任何显示，是不是过滤了 `../`符号，用 `..././`绕过试试，成功回显信息。
+
+![image-20210511204222007](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511204222007.png)
+
+**注意：这里我踩了一个坑，name参数后面的php后缀名要删除掉，不然不会回显任何信息**
+
+接下来自己看的别人的WP，没有思路了……
+
+我们在最后一行看到了nginx。我们去看一下nginx的配置文件。nginx的配置文件位置可能不太一样，不过在/etc/nginx/nginx.conf的可能性比较大。我们尝试访问一下，成功了：
+
+![image-20210511204521857](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511204521857.png)
+
+
+
+![image-20210511204608599](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511204608599.png)
+
+注意最后一行包含的sites-enabled/default.进入之后发现了目录遍历的漏洞：
+
+![image-20210511204822110](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511204822110.png)
+
+
+
+~~~
+location /online-movies {
+            alias /movie/;
+            autoindex on;
+        }
+~~~
+
+这里边的 autoindex on ，即为允许目录浏览。因此我们可以进行目录遍历了。 怎么遍历呢？我们直接访问/online-movies. ./，因为alias /movie/，因为会变成 /movie/. ./，我们访问试试：
+
+![image-20210511205218905](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511205218905.png)
+
+成功显示了flag值。通过本题学习了中间件的目录访问
 
 ### “百度杯”2017年春秋欢乐赛——象棋（未写WP）
 
 ![image-20210505134028040](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505134028040.png)
+
+查看源代码，发现了了一个特别的js文件
+
+![image-20210511205747009](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210511205747009.png)
+
+
+
+猜想是不是正确猜出js文件的名字，然后访问此文件，获得下一步的线索。文件名是一个正则表达式，写个py脚本，然后用python脚本写个请求爆破一下吧
+
+~~~python
+#js文件名脚本，哈哈简单粗暴，五个for循环
+pre_str='abcmlyx'
+hou_str='0123456789'
+for i in pre_str:
+    for j in pre_str:
+        pre = i+j+'ctf'
+        for a in hou_str:
+            for b in hou_str:
+                for c in hou_str:
+                    print(pre+a+b+c)
+                    with open(r'ctf_str.txt', 'a+', encoding='utf-8') as f:
+                        f.write(pre+a+b+c + '\n')
+                        f.close()
+~~~
+
+~~~python
+# 请求脚本
+def bp():
+    url='http://353e7b03144049c18a362f7dd41d8832df76c8b4bcec4b49.changame.ichunqiu.com/js/'
+    try:
+        for i in open('ctf_str.txt'):
+            i = i.replace('\n','')
+            html = requests.get(url+i+'.js').status_code
+            if(html==200):
+                print(i)
+            # sleep(0.5)
+            print(url+i+'.js'+"         "+str(html))
+    except :
+        pass
+~~~
+
+静静等待结果吧
+
+
+
+
+
+
 
 ### 第一届“百度杯”信息安全攻防总决赛 线上选拔赛——Upload
 
@@ -1034,4 +1180,136 @@ https://blog.csdn.net/vanarrow/article/details/108295481
 ### [极客大挑战 2019]Knife
 
 简单，略过
+
+### [护网杯 2018]easy_tornado
+
+![image-20210508093548461](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210508093548461.png)
+
+线索
+
+![image-20210508093716495](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210508093716495.png)
+
+flag位置
+
+![image-20210508093740677](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210508093740677.png)
+
+> 思路：先用线索构造flag所在位置的md5值
+>
+> ​	 fllllllllllllag：md5值 594cb6af684ad354b4a59ac496473990
+>
+> ​	cookie_secret+md5(filename)：md5值 
+>
+> ​	cookie_secret没找到，百度一下吧，唉，原来是模板注入，提示在/welcome.txt里面，render
+>
+> ​	36277246-f3aa-4cea-a784-115ecefa55a2+594cb6af684ad354b4a59ac496473990.后来发现原来filename=/ fllllllllllllag，得加上/         严谨啊
+>
+> md5(36277246-f3aa-4cea-a784-115ecefa55a2+3bf9f6cf685a6dd8defadabfb41a03a1)最终得出flag
+
+### [RoarCTF 2019]Easy Calc
+
+源代码内容：
+
+~~~js
+<!--I've set up WAF to ensure security.-->
+<script>
+    $('#calc').submit(function(){
+        $.ajax({
+            url:"calc.php?num="+encodeURIComponent($("#content").val()),
+            type:'GET',
+            success:function(data){
+                $("#result").html(`<div class="alert alert-success">
+            <strong>答案:</strong>${data}
+            </div>`);
+            },
+            error:function(){
+                alert("这啥?算不来!");
+            }
+        })
+        return false;
+    })
+</script>
+
+~~~
+
+**利用PHP的字符串解析特性**
+
+### [极客大挑战 2019]PHP
+
+**private** 声明的字段为私有字段，只在所声明的类中可见，在该类的子类和该类的对象实例中均不可见。因此私有字段的字段名在序列化时，**类名和字段名前面都会加上\0的前缀**。字符串长度也包括所加前缀的长度。其中 \0 字符也是计算长度的。
+
+**当反序列化字符串，表示属性个数的值大于真实属性个数时，会跳过 __wakeup 函数的执行。**
+
+### [极客大挑战 2019]Upload
+
+### [极客大挑战 2019]BabySQL
+
+![image-20210510115359835](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510115359835.png)
+
+
+
+
+
+并不在当前数据库
+
+### [ACTF2020 新生赛]Upload
+
+![image-20210510111833218](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510111833218.png)
+
+白名单限制&前端限制：
+
+![image-20210510111923779](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510111923779.png)
+
+### [ACTF2020 新生赛]BackupFile
+
+![image-20210510113407203](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510113407203.png)
+
+~~~php
+<?php
+include_once "flag.php";
+
+if(isset($_GET['key'])) {
+    $key = $_GET['key'];
+    if(!is_numeric($key)) {
+        exit("Just num!");
+    }
+    $key = intval($key);
+    $str = "123ffwsfwefwf24r2f32ir23jrw923rskfjwtsw54w3";
+    if($key == $str) {
+        echo $flag;
+    }
+}
+else {
+    echo "Try to find out source file!";
+}
+
+
+~~~
+
+
+
+源码的意思是传一个key参数，这个参数必须是整数，然后和str字符串比较，int和string是无法直接比较的，php会将string转换成int然后再进行比较，转换成int比较时只保留数字，第一个字符串之后的所有内容会被截掉，双等属于弱类型比较。所以只需要key=123就行了。
+
+### [HCTF 2018]admin（*）
+
+![image-20210510150346033](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510150346033.png)
+
+https://blog.csdn.net/weixin_44677409/article/details/100733581
+
+### [极客大挑战 2019]BuyFlag
+
+~~~php
+
+	//~~~post money and password~~~
+if (isset($_POST['password'])) {
+	$password = $_POST['password'];
+	if (is_numeric($password)) {
+		echo "password can't be number</br>";
+	}elseif ($password == 404) {
+		echo "Password Right!</br>";
+	}
+}
+
+~~~
+
+https://blog.csdn.net/weixin_44348894/article/details/105333137
 

