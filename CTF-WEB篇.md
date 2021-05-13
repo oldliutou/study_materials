@@ -1267,7 +1267,7 @@ var_dump(md5($array1)==md5($array2)); //true
 
 PHP 手册中的 md5（）函数的描述是 `string md5 ( string $str [, bool $raw_output = false ] )`，`md5()` 中的需要是一个 string 类型的参数。但是当你传递一个 array 时，`md5()` 不会报错，只是会无法正确地求出 array 的 md5 值，这样就会导致任意 2 个 array 的 md5 值都会相等。
 
-##### **strcmp**()
+**strcmp**()
 
 `strcmp()` 函数在 PHP 官方手册中的描述是 `intstrcmp ( string $str1 ， string $str2 )`，需要给 `strcmp()` 传递 2 个 `string` 类型的参数。如果 `str1` 小于 `str2`，返回 -1，相等返回 0，否则返回 1。`strcmp()` 函数比较字符串的本质是将两个变量转换为 ASCII，然后进行减法运算，然后根据运算结果来决定返回值。
 
@@ -1343,7 +1343,7 @@ var_dump(in_array('1bc', $array)); //true
 
 
 
-
+## SSTI
 
 ## IDS
 
