@@ -2024,11 +2024,35 @@ payload:
 
 ![image-20210510115359835](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510115359835.png)
 
+限制了关键字 `or、order、 by、union、select、from、where`,我通过`<>`成功绕过限制，获得了列数为3列
+
+![image-20210515220934811](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515220934811.png)
+
+开始获取数据库的信息和是否可以使用information_schema数据库爆破信息
+
+获得数据库和版本信息
+
+![image-20210515221122979](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515221122979.png)
+
+开始使用information_schema数据库爆破
+
+![image-20210515221407842](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515221407842.png)
+
+获得数据库信息，看见有一个数据库是ctf，看来flag值并不在咱们当前项目的数据库，**这也是出题人的一个小坑吧，看来之后还要先爆破所有的数据库，不能立马爆破当前web项目所在的数据库啊**。
+
+接下来开始爆破ctf数据库中的表，表中只有一个表Flag
+
+![image-20210515221713824](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515221713824.png)
+
+爆破Flag表，表中只有一个字段是flag
+
+![image-20210515221854944](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515221854944.png)
+
+最后直接查询ctf数据库中的Flag表就可以了，成功获得flag值。
+
+![image-20210515221955482](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515221955482.png)
 
 
-
-
-并不在当前数据库
 
 ### [ACTF2020 新生赛]Upload
 
@@ -2038,9 +2062,29 @@ payload:
 
 ![image-20210510111923779](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510111923779.png)
 
+绕过前端限制，并且上传 `.phtml`后缀的文件，修改 `content-type`即可上传成功
+
+![image-20210515220251584](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515220251584.png)
+
+
+
+用蚁剑连接成功在网站根目录下获得flag
+
+![image-20210515220419798](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210515220419798.png)
+
 ### [ACTF2020 新生赛]BackupFile
 
 ![image-20210510113407203](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510113407203.png)
+
+
+
+扫描目录发现了备份文件 `/index.php.bak`
+
+![image-20210516130020347](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516130020347.png)
+
+
+
+下载下来，审计源码
 
 ~~~php
 <?php
@@ -2061,20 +2105,33 @@ else {
     echo "Try to find out source file!";
 }
 
-
 ~~~
 
 
 
 源码的意思是传一个key参数，这个参数必须是整数，然后和str字符串比较，int和string是无法直接比较的，php会将string转换成int然后再进行比较，转换成int比较时只保留数字，第一个字符串之后的所有内容会被截掉，双等属于弱类型比较。所以只需要key=123就行了。
 
+![image-20210516130341225](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516130341225.png)
+
 ### [HCTF 2018]admin（*）
 
 ![image-20210510150346033](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210510150346033.png)
 
+
+
+
+
+
+
+
+
+
+
 https://blog.csdn.net/weixin_44677409/article/details/100733581
 
 ### [极客大挑战 2019]BuyFlag
+
+在pay.php的注释中发现了一下代码
 
 ~~~php
 
@@ -2090,7 +2147,37 @@ if (isset($_POST['password'])) {
 
 ~~~
 
-https://blog.csdn.net/weixin_44348894/article/details/105333137
+
+
+> 并且页面中显示`Flag need your 100000000 money`，
+>
+> **attention**
+>
+> If you want to buy the FLAG:
+> ``You must be a student from CUIT!!!
+> You must be answer the correct password!!!`` 
+
+你必须是cuit的学生，估计是抓包修改某个字段
+
+cookie中有个user字段，把他的值改为1即可
+
+![image-20210516133351712](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516133351712.png)
+
+![image-20210516133339333](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516133339333.png)
+
+现在还要用post方法传递密码，传递的规则上面代码已经给了要求，利用PHP代码的弱语言特性，password=404a即可绕过。
+
+![image-20210516133839109](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516133839109.png)
+
+看来还得在传递个money字段，payload:password=404a&money=100000000。还是报错了，输入的字符太长了
+
+![image-20210516133947843](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516133947843.png)
+
+这里可是使用科学技术法： `1e9`或者用数组 `password[]=1`利用strcmp函数特性绕过的办法
+
+成功得到flag值
+
+![image-20210516134627266](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516134627266.png)
 
 ### [BJDCTF2020]Easy MD5
 
@@ -2359,7 +2446,104 @@ class UserInfo
 }
 ~~~
 
-开始代码审计
+开始代码审计，肯定又是考察反序列化。先注册一个用户，登陆之后值url地址栏发现了异常，有`?no=1`,试试有没有注入漏洞，果然有，数字型注入，列数是4个
 
-https://www.freesion.com/article/4631470744/
+![image-20210516135409180](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516135409180.png)
+
+还限制了关键字，用注释绕过，成功得到2的位置可以回显，开始爆破数据库吧
+
+![image-20210516135616281](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516135616281.png)
+
+> 数据库：fakebook
+>
+> 版本号：10.2.26-MariaDB-log 
+>
+> 用户：root@localhost 
+>
+> 所有数据库：fakebook,information_schema,mysql,performance_schema,test 	
+>
+> fakebook数据库中的表：users 	
+>
+> users表中的字段：no,username,passwd,data,USER,CURRENT_CONNECTIONS,TOTAL_CONNECTIONS 
+
+成功得到users表中的内容：
+
+![image-20210516140136567](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516140136567.png)
+
+分别是id、username、MD5（password）、data
+
+其中data正好是序列化之后的字符串，age、blog还是在页面显示的内容。
+
+![image-20210516140431478](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516140431478.png)
+
+`the contents of his/her blog`好像是直接调用blog地址中的内容。
+
+有一个思路：
+
+> 页面内容是从序列化的字符串得到的，存在注入点，咱们直接用union select语句把一个自定义的序列化内容传递给php后台，让他在前台显示，就是利用前面得到的php代码，利用ssrf漏洞去访问他自己的服务器中的flag文件，然后在`the contents of his/her blog`中显示。
+
+**第一步构造序列化字符串**
+
+~~~php
+ <?php
+
+class UserInfo
+{
+    public $name = "123";
+    public $age = 12;
+    public $blog = "file:///var/www/html/flag.php";
+	
+}
+
+$a = new UserInfo();
+echo serialize($a);
+?>
+//结果： O:8:"UserInfo":3:{s:4:"name";s:3:"123";s:3:"age";i:12;s:4:"blog";s:29:"file:///var/www/html/flag.php";}
+~~~
+
+**第二步构造注入点payload**
+
+~~~php
+ view.php?no=-1/**/union/**/select 1,2,3,'O:8:"UserInfo":3:{s:4:"name";s:3:"123";s:3:"age";i:12;s:4:"blog";s:29:"file:///var/www/html/flag.php";}'%23
+~~~
+
+![image-20210516141900218](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516141900218.png)
+
+flag.php文件的内容就在the contents of his/her blog中，打开源码
+
+![image-20210516142013398](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516142013398.png)
+
+点击链接成功获得flag值
+
+![image-20210516142029701](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516142029701.png)
+
+这个题考的SQL注入、反序列化、还有ssrf，知识点挺多的，对思维逻辑要求挺高的
+
+### [极客大挑战 2019]HardSQL
+
+进入网站
+
+![image-20210516175647200](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516175647200.png)
+
+开始SQL注入吧，看看这次会有什么限制。经过手工测试过滤了and、= 空格 union等多个sql关键字， 等号可以使用like来代替，试试报错注入
+
+![image-20210516191332950](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516191332950.png)
+
+### “百度杯”CTF比赛 十二月场——notebook
+
+![image-20210516193110579](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516193110579.png)
+
+在URL地址上发现了文件包含的异常，试试有没有文件包含漏洞，并且扫一下网站目录
+
+扫描网站发现了robots.txt文件，打开内容有一个文件名 `php1nFo.php`
+
+![image-20210516193557636](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516193557636.png)
+
+> **利用条件**：session文件路径已知，且其中内容部分可控。
+>  php的session文件的保存路径可以在phpinfo的session.save_path看到。
+>  session 的文件名格式为 sess_[phpsessid]，而 sessionid 在发送的请求的 cookie 字段中也可以看到。
+
+**注意：文件包含漏洞中，不论该文件是不是PHP的文件，文件中的PHP代码都会被解析**  
+
+此题中存在变量可以被控制，所以直接输入一句话木马被文件包含的时候解析成功，再用蚁剑连接即可
 
