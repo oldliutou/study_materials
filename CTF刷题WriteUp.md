@@ -2547,3 +2547,16 @@ flag.php文件的内容就在the contents of his/her blog中，打开源码
 
 此题中存在变量可以被控制，所以直接输入一句话木马被文件包含的时候解析成功，再用蚁剑连接即可
 
+### “迎圣诞，拿大奖”活动赛题“迎圣诞，拿大奖”活动赛题——SQLi
+
+![image-20210517143541651](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517143541651.png)
+
+### “百度杯”CTF比赛 十月场——Vld
+
+![image-20210517143704349](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517143704349.png)
+
+![image-20210517143713796](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517143713796.png)
+
+![image-20210517144651012](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517144651012.png)
+
+https://www.cnblogs.com/leixiao-/p/9784904.html

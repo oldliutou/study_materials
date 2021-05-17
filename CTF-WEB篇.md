@@ -82,9 +82,9 @@ SQL注入分为很多种，有联合注入、布尔注入、报错注入、时�
 + 平时我们最常用到的三种报错注入方式分别是：floor()、updatexml()、extractvalue()。
 
 ~~~sql
-1. select count(*) ,concat ((此处加入执行语句),0x7e,floor (rand (0)*2))  as a from information _schema.tables group by a;
-2. extractvalue(1,concat (0x7e,(此处加入执行语句),0x7e));
-3. select updatexml(1,concat (0x7e,(此处加入执行语句),0x7e),1);
+1. select count(*) ,concat((此处加入执行语句),0x7e,floor (rand (0)*2))  as a from information _schema.tables group by a;
+2. extractvalue(1,concat(0x7e,(此处加入执行语句),0x7e));
+3. select updatexml(1,concat(0x7e,(此处加入执行语句),0x7e),1);
 ~~~
 
 [详细解释]([SQL 注入 报错注入 - Keefe's Blog | 每天都要热爱技术 -- 网络安全技术博客 (aiyuanzhen.com)](http://aiyuanzhen.com/index.php/archives/34/))

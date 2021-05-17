@@ -33,7 +33,7 @@ range():根据范围创建数组，包含指定的元素
 mt_rand():生成更好的随机数
 substr(string $string , int $start , int $length = ?):返回字符串的子串，开始位置从0计算
 preg_replace():执行一个正则表达式的搜索和替换
-str_replace():子字符串替换
+str_replace(find,replace,string count):子字符串替换
 chr ( int $ascii ) : string 返回指定的字符
 random():
 addslashes():会在单引号‘,双引号“,反斜杠\以及NULL前添加反斜杠进行转义\，该函数常用于为存储在数据库中的字符串以及数据库查询语句准备字符串。				
@@ -272,6 +272,14 @@ int preg_match ( string $pattern , string $subject [, array &$matches [, int $fl
 
   [PHP preg_match() 函数 | PHP 教程 - 码农教程 (codercto.com)](https://www.codercto.com/courses/d/852.html)
 
+**绕过：**
+
++ 1. 数组绕过
+
+  preg_match只能处理字符串，当传入的subject是数组时会返回false
+  
++ 2. 异或绕过
+
 ### PHP中sha1()函数和MD5()函数的绕过
 
 ```php
@@ -280,7 +288,89 @@ sha1($_GET['name']) === sha1($_GET['password'])
 
 这两个函数比较时，由于无法处理数组，两边都会返回false，则相等，所以playload为?name[]=1&password[]=2。
 
+### 异或注入
 
+异或：两个条件相同（同真或者同假）即为假
+
+下面实例是用异或来判断SQL特殊字符有没有被过滤
+
+```
+http://120.24.86.145:9004/1ndex.php?id=1'^(length('union')!=0)--+
+```
+
+如上，如果union被过滤，则 length('union')!=0 为假，那么返回页面正常。
+
+### extract变量覆盖
+
+extract()函数：从数组中将变量导入当前符号表。
+
+定义：
+
+- 从数组中将变量导入到当前的符号表
+- 该函数使用数组键名作为变量名，使用数组键值作为变量值。针对数组中的每个元素，将在当前符号表中创建对应的一个变量
+
+语法：extract(array,extract_rules,prefix)
+
+- array,必需，要使用的数组
+
+```php
+<?php
+$a="hello";
+$b= array('a' =>"world" ,"b"=>"gogogo");
+extract($b);
+echo $a;		//world
+?>
+```
+
+如上所示，会存在一个覆盖漏洞。
+
+[更多变量覆盖漏洞参考](https://blog.csdn.net/qq_17204441/article/details/90398216?utm_medium=distribute.pc_relevant.none-task-blog-baidujs_title-1&spm=1001.2101.3001.4242)
+
+### MD5漏洞
+
+```php
+$_GET['name'] != $_GET['password']
+MD5($_GET['name']) == MD5($_GET['password'])
+MD5($_GET['name']) === MD5($_GET['password'])
+```
+
+ PHP在处理哈希字符串时，它把每一个以“0E”开头的哈希值都解释为0，所以如果两个不同的密码经过哈希以后，其哈希值都是以“0E”开头的，那么PHP将会认为他们相同，都是0。
+
+**以下值在md5加密后以0E开头：**
+
+- QNKCDZO
+- 240610708
+- s878926199a
+- s155964671a
+- s214587387a
+- s214587387a
+
+**另外，MD5()无法处理数组，当比较数组时，会返回0，也能用于绕过，name[]=a&password[]=b**
+
+### egrep()漏洞
+
+ereg()与strpos()两个函数同样不能用数组作为参数，否则返回NULL。
+
+另外，ereg()存在截断漏洞，使用%00可以截断正则匹配。
+
+另外，当长度与数值矛盾时，可以采用科学计数法表示，1e8=100000000。
+
+### 弱类型整数大小比较绕过
+
+```php
+$temp = $_GET['password'];
+is_numeric($temp)?die("no numeric"):NULL;
+if($temp>1336){
+echo $flag;
+```
+
+is_numeric()同样可以用数组绕过、%00截断、添加其他字符
+
+```http
+http://123.206.87.240:9009/22.php?password[]=1
+http://123.206.87.240:9009/22.php?password=9999a
+http://123.206.87.240:9009/22.php?password=9999%00
+```
 
 
 
