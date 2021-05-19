@@ -2560,3 +2560,11 @@ flag.php文件的内容就在the contents of his/her blog中，打开源码
 ![image-20210517144651012](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517144651012.png)
 
 https://www.cnblogs.com/leixiao-/p/9784904.html
+
+### [CISCN2019 华北赛区 Day2 Web1]Hack World
+
+用 `1/1`判断出是数字型注入
+
+### [极客大挑战 2019]HardSQL
+
+报错注入

