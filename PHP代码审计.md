@@ -49,6 +49,9 @@ get_defined_funcations():
 ctype_alpha():
 strrev():反转打印字符串，就是倒着打印
 str_rot13 ( string $str ) : string	对 str 参数执行 ROT13 编码并将结果字符串返回。编码和解码都使用相同的函数,传递一个编码过的字符串作为参数，将得到原始字符串。
+escapeshellarg ( string $arg ) : string-->把字符串转码为可以在 shell 命令里使用的参数，将给字符串增加一个单引号并且能引用或者转码任何已经存在的单引号;
+ escapeshellcmd ( string $command ) : string-->对字符串中可能会欺骗 shell 命令执行任意命令的字符进行转义,反斜线（\）会在以下字符之前插入： &#;`|*?~<>^()[]{}$\, \x0A 和 \xFF。
+
  ```
 
 **执行运算符：**
