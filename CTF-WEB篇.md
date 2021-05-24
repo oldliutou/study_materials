@@ -1333,7 +1333,317 @@ var_dump(in_array('1bc', $array)); //true
 
 ## XXE（。。。）
 
+#### XXE漏洞简介
+
+XXE漏洞全称是XML External Entity Injection即xml外部实体注入漏洞，XXE漏洞发生在应用程序解析XML输入时，没有禁止外部实体的加载，导致可加载外部恶意的文件，造成文件读取、命令执行、内网端口扫描、攻击内网网站、发起DOS攻击等危害。XXE漏洞触发的点往往是可以上传xml格式文件的位置，没有对上传的xml文件进行过滤，导致可上传恶意xml文件。
+
+#### XML
+
++ 什么是XML？
+  + XML指可扩展标记语言（Extensible Markup Language）
+  + XML的设计宗旨是传输数据，而不是现实数据
+  + XML是W3C的推荐标准
+  + XML不会做任何事情。XML被设计用来结构化、存储以及传输信息。
+  + XML语言没有预定义的标签
++ XML和HTML区别：
+
+> \- XML被设计为传输和存储数据，其焦点是数据的内容。
+>
+> \- HTML被设计用来显示数据，其焦点是数据的外观。
+
+XML把数据从HTML分离，XML是独立于软件和硬件的信息传输工具。
+
+
+
+\- 实体引用，这里看个例子，如果你把字符 "<" 放在 XML，素中，会发生错误，这是因为解析器会把它当作新元素的开始。这样会产生XML错误：
+
+`<message>hello < world</message>`,为了避免错误。我们用实体引用`&lt;`来代替"<"字符。XML中，有5个预定义的实体引用。    
+
+![img](CTF-WEB%E7%AF%87.assets/15295974357464.png)
+
+\- XML中的注释，在XML中编写注释的语法与 HTML 的语法很相似。
+
+```
+<!-- -->
+```
+
++ XML基本格式与基本语法
+
+  + 基本格式：
+
+    ~~~xml-dtd
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?><!--xml文件的声明-->
+    <bookstore>                                                 <!--根元素-->
+    	<book category="COOKING">        <!--bookstore的子元素，category为属性-->
+    		<title>Everyday Italian</title>           <!--book的子元素，lang为属性-->
+    		<author>Giada De Laurentiis</author>                  <!--book的子元素-->
+    		<year>2005</year>                                     <!--book的子元素-->
+    		<price>30.00</price>                                  <!--book的子元素-->
+    	</book>                                                 <!--book的结束-->
+    </bookstore>                                       <!--bookstore的结束-->
+    ~~~
+
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` 称为 XML prolog ，用于声明XML文档的版本和编码，是可选的，必须放在文档开头。
+
+    `standalone值是yes的时候表示DTD仅用于验证文档结构，从而外部实体将被禁用`，但它的默认值是no，而且有些parser会直接忽略这一项。
+
+    
+
+  + 基本语法：
+    + 所有 XML 元素都须有关闭标签。
+      + XML 标签对大小写敏感。
+    + XML 必须正确地嵌套。
+      + XML 文档必须有根元素。
+      + XML 的属性值须加引号。
+
+若多个字符都需要转义，则可以将这些内容存放到CDATA里面
+
+```dtd
+<![CDATA[ 内容 ]]>
+```
+
+#### DTD
+
++ DTD基本概念
+
+  XML 文档有自己的一个格式规范，这个格式规范是由一个叫做 DTD（document type definition） 的东西控制的。
+
+  DTD用来为XML文档定义语义约束。可以嵌入在XML文档中(内部声明)，也可以独立的放在另外一个单独的文件中(外部引用)。是XML文档中的几条语句，用来说明哪些元素/属性是合法的以及元素间应当怎样嵌套/结合，也用来将一些特殊字符和可复用代码段自定义为实体。
+
++ 实体引用
+
+  实体引用可以起到类似宏定义和文件包含的效果，为了方便，我们会希望自定义实体引用，这个操作在称为 Document Type Defination（DTD，文档类型定义）的过程中进行。
+
++ dtd的引入方式
+
+  DTD（文档类型定义）的作用是定义XML文档的合法构建模块。DTD 可以在 XML 文档内声明，也可以外部引用。
+
+*内部 DTD*
+   使用内部的dtd文件，即将约束规则定义在xml文档中
+
+```dtd
+<!DOCTYPE 根元素名称 [元素声明]>
+```
+
+​	示例代码：
+
+~~~xml-dtd
+<?xml version="1.0"?>
+<!DOCTYPE note [<!--定义此文档是 note 类型的文档-->
+    <!ELEMENT note (to,from,heading,body)><!--定义note元素有四个元素-->
+    <!ELEMENT to (#PCDATA)><!--定义to元素为”#PCDATA”类型-->
+    <!ELEMENT from (#PCDATA)><!--定义from元素为”#PCDATA”类型-->
+    <!ELEMENT head (#PCDATA)><!--定义head元素为”#PCDATA”类型-->
+    <!ELEMENT body (#PCDATA)><!--定义body元素为”#PCDATA”类型-->
+]>
+<note>
+<to>Y0u</to>
+<from>@re</from>
+<head>v3ry</head>
+<body>g00d!</body>
+</note>
+~~~
+
+*外部 DTD*
+ （1）引入外部的dtd文件
+
+~~~dtd
+<!DOCTYPE 根元素名称 SYSTEM "dtd路径">
+~~~
+
+（2）使用外部的dtd文件(网络上的dtd文件)
+
+```dtd
+<!DOCTYPE 根元素 PUBLIC "DTD名称" "DTD文档的URL">
+```
+
+当使用外部DTD时，通过如下语法引入：
+
+```dtd
+<!DOCTYPE root-element SYSTEM "filename">
+```
+
+示例代码：
+
+```xml-dtd
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE root-element SYSTEM "test.dtd">
+<note>
+<to>Y0u</to>
+<from>@re</from>
+<head>v3ry</head>
+<body>g00d!</body>
+</note>
+```
+
+test.dtd
+
+```dtd
+<!ELEMENT to (#PCDATA)><!--定义to元素为”#PCDATA”类型-->
+<!ELEMENT from (#PCDATA)><!--定义from元素为”#PCDATA”类型-->
+<!ELEMENT head (#PCDATA)><!--定义head元素为”#PCDATA”类型-->
+<!ELEMENT body (#PCDATA)><!--定义body元素为”#PCDATA”类型-->
+```
+
+**PCDATA**
+ PCDATA的意思是被解析的字符数据。PCDATA是会被解析器解析的文本。这些文本将被解析器检查实体以及标记。文本中的标签会被当作标记来处理，而实体会被展开。
+ 被解析的字符数据不应当包含任何`&`，`<`，或者`>`字符，需要用`&` `<` `>`实体来分别替换。
+ **CDATA**
+ CDATA意思是字符数据，CDATA 是不会被解析器解析的文本，在这些文本中的标签不会被当作标记来对待，其中的实体也不会被展开。
+ **DTD元素**
+
+![img](CTF-WEB%E7%AF%87.assets/20191202150727-65e7882a-14d2-1.png)
+
+**DTD属性**
+ **属性声明语法**：
+
+```xml-dtd
+<!ATTLIST 元素名称 属性名称 属性类型 默认值>
+```
+
+DTD实例：
+
+```xml-dtd
+<!ATTLIST payment Luckey CDATA "Q">
+```
+
+XML实例：
+
+```xml-dtd
+<payment Luckey="Q" />
+```
+
+以下是 属性类型的选项：
+ ![img](CTF-WEB%E7%AF%87.assets/20191202150821-85ef2e3e-14d2-1.png)
+
+默认属性值可使用下列值：
+ ![img](CTF-WEB%E7%AF%87.assets/20191202150849-96eb9a7e-14d2-1.png)
+
+**DTD实体**
+
+> 实体是用于定义引用普通文本或特殊字符的快捷方式的变量。
+>  实体引用是对实体的引用。
+>  实体可在内部或外部进行声明。
+
+*按实体有无参分类，实体分为一般实体和参数实体*
+ *一般实体的声明*：`<!ENTITY 实体名称 "实体内容">`
+ 引用一般实体的方法：`&实体名称;`
+ ps：经实验，普通实体可以在DTD中引用，可以在XML中引用，可以在声明前引用，还可以在实体声明内部引用。
+
+*参数实体的声明*：`<!ENTITY % 实体名称 "实体内容">`
+ 引用参数实体的方法：`%实体名称;`
+ ps：经实验，参数实体只能在DTD中引用，不能在声明前引用，也不能在实体声明内部引用。
+ DTD实体是用于定义引用普通文本或特殊字符的快捷方式的变量，可以内部声明或外部引用。
+
+*按实体使用方式分类，实体分为内部声明实体和引用外部实体*
+ *内部实体*
+
+```xml-dtd
+<!ENTITY 实体名称 "实体的值">
+```
+
+内部实体示例代码：
+
+```xml-dtd
+<?xml version = "1.0" encoding = "utf-8"?>
+<!DOCTYPE test [
+    <!ENTITY writer "Dawn">
+    <!ENTITY copyright "Copyright W3School.com.cn">
+]>
+<test>&writer;©right;</test>
+```
+
+*外部实体*
+ 外部实体，用来引入外部资源。有`SYSTEM`和`PUBLIC`两个关键字，表示实体来自本地计算机还是公共计算机。
+
+```xml-dtd
+<!ENTITY 实体名称 SYSTEM "URI/URL">
+或者
+<!ENTITY 实体名称 PUBLIC "public_ID" "URI">
+```
+
+外部实体示例代码：
+
+```xml-dtd
+<?xml version = "1.0" encoding = "utf-8"?>
+<!DOCTYPE author [
+    <!ENTITY file SYSTEM "file:///etc/passwd">
+    <!ENTITY copyright SYSTEM "http://www.w3school.com.cn/dtd/entities.dtd">
+]>
+<author>&file;©right;</author>
+```
+
+外部实体可支持http、file等协议。不同程序支持的协议不同：
+
+![img](CTF-WEB%E7%AF%87.assets/20191202150935-b26e4a30-14d2-1.png)
+
+PHP引用外部实体，**常见的利用协议**：
+
+```
+file://文件绝对路径 如：file:///etc/passwd
+http://url/file.txt
+php://filter/read=convert.base64-encode/resource=xxx.php
+```
+
+*参数实体+外部实体*
+
+```
+<!ENTITY % 实体名称 SYSTEM "URI/URL">
+```
+
+参数实体+外部实体示例代码：
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE test [
+  <!ENTITY % file SYSTEM "file:///etc/passwd">
+  %file;
+]>
+```
+
+`%file`(参数实体)是在DTD中被引用的，而`&file;`是在xml文档中被引用的。
+
+#### XML外部实体注入(XXE)
+
+[更多……](https://xz.aliyun.com/t/6887#toc-5)
+
 ## SSTI--模板注入（。。。）
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## JAVA安全-JWT安全及预编译CASE注入等（。。。）
 
