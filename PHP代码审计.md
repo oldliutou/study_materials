@@ -52,7 +52,11 @@ str_rot13 ( string $str ) : string	对 str 参数执行 ROT13 编码并将结果
 escapeshellarg ( string $arg ) : string-->把字符串转码为可以在 shell 命令里使用的参数，将给字符串增加一个单引号并且能引用或者转码任何已经存在的单引号;
  escapeshellcmd ( string $command ) : string-->对字符串中可能会欺骗 shell 命令执行任意命令的字符进行转义,反斜线（\）会在以下字符之前插入： &#;`|*?~<>^()[]{}$\, \x0A 和 \xFF。
 readfile ( string $filename , bool $use_include_path = false , resource $context = ? ) : int-->读取文件并写入到输出缓冲。 
-
+base_convert ( string $number , int $frombase , int $tobase ) : string-->返回一字符串，包含 number 以 tobase 进制的表示。number 本身的进制由 frombase 指定。frombase 和 tobase 都只能在 2 和 36 之间（包括 2 和 36）;
+dechex ( int $number ) : string--> 十进制转换为十六进制;
+hex2bin ( string $data ) : string--> 转换十六进制字符串为二进制字符串;
+implode(): 将一个一维数组的值转化为字符串;
+unset():销毁指定的变量;
  ```
 
 **执行运算符：**
@@ -486,6 +490,8 @@ http://www.xxx.com/index.php? num = aaaa
 这样waf就找不到num这个变量了，因为现在的变量叫“ num”，而不是“num”。但php在解析的时候，会先把空格给去掉，这样我们的代码还能正常运行，还上传了非法字符。
 
  **另外scandir()可列出目录和文件，scandir(/)扫描目录下所有文件，如果 / 被过滤，可以用char(47)绕过**
+
+### 反序列化字符串逃逸（。。。）
 
 
 

