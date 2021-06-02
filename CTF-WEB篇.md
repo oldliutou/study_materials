@@ -1325,7 +1325,19 @@ var_dump(in_array('1bc', $array)); //true
 
 `array_search()` 与 `in_array()` 也是一样的问题。
 
+  **eval()函数中参数是字符**，如：
 
+```php
+eval('echo 1;');
+```
+
+eval()里的引号必须是双引号，因为单引号不能解析字符串里的变量$str;
+
+  **assert()函数中参数为表达式 （或者为函数）**，如：
+
+```php
+ assert(phpinfo()) 
+```
 
 
 
@@ -1562,7 +1574,7 @@ XML实例：
 <!ENTITY 实体名称 PUBLIC "public_ID" "URI">
 ```
 
-外部实体示例代码：
+**外部实体示例代码：**
 
 ```xml-dtd
 <?xml version = "1.0" encoding = "utf-8"?>

