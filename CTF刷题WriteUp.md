@@ -4841,3 +4841,78 @@ for i in range(10000000000):
 
 ![image-20210603195158456](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603195158456.png)
 
+### [MRCTF2020]PYWebsite
+
+~~~javascript
+ function enc(code){
+      hash = hex_md5(code);
+      return hash;
+    }
+    function validate(){
+      var code = document.getElementById("vcode").value;
+      if (code != ""){
+        if(hex_md5(code) == "0cd4da0223c0b280829dc3ea458d655c"){
+          alert("您通过了验证！");
+          window.location = "./flag.php"
+        }else{
+          alert("你的授权码不正确！");
+        }
+      }else{
+        alert("请输入授权码");
+      }
+      
+    }
+~~~
+
+直接访问flag.php
+
+![image-20210604105744125](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604105744125.png)
+
+提示验证在后端，所以前面那个前端验证没用（也正常，前端验证都可以直接修改）
+ 购买者的ip已经被记录，本地可以看到flag，那么使用xff或者client-ip伪造一下ip试试。
+ bp抓包
+
+![image-20210604105917424](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604105917424.png)
+
+### [GYCTF2020]FlaskApp
+
+发现了一个隐藏的文本框，看名字里面应该是token
+
+![image-20210604110714076](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604110714076.png)
+
+hint文件注释：提示PIN，没太懂什么意思
+
+![image-20210604111527985](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604111527985.png)
+
+看了别人的WP发现，最后的漏洞点和上面的两个信息并没有什么关系。原来是Flask框架的SSTI漏洞利用，故意在decode解码输入无法解开的字母，就会产生错误信息
+
+![image-20210604112931832](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604112931832.png)
+
+~~~python
+@app.route('/decode',methods=['POST','GET'])
+
+def decode():
+
+    if request.values.get('text') :
+
+        text = request.values.get("text")
+
+        text_decode = base64.b64decode(text.encode())
+
+        tmp = "结果 ： {0}".format(text_decode.decode())
+
+        if waf(tmp) :
+
+            flash("no no no !!")
+
+            return redirect(url_for('decode'))
+
+        res =  render_template_string(tmp)
+~~~
+
+根据上述代码，发现了SSTI漏洞，还有一个waf方法，估计下面得绕过waf方法
+
+
+
+
+
