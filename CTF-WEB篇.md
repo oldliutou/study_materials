@@ -1690,7 +1690,78 @@ PHP/模版引擎Twig注入
 
 
 
+## python序列化（。。。。）
 
+pickle序列化：
+
+> pickle提供了一个简单的持久化功能。可以将对象以文件的形式存放在磁盘上。
+>
+> pickle模块只能在python中使用，python中几乎所有的数据类型（列表，字典，集合，类等）都可以用pickle来序列化，
+> pickle序列化后的数据，可读性差，人一般无法识别。
+>
+> 
+
+```
+Pickle模块中最常用的函数为：
+
+（1）pickle.dump(obj, file, [,protocol])
+
+        函数的功能：将obj对象序列化存入已经打开的file中。
+
+       参数讲解：
+
+    obj：想要序列化的obj对象。
+    file:文件名称。
+    protocol：序列化使用的协议。如果该项省略，则默认为0。如果为负值或HIGHEST_PROTOCOL，则使用最高的协议版本。
+
+（2）pickle.load(file)
+
+        函数的功能：将file中的对象序列化读出。
+
+        参数讲解：
+
+    file：文件名称。
+
+（3）pickle.dumps(obj[, protocol])
+
+       函数的功能：将obj对象序列化为string形式，而不是存入文件中。
+
+       参数讲解：
+
+    obj：想要序列化的obj对象。
+    protocal：如果该项省略，则默认为0。如果为负值或HIGHEST_PROTOCOL，则使用最高的协议版本。
+
+（4）pickle.loads(string)
+
+       函数的功能：从string中读出序列化前的obj对象。
+
+       参数讲解：
+
+    string：需要序列化读出的字符串。
+```
+
+```
+    【注】 dump() 与 load() 相比 dumps() 和 loads() 还有另一种能力：dump()函数能一个接着一个地将几个对象序列化存储到同一个文件中，随后调用load()来以同样的顺序反序列化读出这些对象。
+```
+
+官方文档中说过，pickle是个不安全的模块，永远别去反序列化不信任的数据。
+
+这一切都是因为**reduce** 魔术方法，它在序列化的时候会完全改变被序列化的对象，这个方法相当的强大，官方建议不要直接操作这个方法。
+
+~~~python
+class Test(object):
+    def __init__(self):
+        self.a = 1
+        self.b = '2'
+        self.c = '3'
+    def __reduce__(self):
+        return (os.system,('ls',))
+
+aa = Test()
+bb = pickle.dumps(aa)
+print [bb],pickle.loads(bb)
+
+~~~
 
 
 
