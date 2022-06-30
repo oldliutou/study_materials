@@ -966,7 +966,41 @@ curl gopher://192.168.0.109:80/_POST%20/ssrf/base/post.php%20HTTP/1.1%0d%0AHost:
 
 ![JAVA反序列化.png](CTF-WEB%E7%AF%87.assets/JAVA%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96.png)
 
- 
+###  php反序列化
+
+**1. PHP魔法函数**
+
+PHP中包含很多魔法函数，他们可以在某些情况下自动执行而不需要手动调用
+
+~~~php
+__construct()    #类的构造函数
+__destruct()    #类的析构函数
+__call()    #在对象中调用一个不可访问方法时调用
+__callStatic()    #用静态方式中调用一个不可访问方法时调用
+__get()    #获得一个类的成员变量时调用
+__set()    #设置一个类的成员变量时调用
+__isset()    #当对不可访问属性调用isset()或empty()时调用
+__unset()    #当对不可访问属性调用unset()时被调用。
+__sleep()    #执行serialize()时，先会调用这个函数
+__wakeup()    #执行unserialize()时，先会调用这个函数
+__toString()    #类被当成字符串时的回应方法
+__invoke()    #调用函数的方式调用一个对象时的回应方法
+__set_state()    #调用var_export()导出类时，此静态方法会被调用。
+__clone()    #当对象复制完成时调用
+__autoload()    #尝试加载未定义的类
+__debugInfo()    #打印所需调试信息
+~~~
+
+
+
+> 魔术函数执行顺序
+>
+> \_\_construct()
+> \_\_sleep()
+> \__wakeup()
+> _\_toString()
+> _\_destruct()
+> \_\_destruct()
 
 ## PHP代码审计
 

