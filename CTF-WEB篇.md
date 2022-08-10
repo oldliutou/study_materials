@@ -1170,7 +1170,7 @@ assert();
 system();
 exec();
 shell_exec();
-passthru();
+passthru();执行外部程序并且显示原始输出
 escapeshellcmd();
 pcntl_exec();
 ……

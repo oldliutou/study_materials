@@ -104,6 +104,20 @@
 
 ![image-20210511145507931](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210511145507931.png)
 
+> 在报错注入过程中会出出现字符串信息显示不全的问题
+>
+> 解决方案：
+>
+> 1. limit(pos,len)
+>
+> 2. mid(str,startpos,len)  example:
+>
+>    and updatexml(1,concat(0x7e,mid((select group_concat(schema_name) from information_schema.schemata),1,31),0x7e),1) %23
+>
+>    and updatexml(1,concat(0x7e,mid((select group_concat(schema_name) from information_schema.schemata),32,31),0x7e),1) %23
+>
+> 3. substr(str,startpos,len)   用法同mid()
+
 ## 第六关
 
 输入 `'`单引号没错误显示，可能不是单引号字符注入，试试双引号成功回显语法错误信息，看来是`id`用双引号包起来的，再在后面加个注释符看看错误信息消不消失，如果消失了，那就是双引号字符注入。果然错误信息消除，正常回显信息。
@@ -147,7 +161,7 @@
 
 那对于此处注入 没有输出 没有报错 信息回显 我们可以干嘛呐？？？
 
-可以写入文件 别问我为什么知道 他上面谢了outfile  可是我们不知道他的绝对路径 从何写入
+可以写入文件 别问我为什么知道 他上面写了outfile  可是我们不知道他的绝对路径 从何写入
 
 判断是否有写权限，可以判断有写权限
 
@@ -1045,7 +1059,7 @@ payload：
 
 ## 第二十关
 
-![image-20210604200830978](sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210604200830978.png)
+<img src="sqli-lab%E9%80%9A%E5%85%B3%E7%AC%94%E8%AE%B0.assets/image-20210604200830978.png" alt="image-20210604200830978" style="zoom: 200%;" />
 
 在请求头字段加上cookie的uname字段，会回显一些数据信息，试试cookie是否存在注入漏洞。
 

