@@ -6509,9 +6509,9 @@ if(isset($_GET['file'])){
 
 利用文件包含的特性，会渲染任何文件类型为php类型并渲染；所以去访问`/var/log/ngin/access.log`，抓包修改UA值为一句话木马，蚁剑连接就可以成功
 
-![image-20220812124246065](.\CTF刷题WriteUp.assets\image-20220812124246065.png)
+![image-20220812124246065](CTF刷题WriteUp.assets\image-20220812124246065.png)
 
-![image-20220812124258539](.\CTF刷题WriteUp.assets\image-20220812124258539.png)
+![image-20220812124258539](CTF刷题WriteUp.assets\image-20220812124258539.png)
 
 ### ctf_show web81
 
