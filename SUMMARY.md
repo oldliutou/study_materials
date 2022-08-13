@@ -1,6 +1,6 @@
 # Table of contents
 
-* [README][README.md]
+* [README](README.md)
 * [2023届面试题个人学习记录总结](2023届面试题个人总结.md)
 * [CTF-WEB篇](CTF-WEB篇.md)
 * [CTF--密码篇](CTF-密码篇.md)
@@ -9,7 +9,6 @@
 * [Linux学习笔记](Linux学习笔记.md)
 * [MySQL学习笔记](MySQL学习笔记.md)
 * [PHP代码审计](PHP代码审计.md)
-* [日常学习资料](<README (1).md>)
 * [sqli-lab通关笔记](sqli-lab通关笔记.md)
 * [upload-labs通关笔记](upload-labs通关笔记.md)
 * [vulhub靶场漏洞学习笔记](vulhub靶场漏洞学习笔记.md)
@@ -18,3 +17,4 @@
 * [信息收集](信息收集.md)
 * [内网渗透](内网渗透学习笔记.md)
 * [工具使用](工具使用.md)
+
