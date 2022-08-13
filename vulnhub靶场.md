@@ -1,14 +1,16 @@
-# MY CMSMS: 1
+# vulnhub靶场
 
-> + 信息汇总
->   + ​	本机ip
->     + 10.0.2.11
->   + ​	靶机ip
->     + 10.0.2.10
+## MY CMSMS: 1
 
-## 信息收集：
+> * 信息汇总
+>   * ​ 本机ip
+>     * 10.0.2.11
+>   * ​ 靶机ip
+>     * 10.0.2.10
 
-~~~shell
+### 信息收集：
+
+```shell
 nmap -p- -Pn -vv 10.0.2.10
 
 PORT      STATE SERVICE REASON
@@ -16,10 +18,9 @@ PORT      STATE SERVICE REASON
 80/tcp    open  http    syn-ack ttl 64
 3306/tcp  open  mysql   syn-ack ttl 64
 33060/tcp open  mysqlx  syn-ack ttl 64
+```
 
-~~~
-
-~~~shell
+```shell
 nmap -p22,80,3306,33060 -A -vv 10.0.2.10
 
 PORT      STATE SERVICE REASON         VERSION
@@ -58,23 +59,18 @@ PORT      STATE SERVICE REASON         VERSION
 |_    HY000
 1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
 
-
-~~~
+```
 
 http://10.0.2.10/
 
-# cengbox
+## cengbox
 
-~~~shell
+```shell
+```
 
+## cybox
 
-~~~
-
-
-
-# cybox 
-
-~~~shell
+```shell
 21/tcp  open  ftp      syn-ack ttl 64 vsftpd 3.0.3
 25/tcp  open  smtp     syn-ack ttl 64 Postfix smtpd
 |_smtp-commands: cybox.Home, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN
@@ -124,6 +120,4 @@ http://10.0.2.10/
 | Not valid after:  2021-11-14T15:06:32
 | MD5:   1308 6ffe 0aa0 d469 6464 2d4d dbab dd48
 | SHA-1: 7a0a d33a 9fc1 b469 295b abc6 8157 bf7b 0788 1a93
-
-~~~
-
+```
