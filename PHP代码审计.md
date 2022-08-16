@@ -63,6 +63,11 @@ mt_srand(seed): 播种随机数生成函数;
 mt_rand(): 生成随机数;
 hexdec():函数把十六进制数转换为十进制数;
 eval():eval() 函数把字符串按照 PHP 代码来计算,代码以分号结尾;
+strpos(string,find,start) :查找字符串在另一字符串中第一次出现的位置（区分大小写）;
+rand(min,max):返回介于 min（或 0）与 max（或 mt_getrandmax()）之间（包括边界值）的随机整数;
+int file_put_contents ( string $filename , mixed $data [, int $flags = 0 [, resource $context ]] ):把一个字符串写入文件中;
+
+
 ```
 
 **执行运算符：**
@@ -261,17 +266,17 @@ int preg_match ( string $pattern , string $subject [, array &$matches [, int $fl
 
 参数说明：
 
-​ $pattern: 要搜索的模式，字符串形式。
+ $pattern: 要搜索的模式，字符串形式。
 
-​ $subject: 输入字符串。
+ $subject: 输入字符串。
 
-​ $matches: 如果提供了参数matches，它将被填充为搜索结果。 $matches\[0]将包含完整模式匹配到的文本， $matches\[1] 将包含第一个捕获子组匹配到的文本，以此类推。
+ $matches: 如果提供了参数matches，它将被填充为搜索结果。 $matches\[0]将包含完整模式匹配到的文本， $matches\[1] 将包含第一个捕获子组匹配到的文本，以此类推。
 
-​ $flags：flags 可以被设置为以下标记值：
+ $flags：flags 可以被设置为以下标记值：
 
-​ PREG\_OFFSET\_CAPTURE: 如果传递了这个标记，对于每一个出现的匹配返回时会附加字符串偏移量(相对于目标字符串的)。 注意：这会改变填充到matches参数的数组，使其每个元素成为一个由 第0个元素是匹配到的字符串，第1个元素是该匹配字符串 在目标字符串subject中的偏移量。
+ PREG\_OFFSET\_CAPTURE: 如果传递了这个标记，对于每一个出现的匹配返回时会附加字符串偏移量(相对于目标字符串的)。 注意：这会改变填充到matches参数的数组，使其每个元素成为一个由 第0个元素是匹配到的字符串，第1个元素是该匹配字符串 在目标字符串subject中的偏移量。
 
-​ offset: 通常，搜索从目标字符串的开始位置开始。可选参数 offset 用于 指定从目标字符串的某个未知开始搜索(单位是字节)。
+ offset: 通常，搜索从目标字符串的开始位置开始。可选参数 offset 用于 指定从目标字符串的某个未知开始搜索(单位是字节)。
 
 *   返回值
 
@@ -285,7 +290,7 @@ int preg_match ( string $pattern , string $subject [, array &$matches [, int $fl
 *
 
     1. 数组绕过
-
+    
     preg\_match只能处理字符串，当传入的subject是数组时会返回false
 *
   1. 异或绕过
@@ -360,7 +365,7 @@ PHP在处理哈希字符串时，它把每一个以“0E”开头的哈希值都
 
 > **ffifdyop**，这个点的原理是 ffifdyop 这个字符串被 md5 哈希了之后会变成 276f722736c95d99e921722cf9ed621c，这个字符串前几位刚好是 ‘ or ‘6，
 
-**$\_GET\["hash1"] == hash("md4", $\_GET\["hash1"])**
+**\$\_GET\["hash1"] == hash("md4", $\_GET\["hash1"])**
 
 > 0e251288019、0e898201062、0e001233333333333334557778889
 
@@ -394,7 +399,7 @@ http://123.206.87.240:9009/22.php?password=9999%00
 * 空格绕过方式
   * $IFS
   * ${IFS}
-  * $IFS$数字
+  * \$IFS$数字
   * <
   * <>
 * 三种绕过方式
