@@ -66,8 +66,8 @@ eval():eval() 函数把字符串按照 PHP 代码来计算,代码以分号结尾
 strpos(string,find,start) :查找字符串在另一字符串中第一次出现的位置（区分大小写）;
 rand(min,max):返回介于 min（或 0）与 max（或 mt_getrandmax()）之间（包括边界值）的随机整数;
 int file_put_contents ( string $filename , mixed $data [, int $flags = 0 [, resource $context ]] ):把一个字符串写入文件中;
-
-
+ob_get_contents(): 此函数返回输出缓冲区的内容，或者如果输出缓冲区无效将返回false 。
+ob_end_clean():清空（擦除）缓冲区并关闭输出缓冲;
 ```
 
 **执行运算符：**
