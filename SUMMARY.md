@@ -2,7 +2,7 @@
 
 * [README](README.md)
 * [计算机类书籍阅读](计算机类书籍阅读.md)
-* [2023届面试题个人学习记录总结](2023届面试题个人总结.md)
+* [计算机基础面试题](计算机基础面试题.md)
 * [CTF-WEB篇](CTF-WEB篇.md)
 * [CTF--密码篇](CTF-密码篇.md)
 * [CTF刷题WriteUp](CTF刷题WriteUp.md)
