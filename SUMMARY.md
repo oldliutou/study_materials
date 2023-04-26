@@ -1,7 +1,7 @@
 # Table of contents
 
 * [README](README.md)
-* [计算机类书籍阅读](计算机类书籍阅读.md)
+* [计算机类书籍阅读](书籍阅读/计算机类书籍阅读.md)
 * [计算机基础面试题](计算机基础面试题.md)
 * [CTF-WEB篇](CTF-WEB篇.md)
 * [CTF--密码篇](CTF-密码篇.md)
