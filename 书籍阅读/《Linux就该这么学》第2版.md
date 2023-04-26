@@ -9,7 +9,7 @@ cut -d <分隔符> -f <第几列> 文件名
 
 
 
-## 标准输入输出及错误输出
+### 标准输入输出及错误输出
 
 > 标准输入重定向（STDIN，文件描述符为0）
 >
@@ -23,7 +23,7 @@ cut -d <分隔符> -f <第几列> 文件名
 
 **不区分标准输出和错误输出，只要命令有输出信息则全部追加写入到文件中，这就要用到`&>>`操作符**
 
-## 管道符
+### 管道符
 
 > 管道符的作用：**把前一个命令原本要输出在屏幕上的内容作为第二个命令的标准输入**
 
@@ -38,7 +38,7 @@ Copy standard input to each FILE, and also to standard output.
 
 ![image-20230331144656134](计算机类书籍阅读.assets/image-20230331144656134.png)
 
-## 命令行的通配符
+### 命令行的通配符
 
 **顾名思义，通配符就是通用的匹配信息的符号**
 
@@ -48,7 +48,7 @@ Copy standard input to each FILE, and also to standard output.
 
 ![image-20230331145512521](计算机类书籍阅读.assets/image-20230331145512521.png)
 
-## 常用的转义字符
+### 常用的转义字符
 
 ~~~bash
 \	使得反斜杠后面的变量变成一个普通的字符
@@ -59,7 +59,7 @@ Copy standard input to each FILE, and also to standard output.
 
 `$$`的作用是返回当前进程的进程ID号
 
-## 环境变量
+### 环境变量
 
 ![image-20230331151457540](计算机类书籍阅读.assets/image-20230331151457540.png)
 
@@ -71,7 +71,7 @@ Copy standard input to each FILE, and also to standard output.
 
 
 
-## vim
+### vim
 
 > 在`/etc/sysconfig/network-scripts`目录下，存放这网卡配置文件 `ifcfg-ensxxx`
 >
@@ -79,7 +79,7 @@ Copy standard input to each FILE, and also to standard output.
 
 
 
-## Shell
+### Shell
 
 ~~~$bash
 $0	脚本的名称
@@ -142,7 +142,7 @@ $1……$N	分别对应1至N的位置上的参数值
 
 ![image-20230331210226014](计算机类书籍阅读.assets/image-20230331210226014.png)
 
-## 定时任务
+### 定时任务
 
 ~~~bash
 at ： 执行一次定时任务
@@ -171,7 +171,7 @@ crontab : 周期性的执行任务
 
 
 
-## 用户
+### 用户
 
 ~~~bash
 useradd 
@@ -186,7 +186,7 @@ passwd
 	-S	显示用户的密码是否被锁定，以及密码所采用的加密算法名称
 ~~~
 
-## 文件
+### 文件
 
 > 常见的文件类型：
 >
@@ -197,7 +197,7 @@ passwd
 > + 块设备文件（b）
 > + 字符设备文件（c）
 
-## 文件的特殊权限
+### 文件的特殊权限
 
 > SUID是一种对二进制程序进行设置的特殊权限，能够让二进制程序的执行者暂时拥有所有者的权限；
 
@@ -225,7 +225,7 @@ passwd
 
 > 注意：SUID 和SGID 的写法是，原先有执行权限则是小写s，如果没有执行权限则是大写S；而SBIT 的写法则是，原先有执行权限是小写t，没有执行权限是大写T。
 
-## 文件的隐藏属性
+### 文件的隐藏属性
 
 ~~~bash
 chattr:用户设置文件的隐藏属性
@@ -242,7 +242,7 @@ lsattr:用于查看文件的隐藏权限
 语法格式：lsattr [参数]	文件名称
 ~~~
 
-## ACL(访问控制列表)
+### ACL(访问控制列表)
 
 **一般权限、特殊权限、隐藏权限其实有一个共性：权限是针对某一类用户设置的，能够对很多人同时生效。**
 
@@ -266,7 +266,7 @@ getfacl:查看文件的ACL权限规则
 
 ![image-20230402152718992](计算机类书籍阅读.assets/image-20230402152718992.png)
 
-## su和sudo
+### su和sudo
 
 ~~~bash
 su
@@ -322,7 +322,7 @@ visudo 命令只有root 管理员才可以执行，普通用户在使用时会�
 
 ![image-20230403171233590](计算机类书籍阅读.assets/image-20230403171233590.png)
 
-## 一切从“/”开始
+### 一切从“/”开始
 
 > **系Linux统中的一切文件都是从“根”目录（/）开始的，并按照文件系统层次标准（FHS）采用倒树状结构来存放文件。**
 
@@ -332,7 +332,7 @@ visudo 命令只有root 管理员才可以执行，普通用户在使用时会�
 
 ![image-20230403190855095](计算机类书籍阅读.assets/image-20230403190855095.png)
 
-## 物理设备的命名规则
+### 物理设备的命名规则
 
 > 系统内核中的**udev 设备管理器**会自动把硬件名称规范起来，目的是让用户通过设备文件的名
 > 字可以猜出设备大致的属性以及分区信息等。
@@ -376,7 +376,7 @@ visudo 命令只有root 管理员才可以执行，普通用户在使用时会�
 
    
 
-## 文件系统与数据资料
+### 文件系统与数据资料
 
 文件系统类型：
 
@@ -412,13 +412,13 @@ Linux 只是把每个文件的权限与属性记录在`inode` 中，而且每个
 
 ![image-20230403203510945](计算机类书籍阅读.assets/image-20230403203510945.png)
 
-## 挂载硬件设备
+### 挂载硬件设备
 
 硬盘设备：分区->格式化->挂载
 
 **挂载是在使用硬件设备前所执行的最后一步操作**
 
-### mount
+#### mount
 
 ~~~bash
 mount 命令用于挂载文件系统
@@ -459,7 +459,7 @@ vim /etc/fstab
 
 **写入到`/etc/fstab` 文件中的设备信息并不会立即生效，需要使用`mount -a` 参数进行自动挂载**
 
-### df
+#### df
 
 ~~~bash
 df	: 用于查看已挂载的磁盘空间使用情况，英文全称为“disk free”
@@ -473,7 +473,7 @@ df	: 用于查看已挂载的磁盘空间使用情况，英文全称为“disk f
 
 ![image-20230404132920404](计算机类书籍阅读.assets/image-20230404132920404.png)
 
-### umount
+#### umount
 
 ~~~bash
 umount :用于卸载设备或文件系统，英文全称为“un mount
@@ -487,9 +487,9 @@ lsblk	以树状图的形式列举
 
 ![image-20230404133334363](计算机类书籍阅读.assets/image-20230404133334363.png)
 
-## 添加硬盘设备
+### 添加硬盘设备
 
-### fdisk	分区
+#### fdisk	分区
 
 ~~~bash
 fdisk：用于新建、修改及删除磁盘的分区表信息，英文全称"format	disk"
@@ -503,7 +503,7 @@ fdisk：用于新建、修改及删除磁盘的分区表信息，英文全称"fo
 
 ![image-20230404142011591](计算机类书籍阅读.assets/image-20230404142011591.png)
 
-### mkfs	格式化
+#### mkfs	格式化
 
 > 如果硬件存储设备没有进行格式化，则Linux 系统无法得知怎么在其上写入数据。因此，在对存储设备进行分区后还需要进行格式化操作。在Linux 系统中用于格式化操作的命令是`mkfs`。
 
@@ -514,26 +514,26 @@ mkfs:文件系统格式化
 
 ![image-20230404142433100](计算机类书籍阅读.assets/image-20230404142433100.png)
 
-### 挂载设备
+#### 挂载设备
 
 ![image-20230404142739325](计算机类书籍阅读.assets/image-20230404142739325.png)
 
 **既然存储设备已经顺利挂载，接下来就可以尝试通过挂载点目录向存储设备中写入文件了**
 
-### du
+#### du
 
 ~~~bash
 du:	用于查看分区或目录所占用的磁盘容量大小。英文全称为“disk usage”
 语法格式为“du -sh 目录名称”。
 ~~~
 
-## 添加交换分区
+### 添加交换分区
 
 > 交换（SWAP）分区是一种通过在硬盘中预先划分一定的空间，然后把内存中暂时不常用的数据临时存放到硬盘中，以便腾出物理内存空间让更活跃的程序服务来使用的技术，其设计目的是为了解决真实物理内存不足的问题。
 >
 > 只有当真实的物理内存耗尽后才会调用交换分区的资源。
 
-### 创建交换分区
+#### 创建交换分区
 
 ~~~bash
 fdisk /dev/sdb
@@ -541,7 +541,7 @@ fdisk /dev/sdb
 
 ![image-20230404143829250](计算机类书籍阅读.assets/image-20230404143829250.png)
 
-### 格式化交换分区
+#### 格式化交换分区
 
 ~~~bash
 mkswap:用于对新设备进行交换分区格式化。英文全称为：“make swap”
@@ -550,7 +550,7 @@ mkswap:用于对新设备进行交换分区格式化。英文全称为：“make
 
 ![image-20230404144235534](计算机类书籍阅读.assets/image-20230404144235534.png)
 
-### 激活交换分区
+#### 激活交换分区
 
 ~~~bash
 swapon :用于激活新的交换分区设备，英文全称为“swap on”
@@ -563,7 +563,7 @@ swapon :用于激活新的交换分区设备，英文全称为“swap on”
 
 ![image-20230404144637656](计算机类书籍阅读.assets/image-20230404144637656.png)
 
-## 磁盘容量配额
+### 磁盘容量配额
 >可以使用`quota`技术进行磁盘容量配额管理，从而**限制用户的硬盘可用容量或所能创建的最大文件个数**。`quota`技术还有软限制和硬限制的功能。
 + **软限制**：当达到软限制会提醒用户，但仍允许用户在限定的额度内继续使用。
 + **硬限制**：当达到硬限制时会提示用户，且强制终止用户的操作。
@@ -573,7 +573,7 @@ swapon :用于激活新的交换分区设备，英文全称为“swap on”
 显示如下则配置quota成功
 ![](picture/计算机类书籍阅读.assets/image-20230406131738229.png)
 
-###  xfs_quota命令
+####  xfs_quota命令
 ~~~bash 
 xfs_quota：用于管理设备的磁盘容量配额
 语法：xfs_quota [参数] 配额 文件系统
@@ -590,7 +590,7 @@ xfs_quota：用于管理设备的磁盘容量配额
 ![](picture/计算机类书籍阅读.assets/image-20230406133243238.png)
 
 [Linux dd 命令 | 菜鸟教程 (runoob.com)](https://www.runoob.com/linux/linux-comm-dd.html)
-### edquota命令
+#### edquota命令
 **在为用户设置了quota 磁盘容量配额限制后，可以使用edquota 命令按需修改限额的数值。**
 
 ```bash
@@ -604,7 +604,7 @@ edquota: 用于管理系统的磁盘配额。"edit quota"
 `edquota -u tom`
 ![](picture/计算机类书籍阅读.assets/image-20230406134504144.png)
 在上面的界面修改配额
-## VDO（虚拟数据优化）
+### VDO（虚拟数据优化）
 >VDO（Virtual Data Optimize，虚拟数据优化）是一种通过压缩或删除存储设备上的数据来优化存储空间的技术。
 >VDO 技术**支持本地存储和远程存储**，可以作为本地文件系统、iSCSI 或Ceph 存储下的附加存储层使用。
 
@@ -644,11 +644,11 @@ human-readable 参数的作用是将存储容量自动进位，以人们更易�
 **使用UUID号，永久挂载vdo设备卷**
 ![](picture/计算机类书籍阅读.assets/image-20230406144357302.png)
 
-## 软硬方式链接
+### 软硬方式链接
 + **软链接**：也叫符号链接（symbolic link），仅仅包含所链接文件的名称和路径，很像一个记录地址的标签。**当原始文件被删除或移动后，新的链接文件也会随之失效，不能被访问。**与Windows中的快捷方式具有**一样的性质；
 + **硬链接**：**可以将它理解为一个“指向原始文件block 的指针”，系统会创建出一个与原来一模一样的inode 信息块。**硬链接文件与原始文件其实是一模一样的，只是名字不同。每添加一个硬链接，该文件的inode 个数就会增加1；而且只有当该文件的inode 个数为0 时，才算彻底将它删除。换言之，由于硬链接实际上是指向原文件block 的指针，因此即便原始文件被删除，依然可以通过硬链接文件来访问。需要注意的是，由于技术的局限性，**不能跨分区对目录文件进行硬链接**。
 ![](picture/计算机类书籍阅读.assets/image-20230406145055677.png)
-### ln命令
+#### ln命令
 ~~~bash
 ln: 用于创建文件的软硬链接，英文全称：“link”
 语法： ln [参数] 原始文件名 链接文件名
@@ -666,7 +666,7 @@ ln: 用于创建文件的软硬链接，英文全称：“link”
 本章讲解了如下内容：
 +  RAID（独立冗余磁盘阵列）；
 + LVM（逻辑卷管理器）；
-## RAID(独立冗余磁盘阵列)
+### RAID(独立冗余磁盘阵列)
 
 >RAID技术通过把多个硬盘设备组合成一个容量更大、安全性更好的磁盘阵列，并把数据切割成多个区段后分别存放在各个不同的物理硬盘设备上，然后利用分散读写技术来提升磁盘阵列整体的性能，同时把多个重要数据的**副本同步**到不同的物理硬盘设备上，从而起到了非常好的数据冗余备份效果。
 
@@ -676,33 +676,33 @@ ln: 用于创建文件的软硬链接，英文全称：“link”
 
 ![](picture/计算机类书籍阅读.assets/image-20230407151846770.png)
 
-### RAID 0 
+#### RAID 0 
 
 ![](picture/计算机类书籍阅读.assets/image-20230407152040124.png)
 
 >+ RAID 0 技术能够有效地提升硬盘数据的吞吐速度，但是不具备数据备份和错误修复能力。如图7-1 所示，数据被分别写入到不同的硬盘设备中，即硬盘A 和硬盘B 设备会分别保存数据资料，最终实现提升读取、写入速度的效果。
 >+ 若任意一块硬盘发生故障，将导致整个系统的数据都会受到破坏。
 
-### RAID 1
+#### RAID 1
 
 ![](picture/计算机类书籍阅读.assets/image-20230407152721089.png)
 >+ 写入操作速度低，读取速度相对较高
 >+ 安全性高
 
-### RAID 5
+#### RAID 5
 
 ![](picture/计算机类书籍阅读.assets/image-20230407152958670.png)
 
 >+ 图7-3 中Parity 部分存放的就是数据的奇偶校验信息。换句话说，就是RAID 5 技术实际上没有备份硬盘中的真实数据信息，而是当硬盘设备出现问题后通过奇偶校验信息来尝试重建损坏的数据。
 >+ RAID5最少由3块硬盘组成，使用的是硬盘切割（Disk Striping）技术。
-### RAID 10
+#### RAID 10
 
 ![](picture/计算机类书籍阅读.assets/image-20230407153350927.png)
 
 ![](picture/计算机类书籍阅读.assets/image-20230407153445718.png)
 ![](picture/计算机类书籍阅读.assets/image-20230407153609726.png)
 
-### 部署磁盘阵列
+#### 部署磁盘阵列
 
 ~~~bash
 mdadm: 用于创建、调整、监控和管理RAID设备，英文“multiple devices admin”
@@ -749,7 +749,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407160251480.png)
 
-### 损坏磁盘阵列及修复
+#### 损坏磁盘阵列及修复
 
 >在确认有一块物理硬盘设备出现损坏而不能再继续正常使用后，应该使用mdadm 命令将其移除，然后查看RAID 磁盘阵列的状态，可以发现状态已经改变：
 
@@ -776,7 +776,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407161208453.png)
 
-### 磁盘阵列+备份盘
+#### 磁盘阵列+备份盘
 
 `mdadm -Cv /dev/md0 -n 3 -l 5 -x 1 /dev/sdb /dev/sdc /dev/sdd /dev/sde`
 
@@ -806,7 +806,7 @@ mdadm -Q /dev/md0
 
 
 
-### 删除磁盘阵列
+#### 删除磁盘阵列
 
 1. 卸载磁盘、将所有磁盘设置成停用状态
 
@@ -827,7 +827,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407163410438.png)
 
-## LVM（逻辑卷管理器）
+### LVM（逻辑卷管理器）
 >+ 硬盘分好区或者部署为RAID磁盘阵列之后，再想修改硬盘分区大小就不容易了。
 >+ 这时就需要用到另外一项非常普及的硬盘设备资源管理技术了——逻辑卷管理器（Logical Volume Manager，LVM）。LVM 允许用户对硬盘资源进行动态调整。
 >+ LVM 是Linux 系统用于对硬盘分区进行管理的一种机制，理论性较强，其创建初衷是为了解决硬盘设备在创建分区后不易修改分区大小的缺陷。
@@ -840,7 +840,7 @@ mdadm -Q /dev/md0
 ![](picture/计算机类书籍阅读.assets/image-20230407201251617.png)
 
 ![](picture/计算机类书籍阅读.assets/image-20230407201421480.png)
-### 部署逻辑卷
+#### 部署逻辑卷
 1. 让新添加的两块硬盘设备支持LVM技术
 
 ![](picture/计算机类书籍阅读.assets/image-20230407201934394.png)
@@ -884,7 +884,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407203217486.png)
 
-### 扩容逻辑卷
+#### 扩容逻辑卷
 
 > 在前面的实验中，卷组是由两块硬盘设备共同组成的。用户在使用存储设备时感知不到设备底层的架构和布局，更不用关心底层是由多少块硬盘组成的，只要卷组中有足够的资源，就可以一直为逻辑卷扩容。**扩容前请一定要记得卸载设备和挂载点的关联。**
 
@@ -916,7 +916,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407204541367.png)
 
-### 缩小逻辑卷
+#### 缩小逻辑卷
 
 **卸载文件系统**
 
@@ -946,7 +946,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407205323657.png)
 
-### 逻辑卷快照
+#### 逻辑卷快照
 
 >LVM 还具备有“快照卷”功能，该功能类似于虚拟机软件的还原时间点功能。
 
@@ -988,7 +988,7 @@ mdadm -Q /dev/md0
 
 ![](picture/计算机类书籍阅读.assets/image-20230407210838573.png)
 
-### 删除逻辑卷
+#### 删除逻辑卷
 **依次删除逻辑卷、卷组、物理卷设备，这个顺序不可颠倒。**
 1. 取消逻辑卷与目录的挂载关联，删除配置文件中永久生效的设备参数。
 
@@ -1015,7 +1015,7 @@ mdadm -Q /dev/md0
 > + 服务的访问控制列表；
 > + Cockpit驾驶舱管理工具；
 
-## 防火墙管理工具
+### 防火墙管理工具
 **在公网与企业内网之间充当保护屏障的防火墙（见图8-1）虽然有软件或硬件之分，但主要功能都是依据策略对穿越防火墙自身的流量进行过滤。防火墙策略可以基于流量的源目地址、端口号、协议、应用等信息来定制，然后防火墙使用预先定制的策略规则监控出入的流量，若流量与某一条策略规则相匹配，则执行相应的处理，反之则丢弃。**
 
 ![](picture/计算机类书籍阅读.assets/image-20230408204619151.png)
@@ -1024,7 +1024,7 @@ mdadm -Q /dev/md0
 >2. iptables 服务会把配置好的防火墙策略交由内核层面的`netfilter` 网络过滤器来处理；
 >3. 而firewalld 服务则是把配置好的防火墙策略交由内核层面的`nftables` 包过滤框架来处理。
 
-## iptables
+### iptables
 ### 策略与规则链
 
 >+ 防火墙会按照从上到下的顺序来读取配置的策略规则，在找到匹配项后就立即结束匹配工作并去执行匹配项中定义的行为（即放行或阻止）。
@@ -1128,7 +1128,7 @@ iptables -A INPUT -p tcp --dport 1000:1024 -j REJECT&&iptables -A INPUT -p udp -
 
 ![](picture/计算机类书籍阅读.assets/image-20230410190507647.png)
 
-## firewalld
+### firewalld
 
 >firewalld（Dynamic Firewall Manager of Linux systems，Linux 系统的动态防火墙管理器）服务是默认的防火墙配置管理工具，它拥有基于CLI（命令行界面）和基于GUI（图形用户界面）的两种管理方式。
 
@@ -1221,14 +1221,14 @@ iptables -A INPUT -p tcp --dport 1000:1024 -j REJECT&&iptables -A INPUT -p udp -
 ![](picture/计算机类书籍阅读.assets/image-20230410202100963.png)
 
 
-### 图形管理工具
+#### 图形管理工具
 
 firewall-config
 
 ![](picture/计算机类书籍阅读.assets/image-20230410203403038.png)
 
 
-## 服务的访问控制列表
+### 服务的访问控制列表
 
 >+ TCP Wrapper是RHEL 6/7 系统中默认启用的一款流量监控程序 
 >+ Linux 系统中其实有两个层面的防火墙，第一种是前面讲到的基于TCP/IP协议的流量过滤工具，而TCP Wrapper 服务则是能允许或禁止Linux 系统提供服务的防火墙，从而在更高层面保护了Linux 系统的安全运行。
@@ -1239,7 +1239,7 @@ firewall-config
 
 ![](picture/计算机类书籍阅读.assets/image-20230410204757758.png)
 
-## Cockpit驾驶舱管理工具
+### Cockpit驾驶舱管理工具
 Cockpit 是一个基于Web 的图形化服务管理工具
 
 `dnf install cockpit`
@@ -1260,9 +1260,9 @@ Cockpit 是一个基于Web 的图形化服务管理工具
 + 不间断会话服务
 + 检索日志信息
 
-## 配置网络服务
+### 配置网络服务
 
-### 配置网卡参数
+#### 配置网卡参数
 **在RHEL 8 系统中至少有5 种网络的配置方法**
 
 `nmtui`命令配置网络
@@ -1309,7 +1309,7 @@ nmcli connection up ens160
 
 [nmcli命令行网络配置](https://blog.csdn.net/ymz641/article/details/111465599)
 
-### 创建网络会话
+#### 创建网络会话
 >RHEL和CentOS系统默认使用`NetWorkManager`来提供网络服务，这是一种**动态管理网络配置的守护进程**，能够让网络设备保持连接状态。可以使用`nmcli`命令来管理NetWorkManager服务程序。它是一款基于命令行的网络配置工具。
 
 ![](picture/计算机类书籍阅读.assets/image-20230412212812365.png)
@@ -1351,7 +1351,7 @@ nmcli connection up ens160
 
 ![](picture/计算机类书籍阅读.assets/image-20230412220025520.png)
 
-### 绑定两块网卡
+#### 绑定两块网卡
 
 ![](picture/计算机类书籍阅读.assets/image-20230413153244315.png)
 
@@ -1411,9 +1411,9 @@ nmcli connection up ens160
 ![](picture/计算机类书籍阅读.assets/image-20230413155344804.png)
 
 
-## 远程控制服务
+### 远程控制服务
 
-### 配置sshd服务
+#### 配置sshd服务
 
 >+ SSH（Secure Shell）是一种能够以安全的方式提供远程登录的协议，也是目前远程管理Linux系统的首选方式。
 >+ 想要使用SSH 协议来远程管理Linux 系统，则需要配置部署sshd 服务程序。sshd 是基于SSH协议开发的一款远程管理服务程序，不仅使用起来方便快捷，而且能够提供两种安全验证的方法：
@@ -1424,7 +1424,7 @@ nmcli connection up ens160
 
 ![](picture/计算机类书籍阅读.assets/image-20230413161718512.png)
 
-### 安全密钥验证
+#### 安全密钥验证
 
 1. 在客户端主机中生成“密钥对”，**记住是客户端**  `ssh-keygen`
 
@@ -1446,7 +1446,7 @@ nmcli connection up ens160
 ![](picture/计算机类书籍阅读.assets/image-20230413162718623.png)
 
 
-### 远程传输命令
+#### 远程传输命令
 
 ~~~~bash
 scp：基于SSH协议在网络上进行安全传输的命令
@@ -1463,7 +1463,7 @@ scp：基于SSH协议在网络上进行安全传输的命令
 
 ![](picture/计算机类书籍阅读.assets/image-20230413163354968.png)
 
-## 不间断会话服务
+### 不间断会话服务
 
 >Terminal Multiplexer（终端复用器，简称为Tmux）是一款能够实现多窗口远程控制的开源服务程序。简单来说就是为了解决网络异常中断或为了同时控制多个远程终端窗口而设计的程序。用户还可以使用Tmux 服务程序同时在多个远程会话中自由切换，能够实现如下功能。
 >+ 会话恢复：即使网络中断，也可让会话随时恢复，确保用户不会失去对远程会话的控制。
@@ -1472,7 +1472,7 @@ scp：基于SSH协议在网络上进行安全传输的命令
 
 `dnf install tmux`
 
-### 管理远程会话
+#### 管理远程会话
 
 >Tmux服务能做的事情非常多，例如创建不间断会话、恢复离线工作、将界面切分为不同的窗格、共享会话等
 
@@ -1493,7 +1493,7 @@ scp：基于SSH协议在网络上进行安全传输的命令
 
 `tmux attach -t backup`
 
-### 管理多窗格
+#### 管理多窗格
 
 >+ 使用“tmux split-window”命令可以创建上下切割的多窗格终端界面
 >+ 使用“tmux split-window -h”命令可以创建左右切割的多窗格终端界面
@@ -1513,7 +1513,7 @@ scp：基于SSH协议在网络上进行安全传输的命令
 
 ![](picture/计算机类书籍阅读.assets/image-20230413170156226.png)
 
-### 会话共享功能
+#### 会话共享功能
 >当多个用户同时控制服务器的时候，它可以把服务器屏幕内容共享出来。也就是说，每个用户都能够看到相同的内容，还能一起同时操作
 
 
@@ -1527,7 +1527,7 @@ tmux attach -t share
 ```
 
 
-## 检索日志信息
+### 检索日志信息
 
 >在RHEL 8 系统中，默认的日志服务程序是rsyslog。可以将rsyslog 理解成之前的syslogd服务的增强版本，它更加注重日志的安全性和性能指标。
 
@@ -1563,7 +1563,7 @@ tmux attach -t share
 + 虚拟主机功能
 + Apache的访问控制
 
-## 网站服务程序
+### 网站服务程序
 
 目前能够提供WEB网络服务的程序有IIS、Nginx、Apache等。
 
@@ -1580,7 +1580,7 @@ systemctl enable httpd
 
 
 
-## 配置服务文件参数
+#### 配置服务文件参数
 
 ![](picture/计算机类书籍阅读.assets/image-20230414204256557.png)
 
@@ -1617,7 +1617,7 @@ echo "The New Web Directory" > /home/wwwroot/index.html
 
 
 
-## SELinux安全子系统
+#### SELinux安全子系统
 
 >**SELinux（Security-Enhanced Linux)是美国国家安全局在Linux开源社区的帮助下开发的一个强制访问控制（MAC，Mandatory Access Control）的安全子系统。Linux系统使用SELinux技术的目的是为了让各个服务进程都受到约束，使其仅获取到本应获取的资源。**
 
@@ -1695,7 +1695,7 @@ semanage: 用于管理SELinux的策略，英文全称为“SELinux manage”
 
 ![](picture/计算机类书籍阅读.assets/image-20230421140937118.png)
 
-## 个人用户主页功能
+### 个人用户主页功能
 
 ![](picture/计算机类书籍阅读.assets/image-20230421141105258.png)
 
@@ -1763,7 +1763,7 @@ require user linuxprobe
 ![](picture/计算机类书籍阅读.assets/image-20230421152431258.png)
 
 
-## 虚拟主机功能
+### 虚拟主机功能
 
 >利用虚拟主机功能，可以把一台处于运行状态的物理服务器分割成多个“虚拟的服务器”。但是，该技术无法实现目前云主机技术的硬件资源隔离，而只能让这些虚拟的服务器共同使用物理服务器的硬件资源，供应商只能限制硬盘的使用空间大小。
 >Apache的虚拟主机功能是服务器基于用户请求的不同的IP地址、主机域名或端口号，提供多个网站同时为外部提供访问服务的技术。
@@ -1771,7 +1771,7 @@ require user linuxprobe
 ![](picture/计算机类书籍阅读.assets/image-20230421153412134.png)
 
 
-### 基于IP地址
+#### 基于IP地址
 
 配置三个IP地址
 
@@ -1802,7 +1802,7 @@ semanage fcontext -a -t httpd_sys_content_t /home/wwwroot
 ![](picture/计算机类书籍阅读.assets/image-20230421155920070.png)
 
 
-### 基于主机域名
+#### 基于主机域名
 
 当服务器无法为每个网站都分配一个独立IP 地址的时候，可以尝试让Apache 自动识别用户请求的域名，从而根据不同的域名请求来传输不同的内容。
 
@@ -1834,7 +1834,7 @@ semanage fcontext -a -t httpd_sys_content_t /home/wwwroot
 ![](picture/计算机类书籍阅读.assets/image-20230421160907296.png)
 
 
-### 基于端口号
+#### 基于端口号
 
 基于端口号的虚拟主机功能可以让用户通过指定的端口号来访问服务器上的网站资源。
 
@@ -1889,7 +1889,7 @@ semanage port -a -t http_port_t -p tcp 6333
 
 ![](picture/计算机类书籍阅读.assets/image-20230421163100818.png)
 
-## Apache的访问控制
+### Apache的访问控制
 
 ![](picture/计算机类书籍阅读.assets/image-20230421164529164.png)
 
@@ -1919,7 +1919,7 @@ semanage port -a -t http_port_t -p tcp 6333
 + vsftpd服务程序
 + TFTP简单文件传输协议
 
-## 文件传输协议
+### 文件传输协议
 
 FTP是一种在互联网中进行文件传输的协议，基于C/S模式，默认使用20、21端口，其中20端口进行数据传输，21端口进行接收客户端发出的相关FTP命令和参数。
 
@@ -1970,14 +1970,14 @@ userlist_enable=YES
 
 ![](picture/计算机类书籍阅读.assets/image-20230424144724201.png)
 
-## vsftpd服务程序
+### vsftpd服务程序
 vsftpd 作为更加安全的文件传输协议服务程序，允许用户以3 种认证模式登录FTP 服务器。
 
 > + 匿名开放模式
 > + 本地用户模式
 > + 虚拟用户模式
 
-### 匿名访问模式
+#### 匿名访问模式
 **向匿名用户开放的权限参数以及作用**
 
 ![](picture/计算机类书籍阅读.assets/image-20230424145304165.png)
@@ -1989,7 +1989,7 @@ vsftpd 作为更加安全的文件传输协议服务程序，允许用户以3 �
 + 修改SELinux策略
 	+ setsebool -P ftp_full_access=on
 
-### 本地用户模式
+#### 本地用户模式
 
 
 ![](picture/计算机类书籍阅读.assets/image-20230424151550139.png)
@@ -2000,12 +2000,12 @@ vsftpd 作为更加安全的文件传输协议服务程序，允许用户以3 �
 >+ 采用本地模式，默认访问的是该用户的家目录，就不会存在像匿名登录一样访问权限不足的问题。只需修改`setsebool -P ftpd_full_access=on`即可创建、删除文件。
 
 
-### 虚拟用户模式*
+#### 虚拟用户模式*
 #已放弃
 虚拟用户模式是这3 种模式中最安全的一种认证模式
 
 
-## TFTP（简单文件传输协议）
+### TFTP（简单文件传输协议）
 
 > 简单文件传输协议（Trivial File Transfer Protocol，TFTP）是一种基于UDP 协议在客户端和服务器之间进行简单文件传输的协议。顾名思义，它提供不复杂、开销不大的文件传输服务，可将其当作FTP 协议的简化版本。
 
@@ -2023,14 +2023,14 @@ dnf install tftp-server tftp xinetd
 
 ![](picture/计算机类书籍阅读.assets/image-20230424155638765.png)
 
-## 使用Samba 或NFS 实现文件共享
+## 第十二章 使用Samba 或NFS 实现文件共享
 
 本章内容：
 >+ Samba文件共享服务；
 >+ NFS（网络文件系统）；
 >+ autofs自动挂载服务；
 
-## Samba文件共享服务
+### Samba文件共享服务
 
 Samba 服务程序现在已经成为在Linux 系统与Windows 系统之间共享文件的最佳选择。它是基于SMB协议开发出来的。
 
@@ -2056,7 +2056,7 @@ dnf install samba samba-client
 >+ domain: 代表通过域控制器进行身份验证，用来限制用户的来源域。
 >+ server：代表使用独立主机验证来访用户提供的密码。这相当于集中管理账号，并不常用。
 
-### 配置共享资源
+#### 配置共享资源
 **创建共享资源的方法很简单，只要将表12-2中的参数写入Samba服务程序的主配置文件中，然后重启该服务即可。**
 
 ![](picture/计算机类书籍阅读.assets/image-20230424194119337.png)
@@ -2106,14 +2106,14 @@ restorecon -Rv /home/database
 
 ![](picture/计算机类书籍阅读.assets/image-20230424195707129.png)
 
-### Windows挂载共享
+#### Windows挂载共享
 
 > 使用windows访问挂载在linux上的共享目录
 
 ![](picture/计算机类书籍阅读.assets/image-20230424202753831.png)
 
 
-### Linux 挂载共享
+#### Linux 挂载共享
 
 Samba 服务程序还可以实现Linux 系统之间的文件共享。
 
@@ -2147,7 +2147,7 @@ domain=SAMBA
 [root@linuxprobe~]# mount -a
 ```
 
-## NFS（网络文件系统）
+### NFS（网络文件系统）
 >NFS 服务可以将远程Linux 系统上的文件共享资源挂载到本地主机的目录上，从而使得本地主机（Linux 客户端）基于TCP/IP 协议，像使用本地主机上的资源那样读写远程Linux 系统上的共享文件。
 
 
@@ -2203,7 +2203,7 @@ echo "welcome to linuxprobe.com" > /nfsfile/readme
 `vim /etc/fstab`
 ![](picture/计算机类书籍阅读.assets/image-20230424205934758.png)
 
-## autofs自动挂载服务
+### autofs自动挂载服务
 
 >与mount 命令不同，autofs 服务程序是一种Linux 系统守护进程，当检测到用户试图访问一个尚未挂载的文件系统时，将自动挂载该文件系统。换句话说，**将挂载信息填入/etc/fstab 文件后，系统在每次开机时都自动将其挂载，而autofs 服务程序则是在用户需要使用该文件系统时才去动态挂载，从而节约了网络资源和服务器的硬件资源。**
 
@@ -2244,7 +2244,7 @@ echo "welcome to linuxprobe.com" > /nfsfile/readme
 >+ 部署缓存服务器
 >+ 分离解析技术
 
-## DNS域名解析服务
+### DNS域名解析服务
 域名系统（Domain Name System，DNS）是一项用于管理解析域名与IP地址对应关系的技术。
 
 ![](picture/计算机类书籍阅读.assets/image-20230426130431792.png)
@@ -2261,15 +2261,177 @@ DNS服务器类型：
 ![](picture/计算机类书籍阅读.assets/image-20230426130758229.png)
 
 
-## 安装bind服务程序
+### 安装bind服务程序
 
 >BIND（Berkeley Internet Name Domain，伯克利因特网名称域）服务是全球范围内使用最广泛、最安全可靠且高效的域名解析服务程序。
 
 >大家在生产环境中安装部服务程序时加上chroot（俗称bind牢笼机制）扩展包，以便有效地限制bind服务程序仅能对自身的配置文件进行操作，以确保整个服务器的安全。
 
+在bind 服务程序中有下面这3 个比较关键的文件:
++ 主配置文件（/etc/named.conf）：只有59 行，而且在去除注释信息和空行之后，实际有效的参数仅有30 行左右，这些参数用来定义bind 服务程序的运行。
++ 区域配置文件（/etc/named.rfc1912.zones）:用来保存域名和IP 地址对应关系的所在位置。
++ 数据配置文件目录（/var/named）：该目录用来保存域名和IP 地址真实对应关系的数据配置文件。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426194207740.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426194430059.png)
+
+**在Linux 系统中，bind 服务程序的名称为named。**
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426194658826.png)
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426194705754.png)
+
+
+#### 正向解析实验
+
+**DNS域名解析服务中，正向解析是指根据域名（主机名）查找到对应地IP**
+
+1. 编辑区域配置文件
+
+添加内容
+```bash
+zone "linuxprobe.com" IN {
+	type master;
+	file "linuxprobe.com.zone";
+	allow-update {none;};
+};
+```
+
+2. 编辑数据配置文件 ，在/var/named目录下
+
+```bash
+cp -a named.localhost linuxprobe.com.zone
+systemctl restart named
+systemctl enable named
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426200729012.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426200840530.png)
 
 
 
 
+**域名解析记录类型**
 
+![](picture/《Linux就该这么学》第2版.assets/image-20230426195358971.png)
+
+
+#### 反向解析实验
+
+1. 编辑区域配置文件
+
+~~~bash
+zone "10.168.192.in-addr.arpa" IN {
+	type master;
+	file "192.168.10.arpa";
+	allow-update {none;};
+};
+~~~
+
+2. 编辑数据配置文件
+
+#已放弃 
+
+## 第十四章 使用DHCP动态管理主机地址
+
+>本章讲解了如下内容：
+>+ 动态主机配置协议；
+>+ 部署dhcpd 服务程序；
+>+ 自动管理IP 地址；
+>+ 分配固定IP 地址。
+
+### 动态主机配置协议
+
+**DHCP 常用名词**
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426201518529.png)
+
+### 部署dhcpd服务程序
+
+`dnf install -y dhcp-server`
+`cat /etc/dhcp/dhcpd.conf`
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426202102336.png)
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426202118394.png)
+
+**dhcpd 服务程序配置文件中使用的常见参数以及作用**
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230426202228384.png)
+
+```bash
+[root@linuxprobe~]# vim /etc/dhcp/dhcpd.conf
+ddns-update-style none;
+ignore client-updates;
+subnet 192.168.10.0 netmask 255.255.255.0 {
+	range 192.168.10.50 192.168.10.150;
+	option subnet-mask 255.255.255.0;
+	option routers 192.168.10.1;
+	option domain-name "linuxprobe.com";
+	option domain-name-servers 192.168.10.1;
+	default-lease-time 21600;
+	max-lease-time 43200;
+}
+
+```
+
+```bash
+[root@linuxprobe~]# systemctl start dhcpd
+[root@linuxprobe~]# systemctl enable dhcpd
+```
+
+配置防火墙
+
+`firewall-cmd --zone=public --permanent --add-service=dhcp`
+`firewall-cmd --reload`
+
+> 在正常情况下，DHCP 的运作会经历4 个过程：请求、提供、选择和确认。当客户端顺利获得一个IP 地址及相关的网络信息后，就会发送一个ARP（Address Resolution Protocol，地址解析协议）请求给服务器。在dhcpd 服务程序收到这条信息后，也会再把这个IP 地址分配给其他主机，从根源上避免了IP 地址冲突的情况。
+
+
+### 分配固定IP地址
+
+>DHCP协议中有个术语是“预约”，它用来确保局域网中特定的设备总是获取到固定IP地址。换句话说，就dhcpd服务程序会把某IP地址私藏下来，只将其用于相匹配的特定设备。
+>**使用MAC地址绑定固定IP**
+
+```bash
+[root@linuxprobe~]# vim /etc/dhcp/dhcpd.conf
+ddns-update-style none;
+ignore client-updates;
+subnet 192.168.10.0 netmask 255.255.255.0 {
+	range 192.168.10.50 192.168.10.150;
+	option subnet-mask 255.255.255.0;
+	option routers 192.168.10.1;
+	option domain-name "linuxprobe.com";
+	option domain-name-servers 192.168.10.1;
+	default-lease-time 21600;
+	max-lease-time 43200;
+	host linuxprobe {
+		hardware ethernet 00:0c:29:dd:f2:22;
+		fixed-address 192.168.10.88;
+		}
+	
+}
+systemctl restart dhcpd
+```
+
+## 第十五章 使用Postfix 与Dovecot 部署邮件系统 
+#准备中 
+
+## 第十六章 使用Ansible服务实现自动化运维
+> 本章主要内容：
+> + Ansible 介绍与安装；
+> + 设置主机清单；
+> + 运行临时命令；
+> + 剧本文件实战；
+> + 创建及使用角色；
+> + 创建和使用逻辑卷；
+> + 判断主机组名；
+> + 管理文件属性；
+> + 管理密码库文件。
+
+## Ansible介绍与安装
 
