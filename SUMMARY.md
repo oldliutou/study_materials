@@ -10,6 +10,6 @@
 * [sqli-lab通关笔记](sqli-lab通关笔记.md)
 * [upload-labs通关笔记](upload-labs通关笔记.md)
 * [内网渗透](内网渗透学习笔记.md)
-* [工具使用](工具使用.md)
+* [网安工具使用](网安工具使用.md)
 * [Domain-penetration_one-stop](Domain-penetration_one-stop.md)
 

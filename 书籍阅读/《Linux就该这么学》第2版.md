@@ -1777,7 +1777,7 @@ require user linuxprobe
 
 ![](picture/计算机类书籍阅读.assets/image-20230421153833961.png)
 
-`nmcli connection up ens160` 并且测试网络连通性
+`**nmcli connection up ens160**` 并且测试网络连通性
 
 ![](picture/计算机类书籍阅读.assets/image-20230421153957554.png)
 
@@ -2433,5 +2433,738 @@ systemctl restart dhcpd
 > + 管理文件属性；
 > + 管理密码库文件。
 
-## Ansible介绍与安装
+### Ansible介绍与安装
+
+>用户可以使用Ansible 自动部署应用程序，以此实现IT基础架构的全面部署。
+>Ansible 服务本身并没有批量部署的功能，它仅仅是一个框架，真正具有批量部署能力的是其所运行的模块。
+>
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230518173428211.png)
+
+**下面准备在系统上部署Ansible 服务程序:**
+
+1. 配置网络，可以访问外网
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230518185604412.png)
+
+
+2. 在原有软件仓库配置的下方，追加EPEL 扩展软件包安装源的信息。
+
+```bash
+[root@linuxprobe~]# vim /etc/yum.repos.d/rhel.repo
+[BaseOS]
+name=BaseOS
+baseurl=file:///media/cdrom/BaseOS
+enabled=1
+gpgcheck=0
+[AppStream]
+name=AppStream
+baseurl=file:///media/cdrom/AppStream
+enabled=1
+gpgcheck=0
+[EPEL]
+name=EPEL
+baseurl=https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/
+enabled=1
+gpgcheck=0
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230518185743931.png)
+
+3. 安装
+`dnf install -y ansible`
+
+**rhel安装没成功，改用centos系统安装成功；
+在centos9上已经不支持yum安装，可以使用python的pip安装**
+
+4. 验证安装是否成功
+
+`ansible --version`
+
+~~~bash
+[root@localhost ~]# ansible --version
+ansible [core 2.14.5]
+  config file = None
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/local/lib/python3.9/site-packages/ansible
+  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/local/bin/ansible
+  python version = 3.9.16 (main, Dec  8 2022, 00:00:00) [GCC 11.3.1 20221121 (Red Hat 11.3.1-4)] (/usr/bin/python3)
+  jinja version = 3.1.2
+  libyaml = True
+
+~~~
+
+### 设置主机清单
+
+**主配置文件优先级**
+
+>Ansible 服务的主配置文件存在优先级的顺序关系，默认存放在**/etc/ansible 目录中的主配置文件优先级最低**。如果在当前目录或用户家目录中也存放着一份主配置文件，则以当前目录或用户家目录中的主配置文件为主。同时存在多个Ansible 服务主配置文件时，具体优先级顺序如下表所示。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230519143055854.png)
+
+```bash
+#### ansible.cfg
+[defaults]
+ 
+#inventory      = /etc/ansible/hosts   #定义Inventory
+#library        = /usr/share/my_modules/  //自定义lib库存放目录 
+#remote_tmp     = ~/.ansible/tmp       //零时文件远程主机存放目录
+#local_tmp      = ~/.ansible/tmp       //零时文件本地存放目录
+#forks          = 5                    //默认开启的并发数
+#poll_interval  = 15                   //默认轮询时间间隔
+#sudo_user      = root                 //默认sudo用户
+#ask_sudo_pass = True                  //是否需要sudo密码
+#ask_pass      = True                  //是否需要密码
+#host_key_checking = False             //首次连接是否检查key认证
+#roles_path    = /etc/ansible/roles    //默认下载的Roles存放的目录
+#log_path = /var/log/ansible.log       //执行日志存放目录
+#module_name = command                 //默认执行的模块
+#action_plugins     = /usr/share/ansible/plugins/action //action插件存放目录
+#callback_plugins   = /usr/share/ansible/plugins/callback //callback插件存放目录
+#connection_plugins = /usr/share/ansible/plugins/connection  //connection插件存放目录
+#lookup_plugins     = /usr/share/ansible/plugins/lookup //lookup插件存放目录
+#vars_plugins       = /usr/share/ansible/plugins/vars //vars插件存放目录
+#filter_plugins     = /usr/share/ansible/plugins/filter //filter插件存放目录
+#test_plugins       = /usr/share/ansible/plugins/test //test插件存放目录
+#strategy_plugins   = /usr/share/ansible/plugins/strategy //strategy插件存放目录
+#fact_caching = memory                 //getfact缓存的主机信息存放方式
+#retry_files_enabled = False              
+#retry_files_save_path = ~/.ansible-retry  //错误重启文件存放目录
+```
+
+用户可以把要管理的主机IP地址预先写入`/etc/ansible/hosts`文件，后续再通过执行ansible命令来执行任务时就自动包含这些主机了，也就不需要每次都重复输入受管主机的地址了。
+
+
+| 操作系统 |    IP地址     | 功能用途 |
+|:--------:|:-------------:|:--------:|
+| centos9  | 192.168.10.10 | 控制机器 |
+| centos8  | 192.168.10.11 |   dev    |
+|  rhel8   | 192.168.10.12 |   dev    |
+| centos7  | 192.168.10.17 |   test   |
+
+
+
+
+```bash
+vim /etc/ansible/hosts
+[dev]
+192.168.10.11
+192.168.10.12
+[test]
+192.168.10.17
+
+```
+
+
+
+主机清单文件在修改后会立即生效，一般使用“`ansible-inventory --graph`”命令以结构化的方式显示出受管主机的信息。
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520191151358.png)
+
+
+
+
+
+**注：pip方式安装ansible默认没有主配置文件，需要自己创建。`/etc/ansible/ansible.cfg`和`/etc/ansible/hosts`文件**
+
+>如果每次执行操作都要输入受管主机的密码，也是比较麻烦的事情。好在Ansible 服务已经对此有了解决办法，那就是使用如表16-4 所示的变量。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230519162817951.png)
+
+用户只需要将对应的变量及信息填写到主机清单文件中，在执行任务时便会自动对账号和密码进行匹配，而不用每次重复输入它们。继续修改主机清单文件：
+
+```bash
+[root@linuxprobe~]# vim /etc/ansible/hosts
+[dev]
+192.168.10.11
+192.168.10.12
+[test]
+192.168.10.17
+[all:vars]
+ansible_user=root
+ansible_password=redhat
+
+```
+
+将Ansible 主配置文件中的设置成默认不需要SSH 协议的指纹验证，以及将设置成默认执行剧本时所使用的管理员名称为root：
+
+```bash
+[root@linuxprobe~]# vim /etc/ansible/ansible.cfg
+
+# uncomment this to disable SSH key host checking
+host_key_checking = False
+
+………………省略部分输出信息………………
+
+remote_user = root
+```
+
+上述操作完成，不需要重启服务。
+
+### 运行临时命令
+
+Ansible 服务的强大之处在于只需要一条命令，便可以操控成千上万台的主机节点。
+
+"ansible-doc" 模块名称”的命令格式自行查询模块详细信息。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520160430359.png)
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520160621546.png)
+
+**命令格式**
+```bash
+ansible 受控主机节点 -m 模块名称[-a 模块参数]
+```
+
+**可以使用ansible 命令直接针对所有主机调用ping 模块，不需要增加额外的参数，返回值若为SUCCESS，则表示主机当前在线。**
+
+```bash
+ansible all -m ping 
+```
+
+成功执行，显示连接成功
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520161649762.png)
+
+#### 剧本文件实战
+
+**Ansible 服务的剧本（playbook）文件采用YAML 语言编写。**
+
+剧本文件的结构由4 部分组成，分别是target、variable、task、handler，其各自的作用如下：
+>➢ target：用于定义要执行剧本的主机范围。
+>➢ variable：用于定义剧本执行时要用到的变量。
+>➢ task：用于定义将在远程主机上执行的任务列表。
+>➢ handler：用于定义执行完成后需要调用的后续任务。
+
+**实例：创建一个名为packages.yml 的剧本，让dev、test 组的主机可以自动安装数据库软件，并且将dev 组主机的软件更新至最新。**
+
+```yaml
+#[root@linuxprobe~]# vim packages.yml
+---
+- name: 安装软件包 #剧本的名称
+  hosts: dev,test #执行剧本的主机列表
+  tasks:
+  - name: one #单一任务的名称
+    yum: #模块名称
+     name: mariadb
+     state: latest
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520165820868.png)
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520171757458.png)
+
+红帽系统主机安装未成功，centos8系统主机安装成功。找到原因：红帽系统主机未挂载cdrom，无法在yum源里找到mariadb程序，重新挂载即可。
+```bash
+mkdir /media/cdrom
+vim /etc/fstab
+/dev/cdrom /media/cdrom  iso9660 defaults 0 0
+
+```
+
+在centos8主机中测试，mariadb程序已经利用剧本安装成功。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520170426438.png)
+
+rhel8系统主机修改完yum源之后，剧本则执行成功。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520172303404.png)
+
+其中，ok 和changed 表示执行及修改成功。如遇到unreachable 或failed 大于0 的情况，建议手动检查剧本是否在所有主机中都正
+确运行了，以及有无安装失败的情况。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520204507208.png)
+
+
+
+### 创建及使用角色
+
+>1. 角色（role）这一功能则是自Ansible 1.2 版本开始引入的新特性，用于层次性、结构化地组织剧本。
+>2. 角色功能分别把变量、文件、任务、模块及处理器配置放在各个独立的目录中，然后对其进行便捷加载。
+>3. 角色的获取有3 种方法，分别是加载系统内置角色、从外部环境获取角色以及自行创建角色。
+
+#### 加载系统内置角色
+
+用户只需要配置好软件仓库的配置文件，然后安装包含系统角色的软件包rhel-system-roles。
+
+`dnf install -y rhel-system-roles`
+
+`ansible-galaxy list`
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520205316991.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520205404063.png)
+
+```bash
+cp /usr/share/doc/rhel-system-roles/timesync/example-multiple-ntp-servers-playbook.yml timesync.yaml
+
+[root@localhost ansible]# cat timesync.yaml
+---
+- name: Example with multiple servers
+  hosts: "{{ targets }}"
+  vars:
+    timesync_ntp_servers:
+      - hostname: 0.pool.ntp.org
+        iburst: true
+      - hostname: 1.pool.ntp.org
+        iburst: true
+      - hostname: 2.pool.ntp.org
+        iburst: true
+      - hostname: 3.pool.ntp.org
+        iburst: true
+  roles:
+    - rhel-system-roles.timesync
+
+
+
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520205938245.png)
+
+#### 从外部环境获取角色
+
+Ansible Galaxy 是Ansible 的一个官方社区，用于共享角色和功能代码，用户可以在网站自由地共享和下载Ansible 角色。
+
+https://galaxy.ansible.com/
+
+这里还存在两种特殊情况：
+>➢ 在国内访问Ansible Galaxy 官网时可能存在不稳定的情况，导致访问不了或者网速较慢。
+>➢ 某位作者是将作品上传到了自己的网站，或者除Ansible Galaxy 官网以外的其他平台。在这两种情况下，就不能再用“ansible-galaxy install 角色名称”的命令直接加载了，而是需要手动先编写一个YAML 语言格式的文件，指明网址链接和角色名称，然后再用`-r` 参数进行加载。
+
+```yaml
+
+#[root@linuxprobe~]# cat my_nginx_roles.yml
+---
+- src: https://www.linuxprobe.com/Software/nginxinc-nginx_core-0.3.0.tar.gz
+  name: nginx-core
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520210711126.png)
+
+==切换在/etc/ansible文件夹下载角色文件，但是文件被下载到了root目录下，暂时不知道原因！！！在下一小节解决==
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520211023872.png)
+
+#### 自行创建角色
+
+除了能够使用系统自带的角色和从Ansible Galaxy 中获取的角色之外，也可以自行创建符合工作需求的角色。这种定制化的编写工作能够更好地贴合生产环境的实际情况，但难度也会稍高一些。
+
+==接下来将会创建一个名为apache 的新角色，它能够帮助我们自动安装、运行httpd 网站服务，设置防火墙的允许规则，以及根据每个主机生成独立的index.html 首页文件。用户在调用这个角色后能享受到“一条龙”的网站部署服务。==
+
+
+**在Ansible 的主配置文件中，`roles_path`是角色保存路径。如果用户新建的角色信息不在规定的目录内，则无法使用ansible-galaxy list 命令找到。**
+
+`vim /etc/ansible/ansible.cfg`
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520211807116.png)
+
+**注：修改完角色保存路径之后，重新下载角色文件，路径更改了，解决了刚才提到的问题，但是其余两个路径下的角色不显示了**
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520212309806.png)
+
+
+
+
+在ansible-galaxy 命令后面跟一个`init`参数，创建一个新的角色信息，且建立成功后便会在当前目录下生成出一个新的目录：
+
+```bash
+[root@linuxprobe~]# cd /etc/ansible/roles
+[root@linuxprobe roles]# ansible-galaxy init apache
+- Role apache was created successfully
+[root@linuxprobe roles]# ls
+apache nginx nginxinc.nginx
+```
+
+进入apache目录下，查看他的结构
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520213622921.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520213825720.png)
+
+
+
+**在创建新角色时，最关键的便是能够正确理解目录结构**。通俗来说，就是**要把正确的信息放入正确的目录中，这样在调用角色时才能有正确的效果。**角色信息对应的目录结构及含义如表16-10 所示。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520213741330.png)
+
+---
+
+下面准备创建新角色：
+
+1. 打开用于定义角色任务的`tasks/main.yml` 文件。**在该文件中不需要定义要执行的主机组列表**，因为后面会单独编写剧本进行调用，此时应先对apache 角色能做的事情（任务）有一个明确的思路，在调用角色后yml 文件会按照从上到下的顺序自动执行。
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230520214234644.png)
+
+
+```yml
+#[root@linuxprobe apache]# vim tasks/main.yml
+---
+- name: one
+  yum:
+   name: httpd
+   state: latest
+```
+
+2. 使用service 模块启动httpd 网站服务程序，并加入到启动项中，保证能够一直为用户提供服务。在初次使用模块前，先用ansible-doc 命令查看一下帮助和实例信息。
+
+```yaml
+
+#[root@linuxprobe apache]# vim tasks/main.yml
+---
+- name: one
+  yum:
+      name: httpd
+      state: latest
+- name: two
+  service:
+          name: httpd
+          state: started
+          enabled: yes
+```
+
+
+3. 配置防火墙的允许策略，让其他主机可以正常访问。在配置防火墙时，需要使用firewalld 模块。同样也是先看一下帮助示例：
+
+```bash
+[root@linuxprobe defaults]# ansible-doc firewalld
+
+- firewalld:
+   service: https
+   permanent: yes
+   state: enabled
+- firewalld:
+   port: 8081/tcp
+   permanent: yes
+   state: disabled
+   immediate: yes
+
+```
+
+依据输出信息可得知，在firewalld 模块设置防火墙策略时，**指定协议名称为“service: http”参数**，**放行该协议为“state: enabled”参数**，设置为永久生效为“permanent: yes”参数，当前立即生效为“immediate: yes”参数
+
+```yml 
+#[root@linuxprobe apache]# vim tasks/main.yml
+
+---
+# tasks file for apache
+- name: one
+  yum:
+   name: httpd
+   state: latest
+- name: two
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+- name: three
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+```
+
+4. 让每台主机显示的主页文件均不相同。
+
+```bash
+[root@linuxprobe apache]# ansible-doc template
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230521142505772.png)
+
+
+
+从template 模块的输出信息中可得知，这是一个用于复制文件模板的模块，**能够把文件从Ansible 服务器复制到受管主机上**。其中，`src` 参数用于定义本地文件的路径，`dest` 参数用于定义复制到受管主机的文件路径，`而owner`、`group`、`mode` 参数可选择性地设置文件归属及权限信息。
+
+**有时候，我们想让每台客户端根据自身系统的情况产生不同的文
+件信息，这就需要用到Jinja2 技术了，Jinja2 格式的模板文件后缀是.j2。继续编写：**
+
+```yml
+
+---
+# tasks file for apache
+- name: one
+  yum:
+   name: httpd
+   state: latest
+- name: two
+  service:
+    name: httpd
+    state: started
+    enabled: yes
+- name: three
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+- name: four
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+
+```
+
+>+ Jinja2 是Python 语言中一个被广泛使用的模板引擎，最初的设计思想源自Django 的模块引擎。
+>+ 正常情况下的复制操作会让新旧文件一模一样，但在使技术时，不是在原始文件中直接写入文件内容，而是写入一系列的变量名Jinja2。
+
+查询到对应的变量名称、主机名及地址所对应的值保存在哪里？可以用`setup `模块进行查询。
+
+```bash
+[root@linuxprobe apache]# ansible-doc setup
+```
+
+>+ setup 模块的作用是自动收集受管主机上的变量信息，使用-a 参数外加filter 命令可以对收集来的信息进行二次过滤。相应的语法格式为**ansible all -m setup -a 'filter="\*关键词\*"'**，其中\*号是第3 章节讲到的通配符，用于进行关键词查询。例如，如果想搜索各个主机的名称，可以使用通配符搜索所有包含fqdn 关键词的变量值信息。
+>+ FQDN（Fully Qualified Domain Name，完全限定域名）用于在逻辑上准确表示出主机的位置。FQDN 常常被作为主机名的完全表达形式，比/etc/hostname 文件中定义的主机名更加严谨和准确
+
+
+`ansible all -m setup -a 'filter="*fqdn*"'`
+
+```bash
+[root@localhost apache]# ansible all -m setup -a 'filter="*fqdn*"'
+192.168.10.12 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_fqdn": "catl.com",
+        "discovered_interpreter_python": "/usr/libexec/platform-python"
+    },
+    "changed": false
+}
+192.168.10.11 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_fqdn": "catl.com",
+        "discovered_interpreter_python": "/usr/libexec/platform-python"
+    },
+    "changed": false
+}
+192.168.10.17 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_fqdn": "centos7",
+        "discovered_interpreter_python": "/usr/bin/python"
+    },
+    "changed": false
+}
+
+```
+
+在确认了主机名与IP 地址所对应的具体变量名称后，在角色所对应的**templates 目录内新建一个与上面的template 模块参数相同的文件名称（index.html.j2）**。Jinja2 在调用变量值时，格式为在变量名称的两侧格加两个大括号：
+
+```bash
+[root@linuxprobe apache]# vim emplates/index.html.j2
+
+Welcome to {{ ansible_fqdn }} on {{ ansible_all_ipv4_addresses }}
+```
+
+最后要做的就是编写一个用于调用apache 角色的yml文件，以及执行这个文件。
+
+```yaml
+#[root@localhost ansible]# vim apache_roles.yml
+
+---
+- name: 调用自建角色
+  hosts: all
+  roles: 
+    - apache
+
+#[root@linuxprobe~]# ansible-playbook roles.yml
+```
+
+剧本-角色执行成功
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230521145938169.png)
+
+### 创建和使用逻辑卷
+
+创建一个能批量、自动管理逻辑卷设备的剧本，不但能大大提高硬盘设备的管理效率，而且还能避免手动创建带来的错误。
+
+>使用Ansible 剧本要比使用Shell 脚本的优势大，原因主要有下面两点:
+>+ ➢ Ansible 模块化的功能让操作更标准，只要在执行过程中无报错，那么便**会依据远程主机的系统版本及配置自动做出判断和操作**，不用担心因系统变化而导致命令失效的问题。
+>+ ➢  Ansible 服务在执行剧本文件时会进行判断：**如果该文件或该设备已经被创建过，或是某个动作（play）已经被执行过，则绝对不会再重复执行；而使用Shell 脚本有可能导致设备被重复格式化，导致数据丢失。**
+
+
+1. dev 组的两台主机上分别添加一块硬盘设备，大小为20GB，类型为SATA，其余选项选择默认值。
+2. 根据第7章学习的逻辑卷的知识，应该让剧本文件一次创建物理卷（PV）、卷组（VG）、逻辑卷（LV）。需要使用lvg模块让设备支持逻辑卷技术，然后创建一个名为research的卷组。
+
+```bash
+[root@linuxprobe~]# ansible-doc lvg
+
+EXAMPLES:
+
+- name: Create a volume group on top of /dev/sda1 with physical extent size = 32MB
+  community.general.lvg:
+    vg: vg.services
+    pvs: /dev/sda1
+    pesize: 32
+
+- name: Create a volume group on top of /dev/sdb with physical extent size = 128KiB
+  community.general.lvg:
+    vg: vg.services
+    pvs: /dev/sdb
+    pesize: 128K
+
+```
+
+>通过输出信息可得知，创建PV 和VG 的lvg 模块总共有3 个必备参数。其中，`vg` 参数用于定义卷组的名称，`pvs` 参数用于指定硬盘设备的名称，`pesize` 参数用于确定最终卷组的容量大小（可以用PE 个数或容量值进行指定）。
+
+3. 编写创建逻辑卷的剧本
+
+```yaml
+#[root@linuxprobe~]# vim lv.yml
+---
+- name: 创建和使用逻辑卷
+  hosts: all
+  tasks:
+      - name: 创建逻辑卷组和物理卷
+        lvg:
+           vg: research
+           pvs: /dev/sdb
+           pesize: 150M
+
+
+```
+
+接下来使用lvol 模块创建出逻辑卷设备。还是按照惯例，先查看模块的帮助信息：
+```bash
+[root@linuxprobe~]# ansible-doc lvol
+
+EXAMPLES:
+
+- name: Create a logical volume of 512m
+  community.general.lvol:
+    vg: firefly
+    lv: test
+    size: 512
+
+- name: Create a logical volume of 512m with disks /dev/sda and /dev/sdb
+  community.general.lvol:
+    vg: firefly
+    lv: test
+    size: 512
+    pvs: /dev/sda,/dev/sdb
+
+- name: Create cache pool logical volume
+  community.general.lvol:
+    vg: firefly
+    lv: lvcache
+    size: 512m
+    opts: --type cache-pool
+
+
+```
+
+>通过输出信息可得知，**lvol 是用于创建逻辑卷设备的模块**。其中，`vg` 参数用于指定卷组名称，`lv` 参数用于指定逻辑卷名称，`size` 参数则用于指定最终逻辑卷设备的容量大小（不用加单位，默认为MB）。填写好参数，创建出一个大小为150MB、归属于research 卷组且名称为data 的逻辑卷设备：
+
+4. 创建逻辑卷
+
+```yml
+#[root@linuxprobe~]# vim lv.yml
+---
+- name: 创建和使用逻辑卷
+  hosts: all
+  tasks:
+      - name: 创建逻辑卷组和物理卷
+        lvg:
+           vg: research
+           pvs: /dev/sdb
+           pesize: 150M
+      - name: 创建逻辑卷
+        lvol:
+          vg: research
+          lv: data
+          size: 150M
+
+```
+
+>将创建出的/dev/research/data 逻辑卷设备自动用Ext4 文件系统进行格式化操作，则又能帮助运维管理员减少一些工作量。可使用`filesystem` 模块来完成设备的文件系统格式化操作。该模块的帮助信息如下：
+
+```bash
+[root@linuxprobe~]# ansible-doc filesystem
+
+EXAMPLES:
+
+- name: Create a ext2 filesystem on /dev/sdb1
+  community.general.filesystem:
+    fstype: ext2
+    dev: /dev/sdb1
+
+- name: Create a ext4 filesystem on /dev/sdb1 and check disk blocks
+  community.general.filesystem:
+    fstype: ext4
+    dev: /dev/sdb1
+    opts: -cc
+
+```
+
+5. 格式化，编写剧本
+
+```yml
+#[root@linuxprobe~]# vim lv.yml
+
+---
+- name: 创建和使用逻辑卷
+  hosts: all
+  tasks:
+      - name: 创建逻辑卷组和物理卷
+        lvg:
+           vg: research
+           pvs: /dev/sdb
+           pesize: 150M
+      - name: create lv
+        lvol:
+          vg: research
+          lv: data
+          size: 150M
+      - name: format filesystem
+        filesystem:
+          fstype: ext4
+          dev: /dev/research/data
+
+```
+
+6. 执行错误，输出提示信息
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230522185251474.png)
+
+```yml
+---
+- name: 创建和使用逻辑卷
+  hosts: all
+  tasks:
+    - block:
+       - name: 创建逻辑卷组和物理卷
+         lvg:
+            vg: research
+            pvs: /dev/sdb
+            pesize: 150M
+       - name: create lv
+         lvol:
+           vg: research
+           lv: data
+           size: 150M
+       - name: format filesystem
+         filesystem:
+           fstype: ext4
+           dev: /dev/research/data
+      rescue:
+       - debug:
+           msg: "Could not create logical volume of that size"
+```
+
+YAML 语言对格式有着硬性的要求，既然rescue 是对block 内的模块进行救援的功能代码，因此**recue 和block 两个操作符必须严格对齐**，错开一个空格都会导致剧本执行失败。确认无误后，执行lv.yml 剧本文件检阅一下效果：
+
+~~~bash
+[root@linuxprobe~]# ansible-playbook lv.yml
+~~~
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230522195127291.png)
+
+可以看到dev的两台机器执行成功，test主机报错显示debug内容。新建的逻辑卷信息如下图所示：
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230522195355524.png)
+
+
 
