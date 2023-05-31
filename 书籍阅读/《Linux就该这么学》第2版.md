@@ -2234,7 +2234,7 @@ echo "welcome to linuxprobe.com" > /nfsfile/readme
 
 2. 重启autofs服务
 
-## 第十三章 使用BIND提供域名解析服务
+## 第十三章 使用BIND提供域名解析服务(***)
 
 本章主要内容：
 >+ DNS域名解析服务
@@ -2418,8 +2418,9 @@ subnet 192.168.10.0 netmask 255.255.255.0 {
 systemctl restart dhcpd
 ```
 
-## 第十五章 使用Postfix 与Dovecot 部署邮件系统 
-#准备中 
+## 第十五章 使用Postfix 与Dovecot 部署邮件系统 （***）
+#已放弃 
+
 
 ## 第十六章 使用Ansible服务实现自动化运维
 > 本章主要内容：
@@ -3166,5 +3167,490 @@ YAML 语言对格式有着硬性的要求，既然rescue 是对block 内的模�
 
 ![](picture/《Linux就该这么学》第2版.assets/image-20230522195355524.png)
 
+
+### 判断主机组名
+
++ 使用copy模块
++ 使用when关键词判断条件
+
+```yaml
+#[root@linuxprobe~]# vim issue.yml
+---
+- name: 修改文件内容
+  hosts: all
+  tasks:
+  - name: one
+    copy:
+     content: 'Development'
+     dest: /etc/issue
+    when: "inventory_hostname in groups.dev"
+  - name: two
+    copy:
+     content: 'Test'
+     dest: /etc/issue
+    when: "inventory_hostname in groups.test"
+  - name: three
+    copy:
+     content: 'Production'
+     dest: /etc/issue
+    when: "inventory_hostname in groups.prod"
+```
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230530160408697.png)
+
+
+### 管理文件属性
+
+Ansible服务将常用的文件管理功能都合并到file模块中
+
+```bash
+ansible-doc file
+```
+
+>实验：
+>1. 请创建出一个名为/linuxprobe 的新目录，所有者及所属组均为root 管理员身份；
+>2. 设置所有者和所属于组拥有对文件的完全控制权，而其他人则只有阅读和执行权限；
+>3. **给予SGID 特殊权限；**
+>4. 仅在dev 主机组的主机上实施。
+
+```yaml
+#[root@linuxprobe~]# vim chmod.yml
+---
+- name: 管理文件属性
+  hosts: dev
+  tasks:
+  - name: one
+    file:
+    path: /linuxprobe
+    state: directory
+    owner: root
+    group: root
+    mode: '2775'
+```
+
+> 添加一个需求：请再创建一个名称为/linuxcool 的快捷方式文件，指向刚刚建立的/linuxprobe 目录。
+
+```yaml
+#[root@linuxprobe~]# vim chmod.yml
+---
+- name: 管理文件属性
+  hosts: dev
+  tasks:
+  - name: one
+    file:
+    path: /linuxprobe
+    state: directory
+    owner: root
+    group: root
+    mode: '2775'
+- name: two
+   file:
+   src: /linuxprobe
+   dest: /linuxcool
+   state: link
+```
+
+### 管理密码库文件
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230530154736122.png)
+
+1. 创建出一个名为locker.yml 的配置文件，其中保存了两个变量值：
+
+```yml
+#[root@linuxprobe~]# vim locker.yml
+---
+pw_developer: Imadev
+pw_manager: Imamgr
+```
+
+2. 使用`ansible-vault `命令对文件进行加密。由于需要每次输入密码比较麻烦，因此还应新建一个用于保存密码值的文本文件，以便让ansible-vault 命令自动调用。为了保证数据的安全性，在新建密码文件后将该文件的权限设置为600，确保仅管理员可读可写：
+
+```bash
+[root@linuxprobe~]# vim /root/secret.txt
+whenyouwishuponastar
+[root@linuxprobe~]# chmod 600 /root/secret.txt
+```
+
+在Ansible 服务的主配置文件中，在第140 行的`vault_password_file `参数后指定密码值保存的文件路径，准备进行调用：
+
+```bash
+[root@linuxprobe~]# vim /etc/ansible/ansible.cfg
+137
+138 # If set, configures the path to the Vault password file as an alternative to
+139 # specifying --vault-password-file on the command line.
+140 vault_password_file = /root/secret.txt
+141
+
+```
+
+3. **在设置好密码文件的路径后，Ansible 服务便会自动进行加载**。用户也就不用在每次加密或解密时都重复输入密码了。例如，在加密刚刚创建的locker.yml 文件时，只需要使用encrypt 参数即可：
+
+```bash
+[root@linuxprobe~]# ansible-vault encrypt locker.yml
+Encryption successful
+```
+
+文件将使用AES 256 加密方式进行加密，也就是意味着密钥有2256 种可能。查看到加密后的内容为:
+
+```bash
+[root@linuxprobe~]# cat locker.yml
+$ANSIBLE_VAULT;1.1;AES256
+386532343138393361383839316638373335333961613437303535303130383136316534393663353432346333346239386334663836643432353434373733310a306662303565633762313232663763383663343162393762626562306435316566653761666636356564363633386264643334303431626664643035316133650a333331393538616130656136653630303239663561663237373733373638623832343030616238656334663366363639616230393432363563363563616137363337396239616334303865663838623363333339396637363061626363383266
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230530155242885.png)
+
+
+4. 如果想查看和修改加密文件中的内容，该怎么操作呢？对于已经加密过的文件，需要使用ansible-vault 命令的edit 参数进行修改，随后用view 参数即可查看到修改后的内容。ansible-vault 命令对加密文件的编辑操作默认使用的是Vim 编辑器，在修改完毕后请记得执行wq 操作保存后退出：
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230530155407297.png)
+
+## 第十七章 使用iSCSI服务部署网络存储 （***）
+
+#已放弃 
+本章讲解内容：
++ iSCSI 技术介绍；
++ 创建RAID硬盘阵列；
++ 配置iSCSI服务端；
++ 配置Linux客户端；
++ 配置Windows客户端；
+
+>iSCSI 技术实现了物理硬盘设备与TCP/IP 网络协议的相互结合，使得用户能够通过互联网方便地访问远程机房提供的共享存储资源。
+
+**互联网小型计算机系统接口（iSCSI，Internet Small Computer System Interface）。**
+### iSCSI技术介绍
+
+**当前的硬盘接口类型主要有IDE、SCSI 和SATA 这3 种。**
+
+➢ IDE：一种成熟稳定、价格便宜的并行传输接口。
+➢ SATA：一种传输速度更快、数据校验更完整的串行传输接口。
+➢ SCSI：一种用于计算机和硬盘、光驱等设备之间系统级接口的通用标准，具有系统资源占用率低、转速高、传输速度快等优点。
+
+
+## 第18章 使用MariaDB 数据库管理系统
+
+本章主要讲解内容：
+
+>+ 数据库管理系统；
+>+ 初始化mariadb 服务；
+>+ 管理用户以及授权；
+>+ 创建数据库与表单；
+>+ 管理表单及数据；
+>+ 数据库的备份及恢复。
+
+### 数据库管理系统
+
+数据库是指按照某些特定结构来存储数据资料的数据仓库。
+
+### 初始化mariadb服务
+
+`dnf install -y mariadb mariadb-server`
+
+```bash
+[root@localhost ansible]# systemctl enable mariadb
+[root@localhost ansible]# systemctl start mariadb
+
+
+```
+
+> 为了确保数据库的安全性和正常运转，需要先对数据库程序进行初始化操作，包括5个步骤。
+> 1. 设置root管理员在数据库中的密码值。
+> 2. 设置root管理员在数据库中的专有密码。
+> 3. 删除匿名用户，并使用root 管理员从远程登录数据库，以确保数据库上运行的业务的安全性。
+> 4. 删除默认的测试数据库，取消测试数据库的一系统访问权限。
+> 5. 刷新授权列表，让初始化的设定立即生效。
+
+```bash
+[root@linuxprobe ~]# mysql_secure_installation 
+
+NOTE: RUNNING ALL PARTS OF THIS SCRIPT IS RECOMMENDED FOR ALL MariaDB
+      SERVERS IN PRODUCTION USE!  PLEASE READ EACH STEP CAREFULLY!
+
+In order to log into MariaDB to secure it, we'll need the currentpassword for the root user.  If you've just installed MariaDB, andyou haven't set the root password yet, the password will be blank,
+so you should just press enter here.
+
+Enter current password for root (enter for none): 
+OK, successfully used password, moving on...
+
+Setting the root password ensures that nobody can log into the MariaDB
+root user without the proper authorisation.
+
+Set root password? [Y/n] y
+New password: 
+Re-enter new password: 
+Password updated successfully!
+Reloading privilege tables..
+ ... Success!
+
+
+By default, a MariaDB installation has an anonymous user, allowing anyone to log into MariaDB without having to have a user account created for them.  This is intended only for testing, and to make the installation go a bit smoother.  You should remove them before moving into a production environment.
+
+Remove anonymous users? [Y/n] y
+ ... Success!
+
+Normally, root should only be allowed to connect from 'localhost'.  This ensures that someone cannot guess at the root password from the network.
+
+Disallow root login remotely? [Y/n] y
+ ... Success!
+
+By default, MariaDB comes with a database named 'test' that anyone can access.  This is also intended only for testing, and should be removed
+before moving into a production environment.
+
+Remove test database and access to it? [Y/n] y
+ - Dropping test database...
+ ... Success!
+ - Removing privileges on test database...
+ ... Success!
+
+Reloading the privilege tables will ensure that all changes made so far will take effect immediately.
+
+Reload privilege tables now? [Y/n] y
+ ... Success!
+
+Cleaning up...
+
+All done!  If you've completed all of the above steps, your MariaDB installation should now be secure.
+
+Thanks for using MariaDB!
+
+```
+
+> 在很多生产环境中都需要使用站库分离的技术（即网站和数据库不在同一个服务器上），**如果需要让root 管理员远程访问数据库，**可在上面的初始化操作中设置策略，以允许root 管理员从远程访问。然后还需要设置防火墙，使其放行对数据库服务程序的访问请求。数据库服务程序默认会占用3306 端口，在防火墙策略中服务名称统一叫作mysql：
+
+```bash
+firewall-cmd --permanent --add-service=mysql
+firewall-cmd --permanent --add-port=3306/tcp
+```
+
+登录
+```bash
+mysql -u root -p
+
+```
+
+[Mariadb 设置远程访问](https://blog.csdn.net/weixin_43919932/article/details/123193962)
+
+```bash
+grant all privileges on *.* to root@"%" identified by "password" with grant option; 
+flush privileges;
+```
+
+### 管理用户以及授权
+
+为了保障数据库系统的安全性，以及让其他用户协同管理数据库，可以在MariaDB 数据库管理系统中为他们**创建多个专用的数据库管理用户**，然后再分配合理的权限，以满足他们的工作需求。
+
+使用root 管理员登录数据库管理系统，然后按照`“CREATE USER 用户名@主机名IDENTIFIED BY '密码';”`的格式创建数据库管理用户。
+
+```mysql
+create user luky@localhost identified by 'luky';
+use mysql;
+select host,user,password from user;
+
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531181426904.png)
+
+**不过，用户luke 仅仅是一位普通用户，没有数据库的任何操作权限。**
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531181612758.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531181819255.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531181827350.png)
+
+```mysql
+show grants for luky@localhost;
+```
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531193924897.png)
+
+```mysql
+GRANT SELECT, INSERT, UPDATE, DELETE ON `mysql`.`user` TO 'luky'@'localhost';
+
+```
+
+上面输出信息中显示用户luke 已经拥有了针对mysql 数据库中user 表单的一系列权限了。
+
+**移除刚才的授权:**
+
+```mysql
+
+REVOKE SELECT,UPDATE,DELETE,INSERT ON mysql.user FROM luke@localhost;
+```
+
+**删除用户**
+
+
+```bash
+drop user luky@localhost;
+```
+
+### 创建数据库与表单
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531195327133.png)
+
+1. 创建数据库
+```mysql
+CREATE DATABASE linuxprobe;
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531195534869.png)
+
+2. 在新建的linuxprobe 数据库中创建表单mybook,我们分别定义3 个字段项，其中，字符型字段name（长度为15 字符）用来存放图书名称，整型字段price 和pages 分别存储图书的价格和页数。
+
+```mysql
+use linuxprobe;
+create table mybook(name char(15),price int,pages int);
+desc mybook;
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531195813104.png)
+
+### 管理表单及数据
+
+接下来向mybook 数据表单中**插入**一条图书信息。
+
+```mysql 
+insert into mybook(name,price,pages) values('linuxprobe',60,518);
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531200028580.png)
+
+**更新表单**
+
+```mysql
+UPDATE mybook SET price=55 ;
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531200140953.png)
+
+**想修改指定的某一条记录？没问题的，用WHERE 命令进行限定即可**
+
+```mysql
+MariaDB [linuxprobe]> INSERT INTO mybook(name,price,pages) VALUES('linuxcool','85', '300');
+Query OK, 1 row affected (0.002 sec)
+
+MariaDB [linuxprobe]> INSERT INTO mybook(name,price,pages) VALUES('linuxdown','105', '500');
+Query OK, 1 row affected (0.004 sec)
+
+MariaDB [linuxprobe]> UPDATE mybook SET price=60 where name='linuxcool';
+
+
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531200256856.png)
+
+**还可以使用DELETE 命令删除某个数据表单中的内容**
+
+```mysql
+DELETE FROM mybook;
+DELETE FROM mybook where name='linuxprobe';
+
+```
+**要想让查询结果更加精准，就需要结合使用SELECT 与WHERE 命令了**
+
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531200426600.png)
+
+```mysql
+SELECT * FROM mybook WHERE price>75;
+SELECT * FROM mybook WHERE price!=80;
+SELECT * from mybook WHERE price=30 AND pages=518 ;
+```
+
+### 数据库的备份及恢复
+
+>`mysqldump` 命令用于备份数据库数据，格式为`“mysqldump [参数] [数据库名称]”`。其中参数与mysql 命令大致相同，**-u** 参数用于定义登录数据库的用户名称，**-p** 参数表示密码提示符。**下面将linuxprobe 数据库中的内容导出为一个文件**，并保存到root 管理员的家目录中：
+
+```bash
+mysqldump -u root -p 123.com > /root/linuxprobeDB.dump
+
+```
+
+```mysql
+#[root@linuxprobe ~]# cat linuxprobeDB.dump 
+-- MySQL dump 10.19  Distrib 10.3.28-MariaDB, for Linux (x86_64)
+--
+-- Host: localhost    Database: linuxprobe
+-- ------------------------------------------------------
+-- Server version	10.3.28-MariaDB
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `mybook`
+--
+
+DROP TABLE IF EXISTS `mybook`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `mybook` (
+  `name` char(15) DEFAULT NULL,
+  `price` int(11) DEFAULT NULL,
+  `pages` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mybook`
+--
+
+LOCK TABLES `mybook` WRITE;
+/*!40000 ALTER TABLE `mybook` DISABLE KEYS */;
+INSERT INTO `mybook` VALUES ('linuxprobe',55,518),('linuxcool',60,300),('linuxdown',105,500);
+/*!40000 ALTER TABLE `mybook` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2023-05-31 20:08:04
+
+```
+
+**然后进入MariaDB 数据库管理系统，彻底删除linuxprobe 数据库，这样mybook 数据表单也将被彻底删除。然后重新建立linuxprobe 数据库：**
+
+`DROP DATABASE linuxprobe;`
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531201107777.png)
+
+
+```mysql
+mysql -u root -p linuxprobe < /root/linuxprobeDB.dump
+```
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531201245198.png)
+
+![](picture/《Linux就该这么学》第2版.assets/image-20230531201304784.png)
+
+## 第十九章 使用PXE+Kickstart 无人值守安装服务
+#已放弃 
+
+## 第二十章 使用LNMP 架构部署动态网站环境
+
+本章讲解了如下内容：
+>+  源码包程序；
+>+  LNMP 动态网站部署架构；
+>+  搭建WordPress 博客；
+>+  选购服务器主机。
+
+LNMP 动态网站部署架构是一套由Linux + Nginx + MySQL + PHP 组成的动态网站系统解决方案，具有免费、高效、扩展性强且资源消耗低等优良特性，目前正在被广泛使用。
 
 
