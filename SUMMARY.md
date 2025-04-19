@@ -13,4 +13,5 @@
 * [内网渗透](内网渗透学习笔记.md)
 * [网安工具使用](网安工具使用.md)
 * [Domain-penetration_one-stop](Domain-penetration_one-stop.md)
+* [AI](AI.md)
 
